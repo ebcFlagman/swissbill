@@ -147,3 +147,17 @@ vite.config.ts.timestamp-*
 
 # Turbo Repo
 .turbo
+
+.idea
+
+
+# Claude Code (local settings only; skills are versioned)
+.claude/settings.local.json
+
+# Electron build output
+release/
+
+# Local SQLite databases (contain real invoice data)
+*.db
+*.sqlite
+*.sqlite3
