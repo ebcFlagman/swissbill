@@ -55,7 +55,7 @@ kann Entwürfe bearbeiten und jederzeit das PDF einer bereits ausgestellten Rech
 
 1. **Given** eine gespeicherte Rechnung, **When** ich die App neu starte, **Then** erscheint sie unverändert in der Rechnungsliste.
 2. **Given** ein Entwurf, **When** ich ihn ändere und speichere, **Then** werden die Änderungen übernommen.
-3. **Given** eine bereits ausgestellte Rechnung (PDF erzeugt), **When** ich sie öffne, **Then** sehe ich sie schreibgeschützt und das erneut erzeugte PDF ist inhaltlich identisch.
+3. **Given** eine bereits ausgestellte Rechnung (festgeschrieben), **When** ich sie öffne, **Then** sehe ich sie schreibgeschützt und das erneut erzeugte PDF ist inhaltlich identisch.
 4. **Given** eine ausgestellte Rechnung, **When** ich sie ändern möchte, **Then** kann ich sie nur als neue Rechnung duplizieren oder stornieren.
 
 ---
@@ -118,13 +118,13 @@ Als Rechnungssteller erhalte ich bei der Ausstellung fortlaufende, eindeutige Re
 - **FR-005**: Das System MUSS bei ungültigen oder unvollständigen Zahlungsdaten die Erzeugung des Zahlteils verhindern und die Fehlerursache feldgenau und verständlich anzeigen.
 - **FR-006**: Das System MUSS Rechnungsinhalt und Zahlungsinformationen jeder Rechnung dauerhaft lokal speichern, ohne Internetverbindung und ohne Benutzerkonto.
 - **FR-007**: Das System MUSS eine durchsuchbare und filterbare Liste aller Rechnungen mit Nummer, Kunde, Datum, Betrag und Status anzeigen.
-- **FR-008**: Das System MUSS Entwürfe bearbeitbar halten, aber eine Rechnung nach der PDF-Erzeugung als ausgestellt kennzeichnen und deren Inhalt unveränderlich machen.
+- **FR-008**: Das System MUSS Entwürfe bearbeitbar halten, aber eine Rechnung beim Ausstellen festschreiben (Nummer und Referenz vergeben, Status «ausgestellt») und deren Inhalt unveränderlich machen.
 - **FR-009**: Das System MUSS das Duplizieren einer ausgestellten Rechnung als neuen Entwurf erlauben.
 - **FR-010**: Das System MUSS das erneute Erzeugen des PDFs einer ausgestellten Rechnung mit inhaltlich identischem Ergebnis erlauben.
 - **FR-011**: Das System MUSS einen globalen Absender (inkl. Zahlungsangaben) sowie Kunden einmalig speichern, den globalen Absender bei neuen Rechnungen vorausfüllen und Kunden zur Auswahl anbieten, wobei bei ausgestellten Rechnungen die damaligen Angaben erhalten bleiben.
-- **FR-012**: Das System MUSS eindeutige Rechnungsnummern im Format Präfix-Jahr-Zähler (z. B. RE-2026-0001) vergeben, wobei der Präfix vom Benutzer konfigurierbar ist, der Zähler pro Jahr bei 1 beginnt, lückenlos hochzählt und mindestens vierstellig angezeigt wird. Duplikate MÜSSEN verhindert werden. Die Nummer wird erst bei der Ausstellung (PDF-Erzeugung) vergeben; Entwürfe haben noch keine Nummer.
+- **FR-012**: Das System MUSS eindeutige Rechnungsnummern im Format Präfix-Jahr-Zähler (z. B. RE-2026-0001) vergeben, wobei der Präfix vom Benutzer konfigurierbar ist, der Zähler pro Jahr bei 1 beginnt, lückenlos hochzählt und mindestens vierstellig angezeigt wird. Duplikate MÜSSEN verhindert werden. Die Nummer wird erst bei der Ausstellung vergeben; Entwürfe haben noch keine Nummer. Massgebend für das Jahr in der Nummer ist das Jahr der Ausstellung, nicht das Rechnungsdatum.
 - **FR-013**: Das System MUSS den Status einer Rechnung (Entwurf, ausgestellt, bezahlt, storniert) verwalten. Eine stornierte Rechnung bleibt in der Liste sichtbar, ihre Nummer bleibt vergeben und wird nicht wiederverwendet.
-- **FR-014**: Das System MUSS das PDF an einem vom Benutzer gewählten Ort speichern und zum Drucken bereitstellen können.
+- **FR-014**: Das System MUSS das PDF an einem vom Benutzer gewählten Ort speichern und im Standardprogramm zum Drucken öffnen können.
 - **FR-015**: Die gesamte Benutzeroberfläche und der Zahlteil MÜSSEN auf Deutsch sein.
 - **FR-016**: Das System MUSS die Daten so ablegen, dass sich eine Sicherung durch Kopieren einer einzelnen Datei erstellen lässt, und den Speicherort dem Benutzer anzeigen.
 - **FR-017**: Das System MUSS erlauben, den Absender pro Rechnung zu überschreiben, ohne den globalen Absender zu verändern. Überschriebene Angaben unterliegen derselben Validierung wie der globale Absender.
@@ -158,7 +158,7 @@ Als Rechnungssteller erhalte ich bei der Ausstellung fortlaufende, eindeutige Re
 - Es gibt einen einzelnen Benutzer pro Installation, ohne Anmeldung und Rollenverwaltung.
 - Es gibt einen globalen Absender (Rechnungssteller) pro Installation, der pro Rechnung überschrieben werden kann; mehrere gespeicherte Absenderprofile sind nicht Teil dieser Version.
 - Währung ist immer CHF, Sprache ausschliesslich Deutsch (gemäss Constitution).
-- Ausgestellt bedeutet: Das PDF wurde erzeugt. Danach ist der Inhalt unveränderlich, nur der Status (z. B. bezahlt) darf geändert werden.
+- Ausgestellt bedeutet: Der Benutzer hat die Rechnung festgeschrieben (Nummer und Referenz sind vergeben). Das PDF kann danach beliebig oft erzeugt werden. Ab dem Ausstellen ist der Inhalt unveränderlich, nur der Status (z. B. bezahlt) darf geändert werden.
 - MwSt wird nicht ausgewiesen, Beträge sind Endbeträge (bestätigt).
 - Rechnungen ohne Betrag (offener Betrag im Zahlteil) und ohne Schuldner sind nicht Teil dieser Version.
 - Einheiten, Rabatte und Positionen mit negativen Beträgen sind nicht Teil dieser Version.

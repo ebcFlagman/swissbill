@@ -43,6 +43,7 @@ type Milli = number;                     // Menge in Tausendsteln
 | Methode | Eingabe | Ausgabe | Hinweise |
 |---------|---------|---------|----------|
 | `pdf.save` | `{ invoiceId }` | `{ path: string } \| { cancelled: true }` | zeigt Speichern-Dialog im Main, schreibt PDF aus der Momentaufnahme (FR-010, FR-014); nur für Rechnungen mit Nummer |
+| `pdf.open` | `{ invoiceId }` | `void` | erzeugt das PDF in einer temporären Datei und öffnet es im Standardprogramm zum Drucken (`shell.openPath` im Main, FR-014); nur für Rechnungen mit Nummer |
 | `pdf.preview` | `{ invoiceId }` | `{ base64: string }` | für Vorschau im Renderer; Entwürfe erhalten ein Wasserzeichen «ENTWURF» ohne gültigen Zahlteil |
 
 ### Kunden (`customers:*`)

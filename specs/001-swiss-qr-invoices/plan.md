@@ -42,7 +42,7 @@ Alternativen in [research.md](research.md).
 |---------|-----------|----------|
 | I. Swiss QR-Bill Compliance | Erfüllt | Eigene, getestete Validierung (IBAN-Prüfsumme, QR-IBAN-IID-Bereich, QRR-Modulo-10, ISO-11649-RF, Feldlängen). `swissqrbill` rendert nur; Ergebnis wird gegen bekannte gültige Beispiele und den SIX-Validator geprüft (SC-002). |
 | II. Local-First, Offline | Erfüllt | Keine Netzwerkzugriffe, DB in `userData`, kein Konto, keine Telemetrie. Renderer-CSP verbietet externe Ressourcen. |
-| III. Datenintegrität / Unveränderlichkeit | Erfüllt | Integer-Rappen, Menge in Tausendsteln; Migrationen mit `PRAGMA user_version`; DB-Trigger sperren Änderungen an ausgestellten Rechnungen (ausser Statuswechsel). |
+| III. Datenintegrität / Unveränderlichkeit | Erfüllt | Integer-Rappen, Menge in Tausendsteln; Migrationen mit `PRAGMA user_version`; DB-Trigger (schon in Migration 001) sperren Änderungen an ausgestellten Rechnungen (ausser Statuswechsel). |
 | IV. Test-First Domänenlogik | Erfüllt | Domänenmodul `src/shared/domain` ist rein (kein Electron/DB) und wird zuerst per Vitest entwickelt; ein Playwright-E2E deckt den Hauptablauf ab. |
 | V. Simplicity & Electron Security | Erfüllt | `contextIsolation: true`, `nodeIntegration: false`, `sandbox: true`; DB und Dateizugriff nur im Main-Prozess; IPC mit zod-Validierung. Abhängigkeiten begründet in research.md. |
 
@@ -68,7 +68,7 @@ specs/001-swiss-qr-invoices/
 ```text
 src/
 ├── shared/                  # reiner TypeScript-Code, ohne Electron/Node-Abhängigkeit
-│   ├── domain/              # Money, Iban, Reference (QRR/SCOR), InvoiceNumber, Invoice-Statusmaschine, Validierung
+│   ├── domain/              # Money, Iban, Reference (QRR/SCOR), QR-Payload, InvoiceNumber, Invoice-Statusmaschine, Validierung
 │   └── ipc/                 # zod-Schemas und Typen des IPC-Vertrags
 ├── main/                    # Electron Main-Prozess
 │   ├── db/                  # Verbindung, Migrationen (SQL-Dateien), Repositories
@@ -84,6 +84,7 @@ src/
 
 tests/
 ├── unit/                    # Domäne: Money, IBAN, Referenzen, Nummern, Statusübergänge
+├── fixtures/                # Beispiel-Payload aus den SIX-Richtlinien u. a. Testdaten (nur fiktiv)
 ├── integration/             # Repositories/Services gegen In-Memory-SQLite, PDF-Erzeugung
 └── e2e/                     # Playwright-Electron: Rechnung erfassen → ausstellen → PDF
 ```

@@ -21,6 +21,10 @@ Globale Vorgaben. Der Absender hier ist die Vorlage für neue Rechnungen (FR-011
 | default_payment_days | INTEGER | Standard 30, Basis für die Zahlungsfrist |
 | updated_at | TEXT | |
 
+Die Zeile `id = 1` wird von Migration 001 mit leeren Absenderfeldern, `invoice_prefix = 'RE'` und
+`default_payment_days = 30` angelegt. «Pflicht» bedeutet hier: Pflicht beim Speichern der Einstellungen, nicht
+im Anfangszustand. Bis zur ersten Einrichtung sind die Absenderfelder leer.
+
 Der Referenztyp ist **abgeleitet**: QR-IBAN → QRR, sonst SCOR (kein eigenes Feld).
 
 ### customers
@@ -44,16 +48,16 @@ Jede Rechnung trägt ihre eigene Momentaufnahme von Absender, Schuldner und Schl
 | id | INTEGER PK | |
 | status | TEXT | `draft` \| `issued` \| `paid` \| `cancelled` |
 | number | TEXT UNIQUE NULL | `PRÄFIX-JAHR-ZÄHLER`; `NULL` solange Entwurf |
-| number_year, number_seq | INTEGER NULL | gesetzt mit `number` |
+| number_year, number_seq | INTEGER NULL | gesetzt mit `number`; `number_year` ist das Jahr der Ausstellung, nicht des Rechnungsdatums |
 | invoice_date | TEXT | Rechnungsdatum |
 | due_date | TEXT | ≥ `invoice_date` |
 | customer_id | INTEGER NULL | FK `customers`, `ON DELETE SET NULL`, nur Herkunftshinweis |
-| sender_* | TEXT | Name, Strasse, Hausnummer, PLZ, Ort, Land, IBAN (vorausgefüllt aus `settings`, überschreibbar) |
-| debtor_* | TEXT | Name, Strasse, Hausnummer, PLZ, Ort, Land (kopiert aus `customers`) |
+| sender_* | TEXT NULL | Name, Strasse, Hausnummer, PLZ, Ort, Land, IBAN (vorausgefüllt aus `settings`, überschreibbar). Bei Entwürfen dürfen die Felder leer sein; Pflicht gilt beim Ausstellen |
+| debtor_* | TEXT NULL | Name, Strasse, Hausnummer, PLZ, Ort, Land (kopiert aus `customers`). Bei Entwürfen leer erlaubt; Pflicht gilt beim Ausstellen |
 | closing_text | TEXT NULL | vorausgefüllt aus `settings`, überschreibbar |
 | reference_type | TEXT NULL | `QRR` \| `SCOR`, gesetzt beim Ausstellen |
 | reference | TEXT NULL | abgeleitet beim Ausstellen (FR-019, FR-020) |
-| total_rappen | INTEGER | Summe der Positionen, > 0 beim Ausstellen |
+| total_rappen | INTEGER NOT NULL DEFAULT 0 | Summe der Positionen; bei Entwürfen 0 erlaubt, > 0 beim Ausstellen |
 | layout_version | INTEGER NULL | Version des PDF-Layouts beim Ausstellen |
 | issued_at, paid_at, cancelled_at | TEXT NULL | Zeitpunkte der Statuswechsel |
 | created_at, updated_at | TEXT | |
@@ -101,7 +105,8 @@ delete             │  └─────reopen─────┘   (Korrektur 
 
 ## Unveränderlichkeit (durchgesetzt in Service und Datenbank)
 
-SQLite-Trigger verhindern, dass bei Rechnungen mit Status ≠ `draft`:
+SQLite-Trigger (Teil der Migration 001, damit sie vom ersten Ausstellen an gelten) prüfen den **alten** Status
+(`OLD.status`); der Übergang `draft → issued` bleibt dadurch erlaubt. Sie verhindern, dass bei Rechnungen mit Status ≠ `draft`:
 
 - `invoice_items` eingefügt, geändert oder gelöscht werden,
 - Spalten der Rechnung ausser `status`, `paid_at`, `cancelled_at`, `updated_at` geändert werden,

@@ -27,6 +27,8 @@ Versionsangaben stammen vom npm-Register (Stand 2026-10-08).
 - **Decision**: `pdfkit` für die Rechnung, `swissqrbill` 4 (MIT) zum Anhängen des Zahlteils (`SwissQRBill.attachTo`). Die Prüfung der Eingaben liegt in einem eigenen Domänenmodul und läuft **vor** dem Rendern.
 - **Rationale**: `swissqrbill` erzeugt Layout, Schweizer Kreuz und Trennlinie nach SIX-Vorgabe und wird als pdfkit-Plugin genutzt; die README erwähnt aber keine eigene Prüfung von IBAN, Referenztypen und Feldlängen. Constitution Prinzip I verlangt harte Validierung, darum eigene getestete Regeln.
 - **Alternatives**: Zahlteil selbst zeichnen (hohes Fehlerrisiko, Standard ist umfangreich); HTML nach PDF über Chromium-Druck (Seitenränder und Massgenauigkeit des Zahlteils schwieriger sicherzustellen).
+- **Eigener Payload-Builder**: `src/shared/domain/qr-payload.ts` baut den QR-Text nach SIX-Spezifikation (Feldreihenfolge, Zeilenumbrüche, Adresstyp `S`) und wird gegen ein Beispiel aus den SIX-Richtlinien getestet (Fixture in `tests/fixtures/`). Der PDF-Test dekodiert den QR-Code des erzeugten PDFs (Rasterisierung mit `pdfjs-dist` und `@napi-rs/canvas`, Dekodierung mit `jsqr`, nur Dev-Abhängigkeiten) und vergleicht ihn mit dem Builder. Ist die Rasterisierung zu aufwendig, wird der Payload ersatzweise über die API von `swissqrbill` ausgelesen; der Entscheid wird im Task dokumentiert.
+- **Drucken**: Das PDF wird im Standardprogramm geöffnet (`shell.openPath`); gedruckt wird dort mit den gewohnten Einstellungen (Skalierung 100 %, Perforation). Ein eigener Druckdialog ist nicht vorgesehen.
 - **Verifikation**: Test mit bekannten gültigen Beispiel-Payloads; manuell mit dem SIX-Validator und zwei Banking-Apps (SC-002, SC-003).
 
 ## 5. Validierungsregeln (Prinzip I)
@@ -42,12 +44,12 @@ Versionsangaben stammen vom npm-Register (Stand 2026-10-08).
 ## 6. Rechnungsnummer und Ausstellung
 
 - **Decision**: Nummer `PRÄFIX-JAHR-ZÄHLER` (z. B. `RE-2026-0001`). Eine Tabelle `number_counters(year, last_seq)` wird beim Ausstellen in derselben Transaktion erhöht, die den Status auf `issued` setzt und die Momentaufnahme festschreibt. Dadurch gibt es keine Lücken und keine Duplikate (`UNIQUE(number)`).
-- **Rationale**: Die Nummer wird erst bei der Ausstellung vergeben (Klarstellung der Spec). Die PDF-Ausgabe ist von der Ausstellung getrennt: Schlägt das Speichern der Datei fehl, bleibt die Rechnung ausgestellt und das PDF lässt sich jederzeit erneut erzeugen (FR-010).
+- **Rationale**: Die Nummer wird erst bei der Ausstellung vergeben (Klarstellung der Spec). Das Jahr in der Nummer ist das Jahr der Ausstellung, nicht das des Rechnungsdatums; so bleibt der Zähler beim Jahreswechsel lückenlos. Die Uhr ist im Service injizierbar, damit Tests den Jahreswechsel prüfen können. Die PDF-Ausgabe ist von der Ausstellung getrennt: Schlägt das Speichern der Datei fehl, bleibt die Rechnung ausgestellt und das PDF lässt sich jederzeit erneut erzeugen (FR-010).
 - **Alternatives**: Nummer schon im Entwurf vergeben (erzeugt Lücken beim Löschen von Entwürfen, verworfen).
 
 ## 7. Unveränderlichkeit
 
-- **Decision**: Eine ausgestellte Rechnung speichert alle relevanten Daten als Momentaufnahme in den eigenen Spalten und Positionen (Absender, Schuldner, Schlusstext, Referenz, Layout-Version). Zusätzlich sperren SQLite-Trigger `UPDATE`/`DELETE` auf ausgestellten Rechnungen und deren Positionen, ausser für Statuswechsel (`issued → paid`, `issued → cancelled`, `paid → issued` zur Korrektur einer Fehlbuchung).
+- **Decision**: Eine ausgestellte Rechnung speichert alle relevanten Daten als Momentaufnahme in den eigenen Spalten und Positionen (Absender, Schuldner, Schlusstext, Referenz, Layout-Version). Zusätzlich sperren SQLite-Trigger (schon in Migration 001, nicht erst später) `UPDATE`/`DELETE` auf ausgestellten Rechnungen und deren Positionen, ausser für Statuswechsel (`issued → paid`, `issued → cancelled`, `paid → issued` zur Korrektur einer Fehlbuchung).
 - **Rationale**: Doppelte Absicherung (Service-Logik und Datenbank) für Prinzip III; das PDF wird bei Bedarf aus der Momentaufnahme neu erzeugt und enthält dasselbe Ausstellungsdatum.
 - **Alternatives**: PDF als Blob speichern (Datenbank wächst, Layout-Verbesserungen wären nicht anwendbar; bei Bedarf später ergänzbar).
 
