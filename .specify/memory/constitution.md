@@ -1,50 +1,66 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+# SwissBill Constitution
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. Swiss QR-Bill Compliance (NON-NEGOTIABLE)
+Every generated payment part MUST conform to the current SIX Swiss Implementation Guidelines for
+the QR-bill (QR code content, layout, dimensions, scissors/separation line, Swiss cross). IBAN vs.
+QR-IBAN and the matching reference type (QRR, SCOR, NON) MUST be validated before an invoice can be
+issued. Invalid payment data MUST be rejected with a clear message, never silently corrected.
+Rationale: an invoice whose payment part is rejected by e-banking or the post office is useless.
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+### II. Local-First, Offline Desktop App
+The app MUST be a standalone Electron desktop application that works fully offline. All invoice
+content and payment information MUST be stored in an embedded SQLite database in the Electron
+`userData` directory. No cloud service, account, or telemetry MAY be required or added without a
+constitution amendment.
+Rationale: invoice data is financial and personal; the user keeps full control of it.
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+### III. Data Integrity & Immutability of Issued Invoices
+Schema changes MUST be made through versioned, forward-only migrations. Monetary amounts MUST be
+stored and computed as integers (rappen) or a decimal type, never as binary floating point. Once
+an invoice is issued (PDF generated), its content MUST NOT be altered; corrections are made via a
+new or duplicated invoice. The database MUST be easy to back up (single file, documented location).
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+### IV. Test-First for Domain Logic
+Domain logic (QR payload generation, reference/IBAN validation, totals and VAT calculation,
+numbering) MUST be developed test-first: tests are written and fail before the implementation.
+Generated QR payloads MUST be covered by tests against known-valid examples. UI code is tested
+proportionally; critical flows (create → save → generate PDF) MUST have at least one end-to-end test.
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+### V. Simplicity & Electron Security
+Start with the simplest solution that works (YAGNI); every added dependency or abstraction MUST be
+justified. The renderer process MUST run with `contextIsolation` enabled and `nodeIntegration`
+disabled; database and file-system access MUST live in the main process and be exposed to the UI
+only through a narrow, typed IPC API.
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+## Technology & Compliance Constraints
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+- Platform: Electron (desktop) with TypeScript; embedded SQLite (native driver, rebuilt for the
+  Electron ABI).
+- Output: PDF invoices including the QR-bill payment part, printable on A4 with a perforated slip
+  and exportable as a file.
+- Localization: user-facing text and the payment part are German only for now; additional languages
+  are out of scope until the constitution is amended. Currency is always CHF; EUR is not supported.
+- Privacy: the database, generated PDFs, and any real customer data MUST NOT be committed to the
+  repository; sample data MUST be fictional.
+- Dependencies: prefer maintained libraries for QR-bill generation over a custom implementation, but
+  their output MUST be verified against Principle I.
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+## Development Workflow & Quality Gates
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+- Work follows Spec Kit: constitution → specify → (clarify) → plan → tasks → implement.
+- Commits follow Conventional Commits (`feat`, `fix`, `docs`, `chore`, …).
+- Before merging: lint and type-check pass, all tests pass, and the change is checked against this
+  constitution (plan.md contains a Constitution Check).
+- Any complexity that violates Principle V MUST be justified in the plan's complexity table.
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+This constitution supersedes other practices. Amendments MUST be made via `/speckit-constitution`,
+documented with a rationale, and increment the version using semantic versioning: MAJOR for
+backward-incompatible principle removals or redefinitions, MINOR for added or materially expanded
+principles or sections, PATCH for clarifications and wording. Every plan and review MUST verify
+compliance with the principles above; unavoidable deviations MUST be recorded and justified.
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+**Version**: 1.0.1 | **Ratified**: 2026-10-08 | **Last Amended**: 2026-10-08
