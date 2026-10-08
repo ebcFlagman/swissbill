@@ -19,7 +19,7 @@ Rationale: invoice data is financial and personal; the user keeps full control o
 ### III. Data Integrity & Immutability of Issued Invoices
 Schema changes MUST be made through versioned, forward-only migrations. Monetary amounts MUST be
 stored and computed as integers (rappen) or a decimal type, never as binary floating point. Once
-an invoice is issued (PDF generated), its content MUST NOT be altered; corrections are made via a
+an invoice is issued (finalized with its number and reference; the PDF can be regenerated at any time), its content MUST NOT be altered; corrections are made via a
 new or duplicated invoice. The database MUST be easy to back up (single file, documented location).
 
 ### IV. Test-First for Domain Logic
@@ -63,4 +63,4 @@ backward-incompatible principle removals or redefinitions, MINOR for added or ma
 principles or sections, PATCH for clarifications and wording. Every plan and review MUST verify
 compliance with the principles above; unavoidable deviations MUST be recorded and justified.
 
-**Version**: 1.0.1 | **Ratified**: 2026-10-08 | **Last Amended**: 2026-10-08
+**Version**: 1.0.2 | **Ratified**: 2026-10-08 | **Last Amended**: 2026-10-08
