@@ -1,0 +1,99 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: verify
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      # better-sqlite3 liefert fertige Binaries mit; ohne --ignore-scripts würde npm versuchen, es zu kompilieren.
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Install Electron binary
+        run: node node_modules/electron/install.js
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit and integration tests
+        run: npm test
+
+      - name: Build and package
+        run: npm run package
+        env:
+          # Optional: ohne Secret (z. B. Forks) baut die App mit Lizenz-Banner.
+          VITE_PRIMEUI_LICENSE: ${{ secrets.PRIMEUI_LICENSE }}
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: swissbill-win-unpacked-${{ github.sha }}
+          path: release/win-unpacked/
+          retention-days: 14
+          if-no-files-found: error
+
+  # Optional: kein Pflicht-Check. Ein Fehlschlag färbt den Lauf rot, blockiert aber weder verify noch das Artefakt.
+  e2e:
+    name: e2e
+    needs: verify
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Install Electron binary
+        run: node node_modules/electron/install.js
+
+      - name: Download packaged app
+        uses: actions/download-artifact@v4
+        with:
+          name: swissbill-win-unpacked-${{ github.sha }}
+          path: release/win-unpacked/
+
+      - name: End-to-end tests
+        run: npm run test:e2e
+        env:
+          VITE_PRIMEUI_LICENSE: ${{ secrets.PRIMEUI_LICENSE }}
+
+      - name: Upload test reports
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-reports-${{ github.sha }}
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 14
+          if-no-files-found: ignore

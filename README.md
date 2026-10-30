@@ -64,6 +64,27 @@ npm run package
 Erzeugt eine entpackte Windows-Anwendung in `release/win-unpacked/`. `better-sqlite3` liefert vorkompilierte
 N-API-Binaries mit; ein Rebuild ist nicht nötig.
 
+## Continuous Integration
+
+Der GitHub-Actions-Workflow `CI` (`.github/workflows/ci.yml`) läuft bei jedem Push, bei Pull Requests gegen `main` und
+manuell (*Actions → CI → Run workflow*). Ältere Läufe desselben Branches werden abgebrochen. Bei Branches mit offenem
+Pull Request laufen ein Push- und ein PR-Lauf parallel; das ist gewollt. Reine Dokumentationsänderungen lösen den Lauf ebenfalls aus.
+
+| Job | Inhalt | Lokale Entsprechung |
+|-----|--------|---------------------|
+| `verify` (Pflicht-Check) | Installation, Lint, Typprüfung, Unit-/Integrationstests, Build und Paketierung, Upload des Artefakts | `npm ci --ignore-scripts`, `node node_modules/electron/install.js`, `npm run lint`, `npm run typecheck`, `npm test`, `npm run package` |
+| `e2e` (optional) | Playwright-Tests gegen die gebaute und verpackte App; bei Fehlern werden Berichte hochgeladen | `npm run test:e2e` |
+
+- **Artefakt:** Aus einem erfolgreichen Lauf lässt sich `swissbill-win-unpacked-<commit>` herunterladen (14 Tage). Entpacken und
+  `SwissBill.exe` starten. Es enthält keine Datenbank und keine Rechnungsdaten.
+- **Lizenzschlüssel:** Optional als Repository-Secret `PRIMEUI_LICENSE` hinterlegen (*Settings → Secrets and variables → Actions*).
+  Er wird beim Build in die App eingebettet; das Artefakt ist daher nur für Personen mit Repository-Zugriff gedacht. Ohne Secret
+  (z. B. bei Forks) baut die Pipeline trotzdem, die App zeigt dann das Lizenz-Banner.
+- **Pflicht-Check:** Nur `CI / verify` sollte in den Branch-Schutzregeln als erforderlich gesetzt werden. Ein Fehler in `e2e`
+  färbt den Lauf rot, blockiert aber weder Merge noch Artefakt.
+- **`--ignore-scripts`:** `better-sqlite3` liefert fertige Binaries mit; ohne dieses Flag würde `npm` versuchen, es zu kompilieren
+  (benötigt Visual Studio Build Tools).
+
 ## Daten und Sicherung
 
 Die Datenbank liegt als **einzelne Datei** `swissbill.db` im Electron-Datenordner
