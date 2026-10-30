@@ -37,6 +37,6 @@ Workflow-Rechte: `contents: read`. Nebenläufigkeit: `group: release`, `cancel-i
 
 ## Konfigurationsänderungen
 
-- `electron-builder.yml`: `artifactName` (`${productName}-${version}-${os}-${arch}.${ext}`), Block `linux` (Ziel `AppImage`, x64, Kategorie `Office`), `nsis` unverändert.
+- `electron-builder.yml`: `nsis.artifactName` und `appImage.artifactName` mit festem Plattform-Suffix (`win-x64` bzw. `linux-x64`), Block `linux` (Ziel `AppImage`, x64, Kategorie `Office`), `nsis` unverändert.
 - `package.json`: `dist:win` = `npm run build && electron-builder --win nsis --publish never`; `dist:linux` = `npm run build && electron-builder --linux AppImage --publish never`.
 - Optional `.github/release.yml`: Kategorien für Release Notes.
