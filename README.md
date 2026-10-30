@@ -100,4 +100,4 @@ Das Projekt wird mit [GitHub Spec Kit](https://github.com/github/spec-kit) entwi
 
 - Der PDF-Zahlteil nutzt die Standardschrift Helvetica; sehr seltene Zeichen aus Latin Extended-A werden evtl. nicht korrekt dargestellt.
 - Nur ein Absender pro Installation (überschreibbar pro Rechnung), keine MwSt-Ausweisung, keine Rabatte oder Einheiten, nur Deutsch.
-- Der Zahlteil wurde mit der Raiffeisen- und der PostFinance-App erfolgreich gescannt. Die Prüfung im SIX-Validator steht noch aus, siehe `docs/validation-log.md`.
+- Der Zahlteil wurde im SIX-Validator (Standard QR 2.3 CH) ohne Fehler geprüft und mit der Raiffeisen- und der PostFinance-App erfolgreich gescannt, siehe `docs/validation-log.md` (geprüft: QR-IBAN mit QR-Referenz).

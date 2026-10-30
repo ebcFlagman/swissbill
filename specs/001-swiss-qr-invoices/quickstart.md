@@ -59,10 +59,10 @@ Rappen-Rundung, QR-Payload, Rechnungsnummern und Statusübergänge ab.
 - Externe Netzwerkzugriffe (z. B. `fetch('https://…')`) und Navigation weg von der App sind blockiert, neue Fenster werden verweigert
 - Ein typischer Ablauf löst keine Anfragen ausserhalb von `file:`, `blob:` und `data:` aus
 
-## Manuelle Abnahme (teilweise erledigt, siehe docs/validation-log.md)
+## Manuelle Abnahme (erledigt am 2026-10-30, siehe docs/validation-log.md)
 
 1. In der Anwendung eine Rechnung mit fiktiven Daten ausstellen und das PDF speichern.
-2. PDF im SIX-Validator für QR-Rechnungen prüfen (SC-002). **Offen.**
+2. QR-Code im SIX-Validator für QR-Rechnungen prüfen (SC-002); das Formular nimmt keine PDFs an, deshalb QR-Code als Bild (`docs/muster-qr-code.png`) oder Text (`docs/muster-qr-payload.txt`) hochladen. **Erledigt:** Standard QR 2.3 CH, keine Fehler.
 3. QR-Code mit mindestens zwei Banking-Apps scannen, Betrag, Empfänger und Referenz kontrollieren (SC-003). **Erledigt:** Raiffeisen- und PostFinance-App, beide bestanden.
 4. Fixture `tests/fixtures/six-example-payload.txt` mit dem Beispiel in den offiziellen SIX-Richtlinien vergleichen.
 5. Benutzbarkeit (SC-001, SC-004): Rechnung mit drei Positionen in unter 3 Minuten erstellen; Erstbenutzer ohne Anleitung.
