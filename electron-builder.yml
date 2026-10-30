@@ -1,0 +1,14 @@
+appId: ch.flagmansworld.swissbill
+productName: SwissBill
+directories:
+  output: release
+files:
+  - out/**/*
+  - package.json
+asarUnpack:
+  - node_modules/better-sqlite3/**
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+npmRebuild: false
