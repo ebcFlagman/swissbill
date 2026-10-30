@@ -25,7 +25,7 @@
 
 ## R5 – Artefakte
 
-- **Decision**: electron-builder mit `--win nsis` (x64) und `--linux AppImage` (x64), `--publish never`. Dateinamen via `artifactName: ${productName}-${version}-${os}-${arch}.${ext}` → `SwissBill-1.2.0-win-x64.exe`, `SwissBill-1.2.0-linux-x64.AppImage`. Version wird per `-c.extraMetadata.version=<version>` gesetzt, damit `package.json` unverändert bleibt und die App-Version (`app.getVersion()`) zur Release-Version passt (FR-009). Neue Skripte `dist:win` / `dist:linux` für lokale Reproduktion (`npm run build && electron-builder …`).
+- **Decision**: electron-builder mit `--win nsis` (x64) und `--linux AppImage` (x64), `--publish never`. Dateinamen via `nsis.artifactName` / `appImage.artifactName` (`${productName}-${version}-win-x64.${ext}` bzw. `-linux-x64.${ext}`; `${arch}` liefert beim AppImage `x86_64`) → `SwissBill-1.2.0-win-x64.exe`, `SwissBill-1.2.0-linux-x64.AppImage`. Version wird per `-c.extraMetadata.version=<version>` gesetzt, damit `package.json` unverändert bleibt und die App-Version (`app.getVersion()`) zur Release-Version passt (FR-009). Neue Skripte `dist:win` / `dist:linux` für lokale Reproduktion (`npm run build && electron-builder …`).
 - **Rationale**: Bestehende Konfiguration nutzt bereits NSIS/x64; nur Linux-Block und Namen fehlen.
 - **Risiken**: (a) `better-sqlite3` muss im Paket ein Linux-x64-Binary enthalten (`npmRebuild: false` bleibt) – wird im Build-Job mit einem Existenz-Check des `.node`-Binaries abgesichert; (b) AppImage unter neueren Ubuntu-Versionen kann am Chromium-Sandbox-Mechanismus scheitern – als Hinweis in die Doku (`--no-sandbox` nur als Notbehelf); (c) AppImage-Start wird in der Pipeline nicht getestet (kein Display); Smoke-Test lokal.
 
