@@ -5,5 +5,12 @@ export default defineConfig({
   testMatch: '**/*.e2e.ts',
   timeout: 60_000,
   workers: 1,
-  reporter: 'list',
+  reporter: process.env.CI
+    ? [
+        ['list'],
+        ['github'],
+        ['html', { open: 'never', outputFolder: 'playwright-report' }],
+        ['junit', { outputFile: 'playwright-report/junit.xml' }],
+      ]
+    : 'list',
 });
