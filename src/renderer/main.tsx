@@ -9,8 +9,11 @@ import { App } from './App';
 // (VITE_PRIMEUI_LICENSE) und wird nicht committet; die Prüfung läuft offline.
 const license = import.meta.env.VITE_PRIMEUI_LICENSE;
 
-// `primelocale` kennt den Eintrag `toggleSidebar` noch nicht, PrimeReact 11 verlangt ihn.
-const deLocale = { ...de, aria: { ...de.aria, toggleSidebar: 'Seitenleiste umschalten' } };
+// `primelocale` kennt die Einträge `toggleSidebar` und `filter` noch nicht, PrimeReact 11 verlangt sie.
+const deLocale = {
+  ...de,
+  aria: { ...de.aria, toggleSidebar: 'Seitenleiste umschalten', filter: 'Filter' },
+};
 
 const theme = {
   preset: Aura,
