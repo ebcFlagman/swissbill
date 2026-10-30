@@ -1,0 +1,18 @@
+# Gruppierung der automatisch generierten Release Notes (nach Pull-Request-Labels).
+changelog:
+  exclude:
+    labels:
+      - skip-changelog
+    authors:
+      - renovate
+  categories:
+    - title: Neue Funktionen
+      labels: [feature, enhancement]
+    - title: Fehlerbehebungen
+      labels: [bug, fix]
+    - title: Dokumentation
+      labels: [documentation]
+    - title: Abhängigkeiten und Wartung
+      labels: [dependencies, chore, ci]
+    - title: Weitere Änderungen
+      labels: ['*']

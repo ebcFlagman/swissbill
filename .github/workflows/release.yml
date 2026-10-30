@@ -1,0 +1,214 @@
+name: Release
+
+# Manuell (nur vom Hauptbranch, mit Versionsangabe) oder durch Push eines Tags v<MAJOR>.<MINOR>.<PATCH>[-zusatz].
+# Der Tag entsteht bei manueller Auslösung erst beim Veröffentlichen des Releases, also nur nach erfolgreicher Prüfung und Build.
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release-Version, z. B. 1.2.0 oder 1.2.0-rc.1 (ohne führendes v)'
+        required: true
+        type: string
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+# Releases laufen nacheinander und werden nie abgebrochen.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    name: prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      version: ${{ steps.resolve.outputs.version }}
+      tag: ${{ steps.resolve.outputs.tag }}
+      prerelease: ${{ steps.resolve.outputs.prerelease }}
+      sha: ${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Require main branch for manual releases
+        if: github.event_name == 'workflow_dispatch' && github.ref != 'refs/heads/main'
+        run: |
+          echo "::error::Manuelle Releases sind nur vom Branch main erlaubt (aktuell: $GITHUB_REF)."
+          exit 1
+
+      - name: Validate version
+        id: resolve
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+        run: node scripts/resolve-release-version.mjs "${INPUT_VERSION:-$GITHUB_REF_NAME}"
+
+      - name: Ensure version is new
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.resolve.outputs.tag }}
+        run: |
+          published=$(gh release list --limit 1000 --json tagName,isDraft --jq '.[] | select(.tagName == env.TAG and (.isDraft | not)) | .tagName')
+          if [ -n "$published" ]; then
+            echo "::error::Zu $TAG existiert bereits ein Release."
+            exit 1
+          fi
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ] && gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$TAG" --silent 2>/dev/null; then
+            echo "::error::Der Tag $TAG existiert bereits."
+            exit 1
+          fi
+
+  verify:
+    name: verify
+    needs: prepare
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.sha }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      # better-sqlite3 liefert fertige Binaries mit; ohne --ignore-scripts würde npm versuchen, es zu kompilieren.
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Install Electron binary
+        run: node node_modules/electron/install.js
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit and integration tests
+        run: npm test
+
+  build:
+    name: build (${{ matrix.label }})
+    needs: [prepare, verify]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - os: windows-latest
+            label: win
+            script: dist:win
+            ext: exe
+          - os: ubuntu-latest
+            label: linux
+            script: dist:linux
+            ext: AppImage
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.sha }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Install Electron binary
+        run: node node_modules/electron/install.js
+
+      # Die Release-Version überschreibt nur die gepackte package.json; die Datei im Repository bleibt unverändert.
+      - name: Build and package
+        shell: bash
+        run: npm run "$SCRIPT" -- "-c.extraMetadata.version=$VERSION"
+        env:
+          SCRIPT: ${{ matrix.script }}
+          VERSION: ${{ needs.prepare.outputs.version }}
+          # Optional: ohne Secret baut die App mit Lizenz-Banner.
+          VITE_PRIMEUI_LICENSE: ${{ secrets.PRIMEUI_LICENSE }}
+
+      - name: Verify package
+        id: package
+        shell: bash
+        env:
+          VERSION: ${{ needs.prepare.outputs.version }}
+          LABEL: ${{ matrix.label }}
+          EXT: ${{ matrix.ext }}
+        run: |
+          file="release/SwissBill-${VERSION}-${LABEL}-x64.${EXT}"
+          test -f "$file" || { echo "::error::Erwartetes Artefakt fehlt: $file"; ls -la release; exit 1; }
+          find release/*-unpacked/resources/app.asar.unpacked/node_modules/better-sqlite3 -name '*.node' | grep . \
+            || { echo "::error::better-sqlite3-Binary fehlt im Paket"; exit 1; }
+          echo "file=$file" >> "$GITHUB_OUTPUT"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ matrix.label }}
+          path: ${{ steps.package.outputs.file }}
+          retention-days: 7
+          if-no-files-found: error
+
+  release:
+    name: release
+    needs: [prepare, build]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      TAG: ${{ needs.prepare.outputs.tag }}
+      VERSION: ${{ needs.prepare.outputs.version }}
+      PRERELEASE: ${{ needs.prepare.outputs.prerelease }}
+      SHA: ${{ needs.prepare.outputs.sha }}
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: release-*
+          merge-multiple: true
+          path: dist
+
+      - name: Create checksums
+        working-directory: dist
+        run: sha256sum SwissBill-* > SHA256SUMS.txt
+
+      - name: Compose release notes header
+        run: |
+          base="https://github.com/${GH_REPO}/releases/download/${TAG}"
+          cat > header.md <<EOF
+          ## Downloads
+
+          | Plattform | Datei |
+          |---|---|
+          | Windows (x64) | [SwissBill-${VERSION}-win-x64.exe](${base}/SwissBill-${VERSION}-win-x64.exe) |
+          | Linux (x64) | [SwissBill-${VERSION}-linux-x64.AppImage](${base}/SwissBill-${VERSION}-linux-x64.AppImage) |
+          | Prüfsummen (SHA-256) | [SHA256SUMS.txt](${base}/SHA256SUMS.txt) |
+
+          Die Installer sind nicht signiert; Windows kann beim Start eine SmartScreen-Warnung anzeigen.
+          EOF
+
+      # Zuerst als Entwurf: der Tag entsteht erst beim Veröffentlichen, ein Fehlschlag hinterlässt keinen Tag.
+      - name: Create release
+        run: |
+          stale=$(gh release list --limit 1000 --json tagName,isDraft --jq '.[] | select(.tagName == env.TAG and .isDraft) | .tagName')
+          if [ -n "$stale" ]; then gh release delete "$TAG" --yes; fi
+
+          args=(--draft --target "$SHA" --title "SwissBill $VERSION" --generate-notes --notes-file header.md)
+          if [ "$PRERELEASE" = "true" ]; then args+=(--prerelease); fi
+          gh release create "$TAG" "${args[@]}" dist/*
+          gh release edit "$TAG" --draft=false

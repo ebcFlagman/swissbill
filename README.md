@@ -85,6 +85,25 @@ Pull Request laufen ein Push- und ein PR-Lauf parallel; das ist gewollt. Reine D
 - **`--ignore-scripts`:** `better-sqlite3` liefert fertige Binaries mit; ohne dieses Flag würde `npm` versuchen, es zu kompilieren
   (benötigt Visual Studio Build Tools).
 
+## Release
+
+Der Workflow `Release` (`.github/workflows/release.yml`) prüft den Stand, baut die Artefakte und veröffentlicht ein
+GitHub-Release inklusive Git-Tag.
+
+- **Auslösen:** *Actions → Release → Run workflow* auf `main` mit der Version (z. B. `1.2.0`, Vorabversion `1.2.0-rc.1`; ohne
+  führendes `v`). Der Tag `v<Version>` entsteht erst, wenn Prüfung und Build erfolgreich waren. Alternativ einen Tag
+  `v<Version>` pushen (`git tag v1.2.0 && git push origin v1.2.0`); der Tag bleibt dabei unverändert.
+- **Ablauf:** `prepare` (Version prüfen, Duplikate ablehnen) → `verify` (Lint, Typprüfung, Tests) → `build` (Windows und Linux) →
+  `release` (Prüfsummen, Release anlegen und veröffentlichen). Bei einem Fehler entsteht weder Tag noch Release. Die Version
+  muss neu sein; bestehende Tags und Releases werden nie verändert.
+- **Artefakte:** `SwissBill-<Version>-win-x64.exe` (Installer), `SwissBill-<Version>-linux-x64.AppImage` und `SHA256SUMS.txt`
+  (`sha256sum -c SHA256SUMS.txt`). Versionen mit Zusatz (`-rc.1`) werden als Vorabversion markiert.
+- **Release Notes:** automatisch generiert (alle Änderungen seit dem letzten Release), gruppiert nach Labels gemäss `.github/release.yml`.
+- **Lokal:** `npm run dist:win` bzw. `npm run dist:linux` (jeweils auf der passenden Plattform), Ausgabe in `release/`.
+- **Hinweise:** Die Installer sind nicht signiert; Windows zeigt beim Start eventuell eine SmartScreen-Warnung. Das AppImage
+  muss ausführbar gemacht werden (`chmod +x`); auf neueren Ubuntu-Versionen kann die Chromium-Sandbox den Start verhindern
+  (Notbehelf: `--no-sandbox`). Der Lizenzschlüssel `PRIMEUI_LICENSE` ist wie in der CI optional.
+
 ## Daten und Sicherung
 
 Die Datenbank liegt als **einzelne Datei** `swissbill.db` im Electron-Datenordner
