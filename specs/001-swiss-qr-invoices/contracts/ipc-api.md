@@ -36,7 +36,7 @@ type Milli = number;                     // Menge in Tausendsteln
 | `invoices.reopen` | `{ id }` | `Invoice` | `paid → issued` |
 | `invoices.cancel` | `{ id }` | `Invoice` | `issued/paid → cancelled` |
 | `invoices.duplicate` | `{ id }` | `Invoice` | neuer Entwurf (FR-009) |
-| `invoices.validate` | `Invoice` | `Result<void>` mit `fields` | Vorab-Prüfung für Sofort-Feedback |
+| ~~`invoices.validate`~~ | – | – | entfällt: Der Renderer nutzt dieselben Regeln lokal aus `src/shared/domain` (`validateForIssue`) für Sofort-Feedback; verbindlich prüft der Main beim Speichern und Ausstellen |
 
 ### PDF (`pdf:*`)
 

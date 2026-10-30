@@ -133,6 +133,10 @@ Als Rechnungssteller erhalte ich bei der Ausstellung fortlaufende, eindeutige Re
 - **FR-020**: Das System MUSS die Zahlungsreferenz aus den Ziffern von Jahr und Zähler der Rechnungsnummer ableiten; der Präfix fliesst nicht in die Referenz ein.
 - **FR-021**: Das System MUSS das Löschen von Entwürfen erlauben, nicht aber das Löschen ausgestellter, bezahlter oder stornierter Rechnungen.
 - **FR-022**: Das System MUSS einen global hinterlegten Standard-Schlusstext (z. B. Zahlungsbedingungen) bei neuen Rechnungen vorausfüllen und das Überschreiben pro Rechnung erlauben, ohne den globalen Text zu verändern. Bei ausgestellten Rechnungen bleibt der damalige Text erhalten.
+- **FR-023**: Das System MUSS ein deutsches, natives Anwendungsmenü bieten (Datei, Bearbeiten, Ansicht, Hilfe) mit Tastenkürzeln für «Neue Rechnung», die Hauptansichten und die Datenbanksicherung. Die Hauptnavigation (Rechnungen, Kunden, Einstellungen) erfolgt ausschliesslich über dieses Menü («Ansicht»), nicht über Schaltflächen im Fenster. Entwicklerwerkzeuge dürfen in der ausgelieferten Anwendung nicht erreichbar sein.
+- **FR-024**: Beim Rechnungsempfänger MUSS nur der Name erfasst werden; Strasse, Nr., PLZ, Ort und Land MÜSSEN optional sein. Vorhandene Angaben werden auf Länge und Zeichensatz geprüft. Im QR-Zahlteil MUSS der Empfänger nur mit Name, PLZ und Ort aufgeführt werden, sonst entfällt er dort. Die Benutzeroberfläche weist darauf hin.
+- **FR-025**: Die Benutzeroberfläche MUSS dem Hell-/Dunkelmodus des Betriebssystems folgen und in beiden Modi gut lesbar sein (Kontrast mindestens 4.5:1).
+- **FR-026**: Die Benutzeroberfläche MUSS die IBAN schon beim Eingeben prüfen: unzulässige Zeichen und ein falsches Land sofort, die Prüfsumme sobald 21 Zeichen vorliegen, eine unvollständige IBAN beim Verlassen des Feldes. Die IBAN wird in Vierergruppen dargestellt und ohne Leerzeichen gespeichert.
 
 ### Key Entities *(include if feature involves data)*
 
@@ -160,7 +164,9 @@ Als Rechnungssteller erhalte ich bei der Ausstellung fortlaufende, eindeutige Re
 - Währung ist immer CHF, Sprache ausschliesslich Deutsch (gemäss Constitution).
 - Ausgestellt bedeutet: Der Benutzer hat die Rechnung festgeschrieben (Nummer und Referenz sind vergeben). Das PDF kann danach beliebig oft erzeugt werden. Ab dem Ausstellen ist der Inhalt unveränderlich, nur der Status (z. B. bezahlt) darf geändert werden.
 - MwSt wird nicht ausgewiesen, Beträge sind Endbeträge (bestätigt).
-- Rechnungen ohne Betrag (offener Betrag im Zahlteil) und ohne Schuldner sind nicht Teil dieser Version.
+- Rechnungen ohne Betrag (offener Betrag im Zahlteil) und ganz ohne Rechnungsempfänger sind nicht Teil dieser Version.
+- Beim Rechnungsempfänger ist nur der Name Pflicht; Strasse, Nr., PLZ, Ort und Land sind optional. Der Swiss-QR-Standard verlangt bei einer Adresse jedoch PLZ und Ort: Fehlen sie, steht der Empfänger nicht im QR-Zahlteil (das Feld «Zahlbar durch» bleibt dort leer, was der Standard erlaubt), auf der Rechnung erscheint er trotzdem. Ein fehlendes Land gilt im QR-Code als CH.
+- Das Erscheinungsbild (hell/dunkel) folgt dem Betriebssystem, auch während die Anwendung läuft.
 - Einheiten, Rabatte und Positionen mit negativen Beträgen sind nicht Teil dieser Version.
 - Mahnwesen, E-Mail-Versand, Import/Export, Mehrbenutzerbetrieb und Buchhaltungsanbindung sind ausser Scope.
 - Es gilt die jeweils aktuelle Version der SIX Swiss Implementation Guidelines für QR-Rechnungen.

@@ -69,7 +69,7 @@ Jede Rechnung trägt ihre eigene Momentaufnahme von Absender, Schuldner und Schl
 | id | INTEGER PK | |
 | invoice_id | INTEGER | FK `invoices`, `ON DELETE CASCADE` (nur bei Entwürfen möglich) |
 | position | INTEGER | Reihenfolge, ab 1 |
-| description | TEXT | Pflicht, max. 500 |
+| description | TEXT | NOT NULL, max. 500 (leer nur im Entwurf; Pflicht beim Ausstellen) |
 | quantity_milli | INTEGER | > 0, Tausendstel (1.5 → 1500) |
 | unit_price_rappen | INTEGER | ≥ 0 |
 | amount_rappen | INTEGER | `round_half_up(quantity_milli * unit_price_rappen / 1000)` |
@@ -109,7 +109,7 @@ SQLite-Trigger (Teil der Migration 001, damit sie vom ersten Ausstellen an gelte
 (`OLD.status`); der Übergang `draft → issued` bleibt dadurch erlaubt. Sie verhindern, dass bei Rechnungen mit Status ≠ `draft`:
 
 - `invoice_items` eingefügt, geändert oder gelöscht werden,
-- Spalten der Rechnung ausser `status`, `paid_at`, `cancelled_at`, `updated_at` geändert werden,
+- Spalten der Rechnung ausser `status`, `paid_at`, `cancelled_at`, `updated_at` und `customer_id` (Herkunftshinweis, wird beim Löschen eines Kunden auf `NULL` gesetzt) geändert werden,
 - die Rechnung gelöscht wird.
 
 ## Indizes
@@ -121,6 +121,6 @@ SQLite-Trigger (Teil der Migration 001, damit sie vom ersten Ausstellen an gelte
 
 ## Validierung (Auszug, Details in research.md)
 
-- Pflichtfelder vor dem Ausstellen: Absender (Name, PLZ, Ort, IBAN), Schuldner (Name, PLZ, Ort), mindestens eine Position, Total > 0.
+- Pflichtfelder vor dem Ausstellen: Absender (Name, PLZ, Ort, IBAN), Rechnungsempfänger (nur Name; Strasse, Nr., PLZ, Ort und Land sind optional, `debtor_country` ist bei «nicht angegeben» `NULL`), mindestens eine Position, Total > 0. Im QR-Code steht der Empfänger nur mit Name, PLZ und Ort, sonst entfällt er.
 - Feldlängen und Zeichenvorrat gemäss Swiss-QR-Standard für alle Adressfelder.
 - Die Validierung läuft in `src/shared/domain` und wird im Renderer (Sofort-Feedback) und im Main (verbindlich) verwendet.
