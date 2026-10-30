@@ -1,6 +1,42 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "config:recommended"
+    "config:recommended",
+    "group:monorepos",
+    "group:recommended"
+  ],
+  "timezone": "Europe/Zurich",
+  "schedule": ["before 8am on monday"],
+  "prConcurrentLimit": 5,
+  "minimumReleaseAge": "3 days",
+  "lockFileMaintenance": {
+    "enabled": true,
+    "automerge": true,
+    "schedule": ["before 6am on monday"]
+  },
+  "platformAutomerge": true,
+  "packageRules": [
+    {
+      "description": "Alle Nicht-Major-Updates von npm-Abhängigkeiten in einem PR bündeln; Auto-Merge, sobald die CI grün ist",
+      "matchManagers": ["npm"],
+      "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
+      "groupName": "npm non-major dependencies",
+      "automerge": true,
+      "automergeType": "pr"
+    },
+    {
+      "description": "GitHub-Actions-Updates (ausser Major) bündeln und automatisch mergen",
+      "matchManagers": ["github-actions"],
+      "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
+      "groupName": "github-actions non-major",
+      "automerge": true,
+      "automergeType": "pr"
+    },
+    {
+      "description": "Major-Updates: eigener PR pro Paket, nie automatisch mergen",
+      "matchUpdateTypes": ["major"],
+      "automerge": false,
+      "addLabels": ["major-update"]
+    }
   ]
 }
