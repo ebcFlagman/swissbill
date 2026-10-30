@@ -12,3 +12,9 @@ win:
     - target: nsis
       arch: [x64]
 npmRebuild: false
+artifactName: ${productName}-${version}-${os}-${arch}.${ext}
+linux:
+  target:
+    - target: AppImage
+      arch: [x64]
+  category: Office
