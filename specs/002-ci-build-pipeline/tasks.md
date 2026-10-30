@@ -57,7 +57,7 @@ Einzelprojekt: Workflow unter `.github/workflows/ci.yml`, Doku in `README.md`. K
 - [X] T005 [US1] In `verify` Schritt `npm ci` ergänzen (FR-002)
 - [X] T006 [US1] In `verify` einzelne, benannte Schritte `npm run lint`, `npm run typecheck` und `npm test` ergänzen, damit das Ergebnis je Schritt sichtbar ist (FR-003, FR-004, FR-005, FR-008)
 - [X] T007 [US1] In `verify` den Schritt `npm run package` ergänzen (baut via `electron-vite build` und paketiert; FR-006) und `VITE_PRIMEUI_LICENSE: ${{ secrets.PRIMEUI_LICENSE }}` als Umgebungsvariable nur für diesen Schritt setzen; ohne Secret muss der Schritt trotzdem laufen (research.md §7)
-- [ ] T008 [US1] Workflow-Datei pushen und quickstart Szenarien 1, 2 und 4 prüfen; in Wegwerf-Branches je einen Lint-Fehler, Typfehler und fehlschlagenden Test pushen (Szenario 3) und anschliessend die Branches löschen
+- [X] T008 [US1] Workflow-Datei pushen und quickstart Szenarien 1, 2 und 4 prüfen; in Wegwerf-Branches je einen Lint-Fehler, Typfehler und fehlschlagenden Test pushen (Szenario 3) und anschliessend die Branches löschen
 
 **Checkpoint**: Pipeline prüft jede Änderung; MVP erreicht
 
@@ -72,8 +72,8 @@ Einzelprojekt: Workflow unter `.github/workflows/ci.yml`, Doku in `README.md`. K
 ### Implementation for User Story 2
 
 - [X] T009 [US2] In `verify` nach `npm run package` den Schritt `actions/upload-artifact@v4` ergänzen: Name `swissbill-win-unpacked-${{ github.sha }}`, Pfad `release/win-unpacked/`, `retention-days: 14`, `if-no-files-found: error`; läuft nur nach erfolgreichen Vorschritten (FR-007, data-model.md)
-- [ ] T010 [US2] Sicherstellen, dass das Artefakt keine Daten enthält: im Artefakt-Pfad keine `*.db`, `*.pdf` und `.env*`-Dateien (FR-012); Inhalt eines Laufs prüfen und quickstart Szenario 5 durchführen
-- [ ] T011 [US2] Quickstart Szenario 8 prüfen: Lauf ohne gesetztes Secret `PRIMEUI_LICENSE` baut trotzdem und das Log enthält keinen Schlüssel
+- [X] T010 [US2] Sicherstellen, dass das Artefakt keine Daten enthält: im Artefakt-Pfad keine `*.db`, `*.pdf` und `.env*`-Dateien (FR-012); Inhalt eines Laufs prüfen und quickstart Szenario 5 durchführen
+- [X] T011 [US2] Quickstart Szenario 8 prüfen: Lauf ohne gesetztes Secret `PRIMEUI_LICENSE` baut trotzdem und das Log enthält keinen Schlüssel
 
 **Checkpoint**: US1 und US2 funktionieren unabhängig
 
@@ -89,7 +89,7 @@ Einzelprojekt: Workflow unter `.github/workflows/ci.yml`, Doku in `README.md`. K
 
 - [X] T012 [US3] Job `e2e` in `.github/workflows/ci.yml` anlegen: `needs: verify`, `runs-on: windows-latest`, `timeout-minutes: 20`, Checkout, Node 24 mit npm-Cache, `npm ci`, Artefakt aus `verify` nach `release/win-unpacked/` herunterladen (`actions/download-artifact@v4`), danach `npm run test:e2e` ohne zusätzliche Display-Einrichtung und ohne `continue-on-error`: ein Fehlschlag färbt den Lauf rot, `verify` und das Artefakt bleiben unberührt; der Job wird nicht als Pflicht-Check geführt (FR-009, research.md §3)
 - [X] T013 [US3] In `e2e` bei Fehlschlag `playwright-report/` und `test-results/` mit `actions/upload-artifact@v4` hochladen (`if: failure()`, `retention-days: 14`; FR-009)
-- [ ] T014 [US3] Auf einem Test-Branch prüfen, ob `e2e` ohne Desktop-Einrichtung zuverlässig grün läuft (mindestens 3 Läufe in Folge, quickstart Szenario 6 mit absichtlich gebrochenem Test). Entscheidung festhalten: bei Instabilität den Job `e2e` aus `.github/workflows/ci.yml` entfernen und den Abschnitt in README.md (T015) anpassen (Clarification 2026-10-30)
+- [X] T014 [US3] Auf einem Test-Branch prüfen, ob `e2e` ohne Desktop-Einrichtung zuverlässig grün läuft (mindestens 3 Läufe in Folge, quickstart Szenario 6 mit absichtlich gebrochenem Test). Entscheidung festhalten: bei Instabilität den Job `e2e` aus `.github/workflows/ci.yml` entfernen und den Abschnitt in README.md (T015) anpassen (Clarification 2026-10-30)
 
 **Checkpoint**: Alle Stories umgesetzt; E2E blockieren weder Prüfung noch Artefakt
 
@@ -98,8 +98,8 @@ Einzelprojekt: Workflow unter `.github/workflows/ci.yml`, Doku in `README.md`. K
 ## Phase 6: Polish & Cross-Cutting Concerns
 
 - [X] T015 [P] Abschnitt «Continuous Integration» in `README.md` ergänzen: Auslöser, Jobs `verify`/`e2e`, lokale Entsprechung der Schritte (`npm ci`, `npm run lint`, `npm run typecheck`, `npm test`, `npm run package`, `npm run test:e2e`), Artefakt-Download, optionales Secret `PRIMEUI_LICENSE`, Hinweis dass nur `CI / verify` Pflicht-Check ist, sowie Status-Badge (FR-014)
-- [ ] T016 Quickstart Szenario 7 prüfen: zwei Läufe ohne Änderung an `package-lock.json`, der zweite ist wegen des npm-Caches schneller (SC-005)
-- [ ] T017 Konformität gegen constitution.md abgleichen (keine Geheimnisse im Repository, keine Telemetrie, keine echten Daten) und specs/002-ci-build-pipeline/quickstart.md vollständig durchgehen
+- [X] T016 Quickstart Szenario 7 prüfen: zwei Läufe ohne Änderung an `package-lock.json`, der zweite ist wegen des npm-Caches schneller (SC-005)
+- [X] T017 Konformität gegen constitution.md abgleichen (keine Geheimnisse im Repository, keine Telemetrie, keine echten Daten) und specs/002-ci-build-pipeline/quickstart.md vollständig durchgehen
 
 ---
 
