@@ -87,8 +87,21 @@ jobs:
         env:
           VITE_PRIMEUI_LICENSE: ${{ secrets.PRIMEUI_LICENSE }}
 
+      - name: Summarize test results
+        if: always()
+        shell: pwsh
+        run: |
+          $file = 'playwright-report/junit.xml'
+          if (Test-Path $file) {
+            $s = ([xml](Get-Content $file)).testsuites
+            $passed = [int]$s.tests - [int]$s.failures - [int]$s.errors - [int]$s.skipped
+            "### E2E-Testergebnis`n`n| Gesamt | Bestanden | Fehlgeschlagen | Übersprungen |`n|---|---|---|---|`n| $($s.tests) | $passed | $([int]$s.failures + [int]$s.errors) | $($s.skipped) |" | Out-File -Append -Encoding utf8 $env:GITHUB_STEP_SUMMARY
+          } else {
+            'Keine E2E-Testergebnisse vorhanden.' | Out-File -Append -Encoding utf8 $env:GITHUB_STEP_SUMMARY
+          }
+
       - name: Upload test reports
-        if: failure()
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: e2e-reports-${{ github.sha }}

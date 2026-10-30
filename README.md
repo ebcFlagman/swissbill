@@ -73,7 +73,7 @@ Pull Request laufen ein Push- und ein PR-Lauf parallel; das ist gewollt. Reine D
 | Job | Inhalt | Lokale Entsprechung |
 |-----|--------|---------------------|
 | `verify` (Pflicht-Check) | Installation, Lint, Typprüfung, Unit-/Integrationstests, Build und Paketierung, Upload des Artefakts | `npm ci --ignore-scripts`, `node node_modules/electron/install.js`, `npm run lint`, `npm run typecheck`, `npm test`, `npm run package` |
-| `e2e` (optional) | Playwright-Tests gegen die gebaute und verpackte App; bei Fehlern werden Berichte hochgeladen | `npm run test:e2e` |
+| `e2e` (optional) | Playwright-Tests gegen die gebaute und verpackte App; Ergebnis als Tabelle in der Lauf-Zusammenfassung, Fehler als Annotationen, HTML-Bericht und JUnit-XML als Artefakt `e2e-reports-<commit>` | `npm run test:e2e` |
 
 - **Artefakt:** Aus einem erfolgreichen Lauf lässt sich `swissbill-win-unpacked-<commit>` herunterladen (14 Tage). Entpacken und
   `SwissBill.exe` starten. Es enthält keine Datenbank und keine Rechnungsdaten.
