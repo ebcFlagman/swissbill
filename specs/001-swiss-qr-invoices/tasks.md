@@ -176,7 +176,7 @@ Einzelprojekt mit electron-vite-Aufteilung gemäss plan.md: `src/shared/`, `src/
 - [X] T063 Fehlerfall Datenbank: fehlende oder beschädigte Datei beim Start in `src/main/db/connection.ts` erkennen, verständlichen Dialog anzeigen, nichts stillschweigend überschreiben; Test in `tests/integration/corrupt-db.test.ts`
 - [X] T064 [P] Sicherheitsprüfung: `tests/e2e/security.e2e.ts` bestätigt `nodeIntegration` aus, `contextIsolation` an, `require` im Renderer nicht verfügbar, keine Netzwerkanfragen; Checkliste in `specs/001-swiss-qr-invoices/quickstart.md` abgleichen
 - [X] T065 [P] Leistungstests: `tests/integration/perf.test.ts` mit 5'000 Rechnungen (Liste und Filter unter 200 ms) und PDF mit 50 Positionen (unter 2 s)
-- [ ] T066 Manuelle Abnahme des Zahlteils: erzeugtes PDF im SIX-Validator prüfen und QR-Code mit mindestens zwei Banking-Apps scannen (SC-002, SC-003); Ergebnis in `docs/validation-log.md` festhalten
+- [ ] T066 Manuelle Abnahme des Zahlteils: erzeugtes PDF im SIX-Validator prüfen und QR-Code mit mindestens zwei Banking-Apps scannen (SC-002, SC-003); Ergebnis in `docs/validation-log.md` festhalten. **Teilweise erledigt:** QR-Code mit der Raiffeisen- und der PostFinance-App gescannt, beide bestanden (SC-003 erfüllt). **Offen:** SIX-Validator (SC-002) und Vergleich der Fixture mit den SIX-Richtlinien
 - [X] T067 [P] `README.md` ergänzen: Zweck, Voraussetzungen, Start (`npm run dev`), Tests, Paketierung, Speicherort der Datenbank, Hinweis zur Sicherung
 - [X] T068 `quickstart.md` komplett durchlaufen und Abweichungen in den Specs oder im Code korrigieren
 
