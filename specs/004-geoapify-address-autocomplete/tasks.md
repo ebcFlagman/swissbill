@@ -131,7 +131,7 @@ description: "Aufgabenliste: Adresseingabe mit Vorschlägen (Geoapify)"
 - [X] T038 Prüfen, dass der Key nirgends geloggt oder in Fehlermeldungen, PDFs und QR-Daten erscheint (`src/main/log.ts`, `src/main/services/pdf-service.ts`, `src/shared/domain/qr-payload.ts`), und bei Bedarf einen Test in `tests/integration/address-service.test.ts` ergänzen
 - [X] T039 `npm run typecheck`, `npm run lint` und `npm test` ausführen und alle Meldungen beheben
 - [X] T040 `npm run test:e2e` ausführen
-- [ ] T041 Validierung nach `specs/004-geoapify-address-autocomplete/quickstart.md` durchführen; die manuelle Prüfung mit echtem Key und den 10 Testadressen gehört dazu, weil SC-001 (unter 10 Sekunden) und SC-002 (mindestens 90 % unter den ersten 5 Vorschlägen) nur so geprüft werden können, und das Ergebnis wird in `docs/validation-log.md` festgehalten
+- [X] T041 Validierung nach `specs/004-geoapify-address-autocomplete/quickstart.md` durchführen; die manuelle Prüfung mit echtem Key und den 10 Testadressen gehört dazu, weil SC-001 (unter 10 Sekunden) und SC-002 (mindestens 90 % unter den ersten 5 Vorschlägen) nur so geprüft werden können, und das Ergebnis wird in `docs/validation-log.md` festgehalten
 - [ ] T042 `.specify/memory/constitution.md` (v1.1.0) mit dem ersten Commit dieser Funktion committen (`docs: amend constitution to v1.1.0 (opt-in Geoapify address suggestions)`) und danach den Constitution-Check gegen v1.1.0 festhalten: Ausnahme von Prinzip II wird eingehalten (kein Netzwerk ohne Key, nur Host `api.geoapify.com`, nur Suchtext und Key, Fallback bei jedem Fehler)
 
 ---
