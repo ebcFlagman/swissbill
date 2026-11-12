@@ -1,5 +1,8 @@
 /**
- * Erlaubte Anfragen der Anwendung (Constitution Prinzip II: keine Netzwerkzugriffe).
+ * Erlaubte Anfragen des Renderers (Constitution Prinzip II: keine Netzwerkzugriffe).
+ *
+ * Der Renderer bleibt auch mit Geoapify-Key vollständig vom Netz getrennt: Der einzige Netzwerkzugriff der
+ * Anwendung sind die optionalen Adressvorschläge, und die laufen im Main-Prozess (`geoapify-client.ts`), nie hier.
  *
  * Erlaubt sind nur lokale Quellen:
  * - eigene Dateien und Blobs (`file:`, `blob:`, `data:`)

@@ -31,6 +31,10 @@ const api: SwissbillApi = {
     get: () => ipcRenderer.invoke(CHANNELS.settingsGet),
     save: (input) => ipcRenderer.invoke(CHANNELS.settingsSave, input),
   },
+  addresses: {
+    suggest: (input) => ipcRenderer.invoke(CHANNELS.addressesSuggest, input),
+    testKey: (input) => ipcRenderer.invoke(CHANNELS.addressesTestKey, input),
+  },
   menu: {
     onAction: (callback) => {
       const listener = (_event: unknown, action: unknown) => {

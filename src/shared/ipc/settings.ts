@@ -1,9 +1,9 @@
 import { z } from 'zod';
-import type { Settings } from '../domain/settings';
+import type { SettingsInput } from '../domain/settings';
 
 const text = (max: number) => z.string().max(max);
 
-export const settingsSchema: z.ZodType<Settings> = z.object({
+export const settingsSchema: z.ZodType<SettingsInput> = z.object({
   sender: z.object({
     name: text(500),
     street: text(500),
@@ -16,4 +16,6 @@ export const settingsSchema: z.ZodType<Settings> = z.object({
   invoicePrefix: text(100),
   defaultClosingText: text(10000).nullable(),
   defaultPaymentDays: z.number(),
+  // nicht angegeben = unverändert, '' = entfernen
+  geoapifyApiKey: text(500).optional(),
 });

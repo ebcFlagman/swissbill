@@ -45,7 +45,7 @@ test('Electron-Sicherheit: Isolation, CSP, keine Netzwerkzugriffe, keine fremden
       module: 'undefined',
       ipcRenderer: 'undefined',
       electron: 'undefined',
-      api: ['app', 'customers', 'db', 'invoices', 'menu', 'pdf', 'settings'],
+      api: ['addresses', 'app', 'customers', 'db', 'invoices', 'menu', 'pdf', 'settings'],
     });
 
     // Content-Security-Policy ohne externe Quellen und ohne eval
@@ -72,6 +72,16 @@ test('Electron-Sicherheit: Isolation, CSP, keine Netzwerkzugriffe, keine fremden
       }
     });
     expect(fetched).toBe('blocked');
+    // Auch Geoapify ist aus dem Renderer nicht erreichbar: Der einzige Zugriff läuft im Main-Prozess (nur mit Key)
+    const geoapify = await page.evaluate(async () => {
+      try {
+        await fetch('https://api.geoapify.com/v1/geocode/autocomplete?text=abc&apiKey=x');
+        return 'allowed';
+      } catch {
+        return 'blocked';
+      }
+    });
+    expect(geoapify).toBe('blocked');
 
     // Ein typischer Ablauf löst keine Anfragen ausserhalb der App aus
     await page.getByRole('button', { name: 'Neue Rechnung' }).click();

@@ -113,4 +113,24 @@ describe('loadMigrations', () => {
     migrate(db, migrations);
     expect(userVersion(db)).toBe(migrations.length);
   });
+
+  it('Migration 002 ergänzt den (leeren) API-Key und lässt bestehende Einstellungen unverändert', () => {
+    const [first, second] = loadMigrations();
+    expect(second?.name).toBe('geoapify_key');
+    const db = openDatabase(':memory:');
+    migrate(db, [first!]);
+    db.prepare("UPDATE settings SET sender_name = 'Muster AG', invoice_prefix = 'XY' WHERE id = 1").run();
+
+    migrate(db, loadMigrations());
+
+    expect(userVersion(db)).toBe(2);
+    const row = db.prepare('SELECT sender_name, invoice_prefix, geoapify_api_key FROM settings WHERE id = 1').get() as {
+      sender_name: string;
+      invoice_prefix: string;
+      geoapify_api_key: Buffer | null;
+    };
+    expect(row.sender_name).toBe('Muster AG');
+    expect(row.invoice_prefix).toBe('XY');
+    expect(row.geoapify_api_key).toBeNull();
+  });
 });

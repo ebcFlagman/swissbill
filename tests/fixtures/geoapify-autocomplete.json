@@ -1,0 +1,40 @@
+{
+  "results": [
+    {
+      "country": "Schweiz",
+      "country_code": "ch",
+      "postcode": "8001",
+      "city": "Zürich",
+      "street": "Bahnhofstrasse",
+      "housenumber": "1",
+      "formatted": "Bahnhofstrasse 1, 8001 Zürich, Schweiz",
+      "result_type": "building"
+    },
+    {
+      "country": "Schweiz",
+      "country_code": "ch",
+      "postcode": "3011",
+      "city": "Bern",
+      "street": "Beispielgasse",
+      "formatted": "Beispielgasse, 3011 Bern, Schweiz",
+      "result_type": "street"
+    },
+    {
+      "country": "Deutschland",
+      "country_code": "de",
+      "postcode": "78462",
+      "city": "Konstanz",
+      "street": "Musterweg",
+      "housenumber": "7a",
+      "formatted": "Musterweg 7a, 78462 Konstanz, Deutschland",
+      "result_type": "building"
+    },
+    {
+      "country": "Schweiz",
+      "country_code": "ch",
+      "formatted": "Ohne Ort, Schweiz",
+      "result_type": "country"
+    }
+  ],
+  "query": { "text": "Bahnhofstr 1 Zür" }
+}
