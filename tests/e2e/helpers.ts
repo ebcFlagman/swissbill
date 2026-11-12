@@ -1,7 +1,7 @@
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
-import { _electron as electron, type ElectronApplication, type Page } from '@playwright/test';
+import { _electron as electron, expect, type ElectronApplication, type Page } from '@playwright/test';
 
 export interface LaunchedApp {
   app: ElectronApplication;
@@ -16,15 +16,20 @@ export interface LaunchedApp {
  * Startet die gebaute App (`npm run build` muss vorher gelaufen sein) mit einem eigenen,
  * temporären Datenordner, damit Tests nie echte Daten berühren.
  */
-export async function launchApp(userDataDir?: string): Promise<LaunchedApp> {
+export async function launchApp(
+  userDataDir?: string,
+  extraEnv: Record<string, string> = {},
+): Promise<LaunchedApp> {
   const dir = userDataDir ?? mkdtempSync(join(tmpdir(), 'swissbill-e2e-'));
   const app = await electron.launch({
     args: [resolve(__dirname, '../..'), `--user-data-dir=${dir}`],
     // Wie in der Produktion: kein Entwicklungsserver (eine leere Variable würde die Netzwerksperre aushebeln)
-    env: Object.fromEntries(Object.entries(process.env).filter(([key]) => key !== 'ELECTRON_RENDERER_URL')) as Record<
-      string,
-      string
-    >,
+    env: {
+      ...(Object.fromEntries(
+        Object.entries(process.env).filter(([key]) => key !== 'ELECTRON_RENDERER_URL'),
+      ) as Record<string, string>),
+      ...extraEnv,
+    },
   });
   const page = await app.firstWindow();
   await page.waitForLoadState('domcontentloaded');
@@ -38,7 +43,7 @@ export async function launchApp(userDataDir?: string): Promise<LaunchedApp> {
     },
     async relaunch() {
       await app.close();
-      return launchApp(dir);
+      return launchApp(dir, extraEnv);
     },
   };
 }
@@ -100,4 +105,22 @@ const PAGE_IDS = { Rechnungen: 'nav-invoices', Kunden: 'nav-customers', Einstell
 /** Wechselt über das Menü «Ansicht» zu einer Hauptansicht. */
 export async function goTo(app: ElectronApplication, page: keyof typeof PAGE_IDS): Promise<void> {
   await clickMenu(app, PAGE_IDS[page]);
+}
+
+/** Erfasst den Absender in den Einstellungen und speichert optional einen Geoapify-API-Key (Fake-Dienst). */
+export async function setupSettings(app: ElectronApplication, page: Page, apiKey?: string): Promise<void> {
+  await goTo(app, 'Einstellungen');
+  await fillAddress(page, 'sender', {
+    name: 'Robert Schneider AG',
+    street: 'Rue du Lac',
+    houseNo: '1268',
+    zip: '2501',
+    city: 'Biel',
+    iban: QR_IBAN,
+  });
+  if (apiKey !== undefined) await page.locator('#geoapifyApiKey').fill(apiKey);
+  await page.getByRole('button', { name: 'Speichern' }).click();
+  await expect(page.getByText('Einstellungen gespeichert.')).toBeVisible();
+  // die Meldung verdeckt sonst später Schaltflächen oben rechts
+  await expect(page.getByText('Einstellungen gespeichert.')).toBeHidden({ timeout: 20_000 });
 }

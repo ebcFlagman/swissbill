@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { AppException } from '@shared/ipc/errors';
 import type { CustomerInput } from '@shared/domain/customer';
-import type { Settings } from '@shared/domain/settings';
+import type { SettingsInput } from '@shared/domain/settings';
 import { CustomerService } from '../../src/main/services/customer-service';
 import { SettingsService } from '../../src/main/services/settings-service';
+import { createFakeSecretStore } from '../fixtures/secret-store';
 import { createFilledDraft, createService, createTestDb } from '../fixtures/db';
 import { makeDraftInput, NORMAL_IBAN, QR_IBAN } from '../fixtures/invoice';
 
@@ -18,7 +19,7 @@ const customer = (overrides: Partial<CustomerInput> = {}): CustomerInput => ({
   ...overrides,
 });
 
-const validSettings = (overrides: Partial<Settings> = {}): Settings => ({
+const validSettings = (overrides: Partial<SettingsInput> = {}): SettingsInput => ({
   sender: {
     name: 'Robert Schneider AG',
     street: 'Rue du Lac',
@@ -114,8 +115,8 @@ describe('Kunden', () => {
 });
 
 describe('Einstellungen', () => {
-  it('liefert zu Beginn leere Absenderfelder und die Standardwerte', () => {
-    const settings = new SettingsService(createTestDb()).get();
+  it('liefert zu Beginn leere Absenderfelder und die Standardwerte', async () => {
+    const settings = await new SettingsService(createTestDb(), createFakeSecretStore()).get();
     expect(settings.sender.name).toBe('');
     expect(settings.sender.country).toBe('CH');
     expect(settings.invoicePrefix).toBe('RE');
@@ -123,42 +124,50 @@ describe('Einstellungen', () => {
     expect(settings.defaultClosingText).toBeNull();
   });
 
-  it('speichert Absender, Präfix, Schlusstext und Zahlungsfrist (IBAN ohne Leerzeichen)', () => {
-    const service = new SettingsService(createTestDb());
-    const saved = service.save(
+  it('speichert Absender, Präfix, Schlusstext und Zahlungsfrist (IBAN ohne Leerzeichen)', async () => {
+    const service = new SettingsService(createTestDb(), createFakeSecretStore());
+    const saved = await service.save(
       validSettings({ sender: { ...validSettings().sender, iban: 'ch93 0076 2011 6238 5295 7' }, invoicePrefix: 'INV-A', defaultPaymentDays: 14 }),
     );
     expect(saved.sender.iban).toBe(NORMAL_IBAN);
     expect(saved.invoicePrefix).toBe('INV-A');
-    expect(service.get()).toEqual(saved);
+    expect(await service.get()).toEqual(saved);
   });
 
-  it('validiert IBAN, Adresse, Präfix, Schlusstext und Zahlungsfrist feldgenau', () => {
-    const service = new SettingsService(createTestDb());
+  it('validiert IBAN, Adresse, Präfix, Schlusstext und Zahlungsfrist feldgenau', async () => {
+    const service = new SettingsService(createTestDb(), createFakeSecretStore());
     const base = validSettings();
-    const fieldsFor = (s: Settings) => failure(() => service.save(s)).error.fields?.map((f) => f.field);
+    const fieldsFor = async (s: SettingsInput) => {
+      try {
+        await service.save(s);
+      } catch (e) {
+        if (e instanceof AppException) return e.error.fields?.map((f) => f.field);
+        throw e;
+      }
+      throw new Error('Es wurde keine AppException geworfen.');
+    };
 
-    expect(fieldsFor({ ...base, sender: { ...base.sender, iban: 'CH9300762011623852958' } })).toEqual(['sender.iban']);
-    expect(fieldsFor({ ...base, sender: { ...base.sender, name: '' } })).toEqual(['sender.name']);
-    expect(fieldsFor({ ...base, invoicePrefix: 're' })).toEqual(['invoicePrefix']);
-    expect(fieldsFor({ ...base, invoicePrefix: 'ABCDEFGHIJK' })).toEqual(['invoicePrefix']);
-    expect(fieldsFor({ ...base, defaultPaymentDays: -1 })).toEqual(['defaultPaymentDays']);
-    expect(fieldsFor({ ...base, defaultPaymentDays: 366 })).toEqual(['defaultPaymentDays']);
-    expect(fieldsFor({ ...base, defaultClosingText: 'x'.repeat(2001) })).toEqual(['defaultClosingText']);
+    expect(await fieldsFor({ ...base, sender: { ...base.sender, iban: 'CH9300762011623852958' } })).toEqual(['sender.iban']);
+    expect(await fieldsFor({ ...base, sender: { ...base.sender, name: '' } })).toEqual(['sender.name']);
+    expect(await fieldsFor({ ...base, invoicePrefix: 're' })).toEqual(['invoicePrefix']);
+    expect(await fieldsFor({ ...base, invoicePrefix: 'ABCDEFGHIJK' })).toEqual(['invoicePrefix']);
+    expect(await fieldsFor({ ...base, defaultPaymentDays: -1 })).toEqual(['defaultPaymentDays']);
+    expect(await fieldsFor({ ...base, defaultPaymentDays: 366 })).toEqual(['defaultPaymentDays']);
+    expect(await fieldsFor({ ...base, defaultClosingText: 'x'.repeat(2001) })).toEqual(['defaultClosingText']);
     // Nichts wurde gespeichert
-    expect(service.get().sender.name).toBe('');
+    expect((await service.get()).sender.name).toBe('');
   });
 
-  it('eine Änderung der Einstellungen wirkt nicht auf bestehende Rechnungen, aber auf neue Entwürfe', () => {
+  it('eine Änderung der Einstellungen wirkt nicht auf bestehende Rechnungen, aber auf neue Entwürfe', async () => {
     const db = createTestDb();
-    const settings = new SettingsService(db);
-    settings.save(validSettings());
+    const settings = new SettingsService(db, createFakeSecretStore());
+    await settings.save(validSettings());
     const { service } = createService(db);
 
     const issued = service.issue(createFilledDraft(service).id);
     const before = service.get(issued.id);
 
-    settings.save(
+    await settings.save(
       validSettings({
         sender: { ...validSettings().sender, name: 'Neue Firma AG', iban: NORMAL_IBAN },
         invoicePrefix: 'XX',
@@ -182,10 +191,10 @@ describe('Einstellungen', () => {
     expect(service.get(issued.id).number).toBe('RE-2026-0001');
   });
 
-  it('das Überschreiben von Absender und Schlusstext in einer Rechnung ändert die Einstellungen nicht', () => {
+  it('das Überschreiben von Absender und Schlusstext in einer Rechnung ändert die Einstellungen nicht', async () => {
     const db = createTestDb();
-    const settings = new SettingsService(db);
-    settings.save(validSettings());
+    const settings = new SettingsService(db, createFakeSecretStore());
+    await settings.save(validSettings());
     const { service } = createService(db);
 
     const draft = service.createDraft();
@@ -202,7 +211,7 @@ describe('Einstellungen', () => {
     expect(overridden.sender.name).toBe('Andere Firma GmbH');
     expect(overridden.closingText).toBe('Nur für diese Rechnung');
 
-    expect(settings.get()).toEqual(validSettings());
+    expect(await settings.get()).toEqual({ ...validSettings(), geoapifyKeySet: false, geoapifyKeyStatus: 'none' });
     const issued = service.issue(draft.id);
     expect(issued.sender.name).toBe('Andere Firma GmbH');
     expect(issued.referenceType).toBe('SCOR'); // überschriebene normale IBAN

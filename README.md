@@ -2,7 +2,9 @@
 
 Einfache Desktop-Anwendung (Electron) zum Erstellen von Schweizer Rechnungen mit QR-Zahlteil als PDF.
 Alle Daten bleiben lokal in einer eingebetteten SQLite-Datenbank; die Anwendung läuft vollständig offline,
-ohne Konto und ohne Telemetrie.
+ohne Konto und ohne Telemetrie. Einzige Ausnahme sind optionale Adressvorschläge: Nur wenn Sie in den
+Einstellungen einen eigenen Geoapify-API-Key hinterlegen, wird der getippte Adress-Suchtext zur Vorschlagssuche
+an Geoapify gesendet (siehe «Adressvorschläge»).
 
 ## Funktionen
 
@@ -128,7 +130,22 @@ specs/         Spezifikation, Plan und Aufgaben (Spec Kit)
 ```
 
 Sicherheit: `contextIsolation` an, `nodeIntegration` aus, Sandbox an, strenge Content-Security-Policy, keine
-Netzwerkzugriffe; der Renderer erreicht Datenbank und Dateisystem nur über validierte IPC-Aufrufe.
+Netzwerkzugriffe im Renderer; der Renderer erreicht Datenbank und Dateisystem nur über validierte IPC-Aufrufe.
+Der einzige Netzwerkzugriff (optionale Adressvorschläge, nur mit Key) läuft im Main-Prozess.
+
+## Adressvorschläge (optional)
+
+Mit einem eigenen API-Key von [Geoapify](https://www.geoapify.com/) (kostenloses Kontingent genügt) schlägt die
+Anwendung beim Tippen im Feld «Strasse» passende Adressen vor. Der Key wird in den Einstellungen unter
+«Adressvorschläge» eingetragen.
+
+- Ohne Key bleibt die Adresseingabe wie bisher, und es werden keine Netzwerkanfragen gesendet. Auch bei Fehlern
+  (keine Verbindung, ungültiger Key, Kontingent erschöpft) kann jede Adresse von Hand erfasst werden.
+- Es wird nur der getippte Suchtext gesendet, nie Namen, IBAN, Beträge oder andere gespeicherte Daten.
+- Der Key wird mit der Verschlüsselung des Betriebssystems verschlüsselt gespeichert und nie im Klartext angezeigt.
+  Er ist an das Gerät und den Benutzer gebunden: Nach dem Einspielen einer Datenbanksicherung auf einem anderen Gerät
+  muss er neu eingegeben werden. Ist auf dem Gerät keine Verschlüsselung verfügbar (z. B. Linux ohne Schlüsselbund),
+  wird kein Key gespeichert.
 
 ## Entwicklung mit Spec Kit
 

@@ -14,7 +14,16 @@ The app MUST be a standalone Electron desktop application that works fully offli
 content and payment information MUST be stored in an embedded SQLite database in the Electron
 `userData` directory. No cloud service, account, or telemetry MAY be required or added without a
 constitution amendment.
-Rationale: invoice data is financial and personal; the user keeps full control of it.
+Exception (opt-in address suggestions): the app MAY send address search text to the Geoapify
+geocoding service, but only while the user has stored their own Geoapify API key in the settings.
+Without a key the app MUST make no network requests and MUST behave exactly as before. Only the
+typed address search text and the key MAY be sent; invoice content, amounts, IBANs, names, and
+other stored data MUST NOT leave the device. Every failure of the service (offline, rejected key,
+quota, timeout) MUST fall back to manual address entry without blocking invoicing. The network
+block MUST stay in force for everything else and be opened only for this one service and only
+while a key is set. Any further external service still requires a constitution amendment.
+Rationale: invoice data is financial and personal; the user keeps full control of it. Address
+suggestions are a convenience the user switches on knowingly, never a dependency.
 
 ### III. Data Integrity & Immutability of Issued Invoices
 Schema changes MUST be made through versioned, forward-only migrations. Monetary amounts MUST be
@@ -63,4 +72,4 @@ backward-incompatible principle removals or redefinitions, MINOR for added or ma
 principles or sections, PATCH for clarifications and wording. Every plan and review MUST verify
 compliance with the principles above; unavoidable deviations MUST be recorded and justified.
 
-**Version**: 1.0.2 | **Ratified**: 2026-10-08 | **Last Amended**: 2026-10-08
+**Version**: 1.1.0 | **Ratified**: 2026-10-08 | **Last Amended**: 2026-11-12

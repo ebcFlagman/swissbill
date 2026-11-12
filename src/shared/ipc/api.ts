@@ -1,7 +1,8 @@
 import type { Customer, CustomerInput } from '../domain/customer';
 import type { DraftInput, Invoice, InvoiceFilter, InvoiceSummary } from '../domain/invoice';
-import type { Settings } from '../domain/settings';
+import type { Settings, SettingsInput } from '../domain/settings';
 import type { CustomerIdInput, CustomerSearchInput } from './customers';
+import type { KeyCheckResult, SuggestInput, SuggestResult, TestKeyInput } from './addresses';
 import type { BackupResult, DbInfo } from './db';
 import type { Result } from './errors';
 import type { MenuAction } from './menu';
@@ -48,7 +49,13 @@ export interface SwissbillApi {
   settings: {
     get(): Promise<Result<Settings>>;
     /** Wirkt nur auf neue Entwürfe */
-    save(input: Settings): Promise<Result<Settings>>;
+    save(input: SettingsInput): Promise<Result<Settings>>;
+  };
+  addresses: {
+    /** Adressvorschläge (nur mit hinterlegtem Geoapify-Key, sonst `disabled`); der Key bleibt im Main */
+    suggest(input: SuggestInput): Promise<Result<SuggestResult>>;
+    /** Prüft einen noch nicht gespeicherten Key mit einer Probeanfrage */
+    testKey(input: TestKeyInput): Promise<Result<KeyCheckResult>>;
   };
   menu: {
     /** Meldet sich für Aktionen des Anwendungsmenüs an; liefert die Funktion zum Abmelden */
@@ -88,6 +95,8 @@ export const CHANNELS = {
   customersDelete: 'customers:delete',
   settingsGet: 'settings:get',
   settingsSave: 'settings:save',
+  addressesSuggest: 'addresses:suggest',
+  addressesTestKey: 'addresses:testKey',
   dbInfo: 'db:info',
   dbBackup: 'db:backup',
   pdfSave: 'pdf:save',

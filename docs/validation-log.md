@@ -50,3 +50,16 @@ aber nicht im Validator geprüft:
 
 Die Fixture `tests/fixtures/six-example-payload.txt` wurde nach dem SIX-Beispiel nachgebaut und nicht mit dem Original
 verglichen. Sie ist durch die Validierung des tatsächlich erzeugten QR-Codes weniger wichtig geworden.
+
+## Adressvorschläge mit Geoapify (Feature 004)
+
+Manuell geprüft (Angaben des Benutzers, 2026-11-12) mit einem echten Geoapify-API-Key in der laufenden Anwendung:
+
+| Prüfung | Ergebnis |
+|---------|----------|
+| Vorschlag wählen füllt Strasse, Nr., PLZ, Ort und Land | **bestanden**, alles wurde ausgefüllt |
+| Falscher API-Key | **bestanden**, wird nicht akzeptiert und kann nicht verwendet werden (bestätigt die Zuordnung ungültiger Key → Fehlerfall) |
+| SC-001 (Adresse in unter 10 Sekunden) und SC-002 (Testadressen unter den ersten 5 Vorschlägen) | **erfüllt** |
+
+Nicht festgehalten: der genaue HTTP-Statuscode bei ungültigem Key (angenommen 401 oder 403) und bei erschöpftem
+Kontingent (angenommen 429). Beides ist durch Tests mit einem Fake-Dienst abgedeckt.

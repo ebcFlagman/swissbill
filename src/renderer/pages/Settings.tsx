@@ -5,7 +5,8 @@ import { Message } from '@primereact/ui/message';
 import { Textarea } from '@primereact/ui/textarea';
 import { formatIban, isQrIban, validateIban } from '../../shared/domain/iban';
 import type { Sender } from '../../shared/domain/invoice';
-import type { Settings as SettingsData } from '../../shared/domain/settings';
+import type { GeoapifyKeyStatus, Settings as SettingsData } from '../../shared/domain/settings';
+import type { KeyCheckResult } from '../../shared/ipc/addresses';
 import type { DbInfo } from '../../shared/ipc/db';
 import type { FieldError } from '../../shared/ipc/errors';
 import { AddressFields } from '../components/AddressFields';
@@ -18,7 +19,20 @@ interface SettingsForm {
   invoicePrefix: string;
   defaultClosingText: string;
   defaultPaymentDays: string;
+  /** Neu eingegebener API-Key; leer = unverändert (der gespeicherte Key wird nie angezeigt) */
+  apiKey: string;
+  /** Gespeicherten API-Key beim Speichern entfernen */
+  removeApiKey: boolean;
 }
+
+const KEY_CHECK_TEXT: Record<KeyCheckResult, string> = {
+  valid: 'Der Key funktioniert.',
+  invalid_key: 'Der Key wird von Geoapify nicht akzeptiert.',
+  quota: 'Das Kontingent bei Geoapify ist erschöpft.',
+  offline: 'Keine Verbindung zu Geoapify.',
+  timeout: 'Geoapify antwortet nicht rechtzeitig.',
+  unavailable: 'Geoapify ist momentan nicht verfügbar.',
+};
 
 function toForm(settings: SettingsData): SettingsForm {
   return {
@@ -26,6 +40,8 @@ function toForm(settings: SettingsData): SettingsForm {
     invoicePrefix: settings.invoicePrefix,
     defaultClosingText: settings.defaultClosingText ?? '',
     defaultPaymentDays: String(settings.defaultPaymentDays),
+    apiKey: '',
+    removeApiKey: false,
   };
 }
 
@@ -49,13 +65,18 @@ export function Settings() {
   const [saving, setSaving] = useState(false);
   const [dbInfo, setDbInfo] = useState<DbInfo | null>(null);
   const [backingUp, setBackingUp] = useState(false);
+  const [keyStatus, setKeyStatus] = useState<{ set: boolean; status: GeoapifyKeyStatus }>({ set: false, status: 'none' });
+  const [keyCheck, setKeyCheck] = useState<string | null>(null);
+  const [checkingKey, setCheckingKey] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     void window.swissbill.settings.get().then((result) => {
       if (cancelled) return;
-      if (result.ok) setForm(toForm(result.value));
-      else notifyError(result.error);
+      if (result.ok) {
+        setForm(toForm(result.value));
+        setKeyStatus({ set: result.value.geoapifyKeySet, status: result.value.geoapifyKeyStatus });
+      } else notifyError(result.error);
     });
     void window.swissbill.db.info().then((result) => {
       if (!cancelled && result.ok) setDbInfo(result.value);
@@ -64,6 +85,18 @@ export function Settings() {
       cancelled = true;
     };
   }, []);
+
+  async function checkKey() {
+    if (!form) return;
+    setCheckingKey(true);
+    setKeyCheck(null);
+    try {
+      const result = await window.swissbill.addresses.testKey({ apiKey: form.apiKey });
+      setKeyCheck(result.ok ? KEY_CHECK_TEXT[result.value] : 'Der Key kann nicht geprüft werden.');
+    } finally {
+      setCheckingKey(false);
+    }
+  }
 
   async function backup() {
     setBackingUp(true);
@@ -90,6 +123,8 @@ export function Settings() {
         invoicePrefix: form.invoicePrefix,
         defaultClosingText: form.defaultClosingText.trim() === '' ? null : form.defaultClosingText,
         defaultPaymentDays: form.defaultPaymentDays.trim() === '' || Number.isNaN(days) ? -1 : days,
+        // nur senden, wenn geändert: leer lassen = Key unverändert, '' = entfernen
+        ...(form.removeApiKey ? { geoapifyApiKey: '' } : form.apiKey.trim() !== '' ? { geoapifyApiKey: form.apiKey } : {}),
       });
       if (!result.ok) {
         if (result.error.code === 'VALIDATION' && result.error.fields) setErrors(toMap(result.error.fields));
@@ -98,6 +133,8 @@ export function Settings() {
       }
       setErrors({});
       setForm(toForm(result.value));
+      setKeyStatus({ set: result.value.geoapifyKeySet, status: result.value.geoapifyKeyStatus });
+      setKeyCheck(null);
       notifySuccess('Einstellungen gespeichert.');
     } finally {
       setSaving(false);
@@ -168,6 +205,64 @@ export function Settings() {
           />
         </Field>
         <p className="hint">Änderungen gelten nur für neue Entwürfe, nie für bereits erstellte Rechnungen.</p>
+      </div>
+
+      <div className="card">
+        <h2>Adressvorschläge (optional)</h2>
+        <p className="hint">
+          Mit einem eigenen Geoapify-API-Key schlägt die Anwendung beim Tippen der Strasse passende Adressen vor.
+          Ohne Key bleibt die Adresseingabe wie bisher und die Anwendung arbeitet vollständig offline.
+        </p>
+        <Field label="Geoapify-API-Key" htmlFor="geoapifyApiKey" error={errors['geoapifyApiKey']} className="span-6">
+          <InputText
+            id="geoapifyApiKey"
+            fluid
+            type="password"
+            autoComplete="off"
+            value={form.apiKey}
+            placeholder={keyStatus.set && !form.removeApiKey ? 'Key gespeichert, zum Ersetzen neuen Key eingeben' : ''}
+            onChange={(e: ChangeEvent<HTMLInputElement>) => {
+              setKeyCheck(null);
+              setForm({ ...form, apiKey: e.target.value, removeApiKey: false });
+            }}
+            invalid={!!errors['geoapifyApiKey']}
+          />
+        </Field>
+        <p className="hint" data-testid="key-status">
+          {form.removeApiKey
+            ? 'Der Key wird beim Speichern entfernt.'
+            : keyStatus.status === 'ok'
+              ? 'Key gespeichert.'
+              : keyStatus.status === 'undecryptable'
+                ? 'Der gespeicherte Key lässt sich auf diesem Gerät nicht lesen (z. B. nach dem Einspielen einer Sicherung). Bitte den Key neu eingeben oder entfernen.'
+                : keyStatus.status === 'encryption-unavailable'
+                  ? 'Verschlüsselung auf diesem Gerät nicht verfügbar. Ein Key wird deshalb nicht gespeichert.'
+                  : 'Kein Key gespeichert.'}
+        </p>
+        <div className="actions">
+          <Button variant="outlined" onClick={() => void checkKey()} disabled={checkingKey || form.apiKey.trim() === ''}>
+            Key prüfen
+          </Button>
+          {keyStatus.set || keyStatus.status === 'undecryptable' ? (
+            <Button
+              variant="outlined"
+              onClick={() => setForm({ ...form, apiKey: '', removeApiKey: !form.removeApiKey })}
+            >
+              {form.removeApiKey ? 'Entfernen abbrechen' : 'Key entfernen'}
+            </Button>
+          ) : null}
+        </div>
+        {keyCheck ? (
+          <p className="hint" role="status" data-testid="key-check">
+            {keyCheck}
+          </p>
+        ) : null}
+        <p className="hint">
+          Datenschutz: Mit einem Key werden die getippten Adressangaben (nur der Suchtext) zur Vorschlagssuche an
+          Geoapify gesendet, sonst nichts. Der Key wird verschlüsselt gespeichert und ist an dieses Gerät und diesen
+          Benutzer gebunden; eine Datenbanksicherung enthält ihn nur verschlüsselt, auf einem anderen Gerät muss er neu
+          eingegeben werden.
+        </p>
       </div>
 
       <div>
