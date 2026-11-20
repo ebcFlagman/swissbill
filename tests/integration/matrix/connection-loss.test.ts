@@ -22,10 +22,20 @@ describeMatrix('Verbindungsabbruch im Betrieb (FR-012)', (name, create) => {
     await target.close();
   });
 
-  const count = async (db: Awaited<ReturnType<TestDb['open']>>, table: string) =>
-    Number(
-      ((await db.query(`SELECT COUNT(*) AS n FROM ${table}`)) as { n: string | number }[])[0]?.n,
-    );
+  // Raw queries bypass the app's connection-loss handling. Other pooled connections were killed as
+  // well, so the first raw query may hit a dead one (depends on how fast the pool notices); retry.
+  const count = async (db: Awaited<ReturnType<TestDb['open']>>, table: string) => {
+    for (let attempt = 0; ; attempt++) {
+      try {
+        const rows = (await db.query(`SELECT COUNT(*) AS n FROM ${table}`)) as {
+          n: string | number;
+        }[];
+        return Number(rows[0]?.n);
+      } catch (e) {
+        if (attempt >= 3 || !isConnectionLost(e)) throw e;
+      }
+    }
+  };
 
   it('im Leerlauf getrennte Verbindungen werden ersetzt: höchstens ein Versuch scheitert mit Meldung, dann geht es weiter', async () => {
     const db = await target.open();
