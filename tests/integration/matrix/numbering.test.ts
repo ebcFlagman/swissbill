@@ -11,6 +11,9 @@ const count = async (db: Awaited<ReturnType<TestDb['open']>>, table: string) =>
     ((await db.query(`SELECT COUNT(*) AS n FROM ${table}`)) as { n: string | number }[])[0]?.n,
   );
 
+// 100 issues in a row write to a real file; on Windows runners every commit syncs to disk and is slow
+const SLOW_MS = 120_000;
+
 describeMatrix('Nummernvergabe und Gleichzeitigkeit', (_name, create) => {
   let target: TestDb;
   beforeEach(async () => {
@@ -20,42 +23,50 @@ describeMatrix('Nummernvergabe und Gleichzeitigkeit', (_name, create) => {
     await target.close();
   });
 
-  it('100 aufeinanderfolgende Ausstellvorgänge: lückenlos und ohne Duplikate', async () => {
-    const db = await target.open();
-    const { service } = createService(db);
-    const numbers: (string | null)[] = [];
-    for (let i = 0; i < 100; i++)
-      numbers.push((await service.issue((await createFilledDraft(service)).id)).number);
-    expect(numbers).toEqual(
-      Array.from({ length: 100 }, (_, i) => `RE-2026-${String(i + 1).padStart(4, '0')}`),
-    );
-  });
+  it(
+    '100 aufeinanderfolgende Ausstellvorgänge: lückenlos und ohne Duplikate',
+    async () => {
+      const db = await target.open();
+      const { service } = createService(db);
+      const numbers: (string | null)[] = [];
+      for (let i = 0; i < 100; i++)
+        numbers.push((await service.issue((await createFilledDraft(service)).id)).number);
+      expect(numbers).toEqual(
+        Array.from({ length: 100 }, (_, i) => `RE-2026-${String(i + 1).padStart(4, '0')}`),
+      );
+    },
+    SLOW_MS,
+  );
 
-  it('100 gleichzeitige Ausstellvorgänge (zwei Jahre gemischt): pro Jahr lückenlos und ohne Duplikate', async () => {
-    const db = await target.open();
-    const y2026 = createService(db, () => new Date(2026, 5, 1, 10, 0)).service;
-    const y2027 = createService(db, () => new Date(2027, 5, 1, 10, 0)).service;
-    const jobs: Promise<Invoice>[] = [];
-    for (let i = 0; i < 100; i++) {
-      const service = i % 2 === 0 ? y2026 : y2027;
-      const draft = await createFilledDraft(service);
-      jobs.push(service.issue(draft.id));
-    }
-    const issued = await Promise.all(jobs);
-    const byYear = (year: number) =>
-      issued
-        .filter((i) => i.numberYear === year)
-        .map((i) => i.numberSeq)
-        .sort((a, b) => (a ?? 0) - (b ?? 0));
-    for (const year of [2026, 2027]) {
-      expect(byYear(year)).toEqual(Array.from({ length: 50 }, (_, i) => i + 1));
-    }
-    expect(new Set(issued.map((i) => i.number)).size).toBe(100);
-    expect(await db.query('SELECT year, last_seq FROM number_counters ORDER BY year')).toEqual([
-      { year: 2026, last_seq: 50 },
-      { year: 2027, last_seq: 50 },
-    ]);
-  });
+  it(
+    '100 gleichzeitige Ausstellvorgänge (zwei Jahre gemischt): pro Jahr lückenlos und ohne Duplikate',
+    async () => {
+      const db = await target.open();
+      const y2026 = createService(db, () => new Date(2026, 5, 1, 10, 0)).service;
+      const y2027 = createService(db, () => new Date(2027, 5, 1, 10, 0)).service;
+      const jobs: Promise<Invoice>[] = [];
+      for (let i = 0; i < 100; i++) {
+        const service = i % 2 === 0 ? y2026 : y2027;
+        const draft = await createFilledDraft(service);
+        jobs.push(service.issue(draft.id));
+      }
+      const issued = await Promise.all(jobs);
+      const byYear = (year: number) =>
+        issued
+          .filter((i) => i.numberYear === year)
+          .map((i) => i.numberSeq)
+          .sort((a, b) => (a ?? 0) - (b ?? 0));
+      for (const year of [2026, 2027]) {
+        expect(byYear(year)).toEqual(Array.from({ length: 50 }, (_, i) => i + 1));
+      }
+      expect(new Set(issued.map((i) => i.number)).size).toBe(100);
+      expect(await db.query('SELECT year, last_seq FROM number_counters ORDER BY year')).toEqual([
+        { year: 2026, last_seq: 50 },
+        { year: 2027, last_seq: 50 },
+      ]);
+    },
+    SLOW_MS,
+  );
 
   it.skipIf(_name === 'sqlite')(
     '100 Ausstellvorgänge von drei Geräten (eigene Verbindungen) zugleich: keine Lücken, keine Duplikate (SC-003)',
