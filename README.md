@@ -11,7 +11,7 @@ an Geoapify gesendet (siehe «Adressvorschläge»).
 - Rechnungen mit Positionen in **CHF** erfassen und als A4-PDF mit **Swiss-QR-Zahlteil** ausgeben (SIX Swiss Implementation Guidelines).
 - Prüfung von IBAN und QR-IBAN, automatische Zahlungsreferenz (QR-Referenz bei QR-IBAN, Creditor Reference bei normaler IBAN).
 - Rechnungsnummern `PRÄFIX-JAHR-ZÄHLER` (z. B. `RE-2026-0001`), lückenlos, Nummer wird erst beim Ausstellen vergeben.
-- Ausgestellte Rechnungen sind **unveränderlich** (auch auf Datenbankebene); Korrektur über Duplizieren oder Stornieren.
+- Ausgestellte Rechnungen sind **unveränderlich** (die Persistenzschicht der Anwendung lehnt jede Änderung ab); Korrektur über Duplizieren oder Stornieren.
 - Rechnungsliste mit Suche und Statusfilter, Status: Entwurf, ausgestellt, bezahlt, storniert.
 - Globaler Absender und Schlusstext, pro Rechnung überschreibbar; Kundenverwaltung.
 - Sicherung der Datenbank als einzelne Datei.
@@ -52,7 +52,7 @@ Falls die Electron-Binärdatei fehlt (npm blockiert Install-Skripte), einmalig `
 |--------|-------|
 | `npm run typecheck` | TypeScript (strict) für Main, Renderer und Tests |
 | `npm run lint` | ESLint |
-| `npm test` | Unit- und Integrationstests (Vitest, SQLite in Memory) |
+| `npm test` | Unit- und Integrationstests (Vitest, SQLite in Memory, TypeORM) |
 | `npm run test:e2e` | End-to-End-Tests der gebauten App (Playwright mit Electron) |
 
 Tests verwenden ausschliesslich fiktive Daten und einen eigenen temporären Datenordner.

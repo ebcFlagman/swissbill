@@ -26,10 +26,16 @@ Rationale: invoice data is financial and personal; the user keeps full control o
 suggestions are a convenience the user switches on knowingly, never a dependency.
 
 ### III. Data Integrity & Immutability of Issued Invoices
-Schema changes MUST be made through versioned, forward-only migrations. Monetary amounts MUST be
+Schema changes MUST be made exclusively through versioned, forward-only TypeORM migrations; automatic
+schema synchronization MUST NOT be used outside tests. Monetary amounts MUST be
 stored and computed as integers (rappen) or a decimal type, never as binary floating point. Once
 an invoice is issued (finalized with its number and reference; the PDF can be regenerated at any time), its content MUST NOT be altered; corrections are made via a
-new or duplicated invoice. The database MUST be easy to back up (single file, documented location).
+new or duplicated invoice. This guarantee is enforced by the application's persistence layer for every
+write path of the app, with no bypass (status transitions, immutability, validation rules and gap-free
+numbering live in code, not in database triggers or CHECK constraints, so they hold on any database
+supported by the persistence layer). Manipulating the database file outside the app is not covered by
+this guarantee; backups are the remedy. The database MUST be easy to back up (single file, documented
+location).
 
 ### IV. Test-First for Domain Logic
 Domain logic (QR payload generation, reference/IBAN validation, totals and VAT calculation,
@@ -46,9 +52,15 @@ only through a narrow, typed IPC API.
 ## Technology & Compliance Constraints
 
 - Platform: Electron (desktop) with TypeScript; embedded SQLite (native driver, rebuilt for the
-  Electron ABI).
+  Electron ABI), accessed through TypeORM.
+- Persistence: only SQLite is shipped and tested. Application code and migrations MUST stay
+  database-portable; SQLite-specific code (connection pragmas, integrity check, file copy, backup)
+  MUST be confined to one clearly delimited module.
 - Output: PDF invoices including the QR-bill payment part, printable on A4 with a perforated slip
   and exportable as a file.
+- Language of the code base: all comments in source, test, configuration and pipeline files MUST be written in
+  English. Project documentation (specs, `docs/`, README, this constitution) MAY stay German. User-facing text
+  stays German (see Localization).
 - Localization: user-facing text and the payment part are German only for now; additional languages
   are out of scope until the constitution is amended. Currency is always CHF; EUR is not supported.
 - Privacy: the database, generated PDFs, and any real customer data MUST NOT be committed to the
@@ -72,4 +84,4 @@ backward-incompatible principle removals or redefinitions, MINOR for added or ma
 principles or sections, PATCH for clarifications and wording. Every plan and review MUST verify
 compliance with the principles above; unavoidable deviations MUST be recorded and justified.
 
-**Version**: 1.1.0 | **Ratified**: 2026-10-08 | **Last Amended**: 2026-11-12
+**Version**: 1.3.0 | **Ratified**: 2026-10-08 | **Last Amended**: 2026-11-20
