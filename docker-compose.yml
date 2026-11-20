@@ -1,14 +1,14 @@
 # Test servers for the database matrix tests (development only, test data only).
 services:
   postgres:
-    image: postgres:16
+    image: postgres:19.0-alpine3.24
     environment:
       POSTGRES_USER: swissbill
       POSTGRES_PASSWORD: test
       POSTGRES_DB: swissbill
     ports: ['55432:5432']
   mysql:
-    image: mysql:8
+    image: mysql:9.7.4
     environment:
       MYSQL_USER: swissbill
       MYSQL_PASSWORD: test
@@ -16,7 +16,7 @@ services:
       MYSQL_ROOT_PASSWORD: root
     ports: ['53306:3306']
   mariadb:
-    image: mariadb:11
+    image: mariadb:12.3.3
     environment:
       MARIADB_USER: swissbill
       MARIADB_PASSWORD: test
