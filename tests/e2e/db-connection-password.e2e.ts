@@ -18,6 +18,18 @@ function filesUnder(dir: string): string[] {
   });
 }
 
+// On Windows Chromium keeps some of its own files (cookies, caches) open exclusively while the app
+// runs; those cannot be read (EBUSY/EPERM/EACCES) and are not written by the app.
+function readFileIfReadable(path: string): Buffer | null {
+  try {
+    return readFileSync(path);
+  } catch (e) {
+    const code = (e as NodeJS.ErrnoException).code;
+    if (code === 'EBUSY' || code === 'EPERM' || code === 'EACCES') return null;
+    throw e;
+  }
+}
+
 test('Datenbankpasswort speichern, nie wieder anzeigen, ersetzen und entfernen (nur im Schlüsselbund)', async () => {
   const { app, page, userDataDir, close } = await launchApp(undefined, {
     SWISSBILL_SECRET_STORE: 'memory',
@@ -54,7 +66,7 @@ test('Datenbankpasswort speichern, nie wieder anzeigen, ersetzen und entfernen (
     expect(existsSync(file)).toBe(true);
     expect(readFileSync(file, 'utf8')).toContain('db.example.ch');
     for (const path of filesUnder(userDataDir)) {
-      expect(readFileSync(path).includes(Buffer.from(PASSWORD)), path).toBe(false);
+      expect(readFileIfReadable(path)?.includes(Buffer.from(PASSWORD)) ?? false, path).toBe(false);
     }
 
     // remove
