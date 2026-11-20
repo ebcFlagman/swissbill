@@ -1,18 +1,20 @@
 import { useCallback, useMemo, useState } from 'react';
-import { shouldSearch, type AddressSuggestion } from '../../shared/domain/address-suggestion';
-import type { SuggestResult } from '../../shared/ipc/addresses';
+import { shouldSearch, type AddressSuggestion } from '@shared/domain/address-suggestion';
+import type { SuggestResult } from '@shared/ipc/addresses';
 
-/** Eine Suche liefert `null`, wenn inzwischen eine neuere Anfrage begonnen hat (die Antwort ist veraltet). */
+/** A search returns `null` if a newer request has started in the meantime (the response is stale). */
 export type SuggestionSearch = (text: string) => Promise<SuggestResult | null>;
 
 const EMPTY: SuggestResult = { status: 'ok', suggestions: [] };
 
 /**
- * Kapselt die Suche samt Schutz vor veralteten Antworten (FR-013): nur die Antwort der jeweils letzten Eingabe
- * zählt. Zu kurze Eingaben lösen keine Anfrage aus und machen frühere, noch laufende Anfragen ungültig.
- * Die Tipppause von 0,3 s liefert der AutoComplete-Baustein (`delay`).
+ * Encapsulates the search including protection against stale responses (FR-013): only the response to the latest input
+ * counts. Inputs that are too short trigger no request and invalidate earlier requests still running.
+ * The typing pause of 0.3 s is provided by the AutoComplete component (`delay`).
  */
-export function createSuggestionSearch(suggest: (text: string) => Promise<SuggestResult>): SuggestionSearch {
+export function createSuggestionSearch(
+  suggest: (text: string) => Promise<SuggestResult>,
+): SuggestionSearch {
   let latest = 0;
   return async (text) => {
     const id = ++latest;
@@ -27,7 +29,7 @@ export function createSuggestionSearch(suggest: (text: string) => Promise<Sugges
   };
 }
 
-/** Dezenter Hinweis nur bei Fehlern des Dienstes; feste deutsche Texte, nie Details. */
+/** Subtle hint only for service errors; fixed German texts, never details. */
 export function hintFor(result: SuggestResult): string | null {
   if (result.status !== 'error') return null;
   switch (result.reason) {
@@ -43,14 +45,14 @@ export function hintFor(result: SuggestResult): string | null {
 export interface AddressSuggestionsState {
   suggestions: AddressSuggestion[];
   hint: string | null;
-  /** Startet eine Suche; das Ergebnis erscheint in `suggestions` und `hint`. */
+  /** Starts a search; the result appears in `suggestions` and `hint`. */
   search: (text: string) => void;
   clear: () => void;
 }
 
 /**
- * Vorschläge für ein Adressfeld. Ohne Key (Ergebnis `disabled`) oder bei Fehlern bleibt die Liste leer und
- * die Eingabe von Hand unberührt. Bei `enabled = false` (gesperrtes Formular) wird nie angefragt.
+ * Suggestions for an address field. Without a key (result `disabled`) or on errors the list stays empty and
+ * manual input stays untouched. With `enabled = false` (locked form) no request is ever made.
  */
 export function useAddressSuggestions(enabled: boolean): AddressSuggestionsState {
   const [suggestions, setSuggestions] = useState<AddressSuggestion[]>([]);
@@ -60,7 +62,7 @@ export function useAddressSuggestions(enabled: boolean): AddressSuggestionsState
     () =>
       createSuggestionSearch(async (text) => {
         const result = await window.swissbill.addresses.suggest({ text });
-        // Fehler des IPC selbst (z. B. Validierung) wie ein Dienstfehler behandeln, nie blockieren
+        // Treat errors of the IPC itself (e.g. validation) like a service error, never block
         return result.ok ? result.value : { status: 'error', reason: 'unavailable' };
       }),
     [],

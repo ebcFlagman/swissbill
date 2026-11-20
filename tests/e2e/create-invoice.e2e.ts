@@ -12,7 +12,13 @@ async function fillAddress(page: Page, prefix: 'sender' | 'debtor', a: Record<st
   }
 }
 
-async function fillItem(page: Page, position: number, description: string, quantity: string, price: string) {
+async function fillItem(
+  page: Page,
+  position: number,
+  description: string,
+  quantity: string,
+  price: string,
+) {
   await page.getByLabel(`Beschreibung Position ${position}`).fill(description);
   await page.getByLabel(`Menge Position ${position}`).fill(quantity);
   await page.getByLabel(`Einzelpreis Position ${position}`).fill(price);
@@ -34,7 +40,7 @@ test('Rechnung erfassen, ausstellen und als PDF speichern', async () => {
       houseNo: '1268',
       zip: '2501',
       city: 'Biel',
-      iban: 'CH44 3199 9123 0008 8901 3', // absichtlich falsche Prüfsumme
+      iban: 'CH44 3199 9123 0008 8901 3', // deliberately wrong checksum
     });
     await fillAddress(page, 'debtor', {
       name: 'Pia-Maria Rutschmann-Schnyder',
@@ -51,12 +57,12 @@ test('Rechnung erfassen, ausstellen und als PDF speichern', async () => {
     await fillItem(page, 3, 'Material', '3', '10');
     await expect(page.getByTestId('total')).toHaveText('379.75');
 
-    // Ungültige IBAN verhindert das Ausstellen, mit Fehlermeldung direkt am Feld
+    // An invalid IBAN prevents issuing, with an error message directly at the field
     await page.getByRole('button', { name: 'Ausstellen', exact: true }).click();
     await expect(page.locator('#sender-iban-error')).toContainText('Prüfsumme');
     await expect(page.getByRole('dialog', { name: 'Rechnung ausstellen?' })).toHaveCount(0);
 
-    // Korrigieren und ausstellen
+    // Correct and issue
     await page.locator('#sender-iban').fill(QR_IBAN);
     await page.getByRole('button', { name: 'Ausstellen', exact: true }).click();
     const confirm = page.getByRole('dialog', { name: 'Rechnung ausstellen?' });
@@ -66,9 +72,10 @@ test('Rechnung erfassen, ausstellen und als PDF speichern', async () => {
     const year = new Date().getFullYear();
     await expect(page.getByTestId('issued-number')).toHaveText(`RE-${year}-0001`);
 
-    // PDF speichern (Speichern-Dialog im Main wird durch einen festen Pfad ersetzt)
+    // Save PDF (the save dialog in main is replaced by a fixed path)
     await app.evaluate(({ dialog }, filePath) => {
-      dialog.showSaveDialog = (() => Promise.resolve({ canceled: false, filePath })) as typeof dialog.showSaveDialog;
+      dialog.showSaveDialog = (() =>
+        Promise.resolve({ canceled: false, filePath })) as typeof dialog.showSaveDialog;
     }, pdfPath);
     const issued = page.getByRole('dialog', { name: 'Rechnung ausgestellt' });
     await issued.getByRole('button', { name: 'PDF speichern' }).click();
@@ -78,7 +85,7 @@ test('Rechnung erfassen, ausstellen und als PDF speichern', async () => {
     expect(pdf.subarray(0, 5).toString()).toBe('%PDF-');
     expect(pdf.length).toBeGreaterThan(5000);
 
-    // Die ausgestellte Rechnung ist schreibgeschützt
+    // The issued invoice is read-only
     await issued.getByRole('button', { name: 'Schliessen' }).click();
     await expect(page.getByText('kann nicht mehr geändert werden')).toBeVisible();
     await expect(page.locator('#debtor-name')).toBeDisabled();

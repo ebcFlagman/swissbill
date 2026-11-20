@@ -1,9 +1,9 @@
-/** Entfernt Leerzeichen und macht Grossbuchstaben. */
+/** Removes spaces and converts to upper case. */
 export function normalizeIban(input: string): string {
   return input.replace(/\s+/g, '').toUpperCase();
 }
 
-/** ISO 7064 Mod 97-10 über eine beliebig lange Ziffern-/Buchstabenfolge (A=10 … Z=35). */
+/** ISO 7064 mod 97-10 over an arbitrarily long sequence of digits/letters (A=10 … Z=35). */
 export function mod97(alphanumeric: string): number {
   let remainder = 0;
   for (const char of alphanumeric) {
@@ -16,8 +16,8 @@ export function mod97(alphanumeric: string): number {
 }
 
 /**
- * Prüft eine IBAN für den Einsatz im Swiss QR-Bill: Zeichenvorrat, Land (CH/LI), Länge 21, Prüfsumme.
- * Liefert eine deutsche Fehlermeldung oder `null`, wenn die IBAN gültig ist.
+ * Checks an IBAN for use in the Swiss QR-bill: character set, country (CH/LI), length 21, checksum.
+ * Returns a German error message or `null` if the IBAN is valid.
  */
 export function validateIban(input: string): string | null {
   const iban = normalizeIban(input);
@@ -33,7 +33,7 @@ export function validateIban(input: string): string | null {
   return null;
 }
 
-/** Anzeigeformat in Vierergruppen: `CH44 3199 9123 0008 8901 2`. Gespeichert wird die IBAN ohne Leerzeichen. */
+/** Display format in groups of four: `CH44 3199 9123 0008 8901 2`. The IBAN is stored without spaces. */
 export function formatIban(input: string): string {
   return normalizeIban(input)
     .replace(/(.{4})/g, '$1 ')
@@ -41,10 +41,10 @@ export function formatIban(input: string): string {
 }
 
 /**
- * Sofortprüfung beim Tippen. Meldet nur, was schon sicher falsch ist, damit unfertige Eingaben nicht stören:
- * unzulässige Zeichen und ein falsches Land (sobald zwei Zeichen vorliegen) sofort, eine zu lange IBAN sofort,
- * bei genau 21 Zeichen die Prüfsumme. Eine noch unvollständige IBAN wird erst gemeldet, wenn das Feld verlassen
- * wird (`final`). Ein leeres Feld meldet nichts; die Pflicht prüft das Ausstellen.
+ * Instant check while typing. Reports only what is already certainly wrong so that unfinished inputs do not disturb:
+ * invalid characters and a wrong country (as soon as two characters exist) immediately, a too long IBAN immediately,
+ * the checksum at exactly 21 characters. An incomplete IBAN is only reported when the field is left
+ * (`final`). An empty field reports nothing; issuing checks the requirement.
  */
 export function ibanFeedback(input: string, final: boolean): string | null {
   const iban = normalizeIban(input);
@@ -58,8 +58,8 @@ export function ibanFeedback(input: string, final: boolean): string | null {
 }
 
 /**
- * QR-IBAN: Institutsnummer (IID, Stellen 5 bis 9) im Bereich 30000 bis 31999.
- * Prüft nur die IID, nicht die Prüfsumme (dafür `validateIban`).
+ * QR-IBAN: institution number (IID, positions 5 to 9) in the range 30000 to 31999.
+ * Checks only the IID, not the checksum (use `validateIban` for that).
  */
 export function isQrIban(input: string): boolean {
   const iban = normalizeIban(input);

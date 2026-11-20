@@ -3,12 +3,12 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { buildQrPayload, qrDebtor, type QrPayloadData } from '@shared/domain/qr-payload';
 
-// Beispiel nach den Swiss Implementation Guidelines for the QR-bill (SIX). Die Fixture wurde nach dem
-// SIX-Beispiel nachgebaut und ist beim Abnahmetest (SIX-Validator) gegen das Original zu prüfen.
-const fixture = readFileSync(resolve(__dirname, '../fixtures/six-example-payload.txt'), 'utf8').replace(
-  /\r?\n$/,
-  '',
-);
+// Example according to the Swiss Implementation Guidelines for the QR-bill (SIX). The fixture was rebuilt from the
+// SIX example and must be checked against the original in the acceptance test (SIX validator).
+const fixture = readFileSync(
+  resolve(__dirname, '../fixtures/six-example-payload.txt'),
+  'utf8',
+).replace(/\r?\n$/, '');
 
 const sixExample: QrPayloadData = {
   iban: 'CH4431999123000889012',
@@ -32,7 +32,8 @@ const sixExample: QrPayloadData = {
   referenceType: 'QRR',
   reference: '210000000003139471430009017',
   message: 'Order of 15 June 2020',
-  billingInfo: '//S1/10/10201409/11/200701/20/140.000-53/30/102673386/31/200701/32/7.7/40/2:10;0:30',
+  billingInfo:
+    '//S1/10/10201409/11/200701/20/140.000-53/30/102673386/31/200701/32/7.7/40/2:10;0:30',
 };
 
 describe('buildQrPayload', () => {
@@ -76,12 +77,14 @@ describe('buildQrPayload', () => {
     expect(lines[28]).toBe('RF3120260001');
     expect(lines[29]).toBe('');
     expect(lines[30]).toBe('EPD');
-    // Ohne Rechnungsinformationen endet der Payload mit dem Trailer EPD.
+    // Without billing information the payload ends with the trailer EPD.
     expect(lines).toHaveLength(31);
   });
 
   it('verwendet NON mit leerer Referenz, wenn keine Referenz angegeben ist', () => {
-    const lines = buildQrPayload({ ...sixExample, referenceType: 'NON', reference: '' }).split('\n');
+    const lines = buildQrPayload({ ...sixExample, referenceType: 'NON', reference: '' }).split(
+      '\n',
+    );
     expect(lines[27]).toBe('NON');
     expect(lines[28]).toBe('');
   });
@@ -99,12 +102,27 @@ describe('buildQrPayload', () => {
       debtor: { ...sixExample.debtor!, street: '', houseNo: '' },
     });
     const lines = payload.split('\n');
-    expect(lines.slice(20, 27)).toEqual(['S', 'Pia-Maria Rutschmann-Schnyder', '', '', '9400', 'Rorschach', 'CH']);
+    expect(lines.slice(20, 27)).toEqual([
+      'S',
+      'Pia-Maria Rutschmann-Schnyder',
+      '',
+      '',
+      '9400',
+      'Rorschach',
+      'CH',
+    ]);
   });
 });
 
 describe('qrDebtor (wann steht der Zahlungspflichtige im QR-Code?)', () => {
-  const full = { name: 'Pia Muster', street: 'Weg', houseNo: '1', zip: '9400', city: 'Rorschach', country: 'CH' };
+  const full = {
+    name: 'Pia Muster',
+    street: 'Weg',
+    houseNo: '1',
+    zip: '9400',
+    city: 'Rorschach',
+    country: 'CH',
+  };
 
   it('übernimmt einen vollständigen Empfänger', () => {
     expect(qrDebtor(full)).toEqual(full);
@@ -114,7 +132,9 @@ describe('qrDebtor (wann steht der Zahlungspflichtige im QR-Code?)', () => {
     expect(qrDebtor({ ...full, zip: '' })).toBeUndefined();
     expect(qrDebtor({ ...full, city: '' })).toBeUndefined();
     expect(qrDebtor({ ...full, name: '' })).toBeUndefined();
-    expect(qrDebtor({ name: 'Pia Muster', street: '', houseNo: '', zip: '', city: '', country: '' })).toBeUndefined();
+    expect(
+      qrDebtor({ name: 'Pia Muster', street: '', houseNo: '', zip: '', city: '', country: '' }),
+    ).toBeUndefined();
   });
 
   it('Strasse und Nr. sind optional; ein fehlendes Land wird zu CH', () => {

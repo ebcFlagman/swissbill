@@ -2,9 +2,9 @@ import { useCallback, useEffect, useState, type ChangeEvent } from 'react';
 import { Button } from '@primereact/ui/button';
 import { Dialog } from '@primereact/ui/dialog';
 import { InputText } from '@primereact/ui/inputtext';
-import { formatDateCh } from '../../shared/domain/dates';
-import type { InvoiceStatus, InvoiceSummary } from '../../shared/domain/invoice';
-import { formatChf } from '../../shared/domain/money';
+import { formatDateCh } from '@shared/domain/dates';
+import type { InvoiceStatus, InvoiceSummary } from '@shared/domain/invoice';
+import { formatChf } from '@shared/domain/money';
 import { StatusBadge, STATUS_LABEL } from '../components/StatusBadge';
 import { notifyError, notifySuccess } from '../lib/notify';
 
@@ -31,7 +31,7 @@ export function InvoiceList({ onOpen, onCreate, creating }: InvoiceListProps) {
     else notifyError(result.error);
   }, []);
 
-  // Suche leicht verzögern, damit nicht jeder Tastendruck eine Abfrage auslöst.
+  // Delay the search slightly so that not every keystroke triggers a query.
   useEffect(() => {
     const timer = setTimeout(() => void load(search, status), 200);
     return () => clearTimeout(timer);
@@ -155,7 +155,10 @@ export function InvoiceList({ onOpen, onCreate, creating }: InvoiceListProps) {
         </table>
       )}
 
-      <Dialog.Root open={toDelete !== null} onOpenChange={(event: { value?: boolean | undefined }) => !event.value && setToDelete(null)}>
+      <Dialog.Root
+        open={toDelete !== null}
+        onOpenChange={(event: { value?: boolean | undefined }) => !event.value && setToDelete(null)}
+      >
         <Dialog.Portal>
           <Dialog.Positioner>
             <Dialog.Popup style={{ width: '28rem' }}>
@@ -163,7 +166,10 @@ export function InvoiceList({ onOpen, onCreate, creating }: InvoiceListProps) {
                 <Dialog.Title>Entwurf löschen?</Dialog.Title>
               </Dialog.Header>
               <Dialog.Content>
-                <p>Der Entwurf wird endgültig gelöscht. Es entsteht keine Lücke in der Rechnungsnummer.</p>
+                <p>
+                  Der Entwurf wird endgültig gelöscht. Es entsteht keine Lücke in der
+                  Rechnungsnummer.
+                </p>
                 <div className="dialog-actions">
                   <Button severity="secondary" variant="outlined" onClick={() => setToDelete(null)}>
                     Abbrechen

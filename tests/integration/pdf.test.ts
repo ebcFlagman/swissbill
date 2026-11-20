@@ -41,8 +41,8 @@ describe('PDF mit Zahlteil', () => {
     ]) {
       expect(text, expected).toContain(expected);
     }
-    // Total 349.75 (2 x 150.00 + 49.75) steht auf der Rechnung und im Zahlteil
-    expect(text).toContain("349.75");
+    // Total 349.75 (2 x 150.00 + 49.75) appears on the invoice and in the payment part
+    expect(text).toContain('349.75');
   });
 
   it('der QR-Code enthält genau den Payload der Rechnung (Betrag, CHF, Gläubiger, Schuldner, Referenz)', async () => {
@@ -95,7 +95,9 @@ describe('PDF mit Zahlteil', () => {
 
   it('erzeugt bei ungültigen Zahlungsdaten kein PDF', async () => {
     const base = makeIssuedInvoice();
-    const badIban = makeIssuedInvoice({ sender: { ...base.sender, iban: 'CH9300762011623852958' } });
+    const badIban = makeIssuedInvoice({
+      sender: { ...base.sender, iban: 'CH9300762011623852958' },
+    });
     await expect(renderInvoicePdf(badIban)).rejects.toBeInstanceOf(AppException);
 
     const badReference = makeIssuedInvoice({ reference: '210000000003139471430009018' });
@@ -104,11 +106,15 @@ describe('PDF mit Zahlteil', () => {
     });
 
     const noDebtor = makeIssuedInvoice({ debtor: { ...base.debtor, name: '' } });
-    await expect(renderInvoicePdf(noDebtor)).rejects.toMatchObject({ error: { code: 'VALIDATION' } });
+    await expect(renderInvoicePdf(noDebtor)).rejects.toMatchObject({
+      error: { code: 'VALIDATION' },
+    });
   });
 
   it('verweigert das PDF für Entwürfe, ausser als Vorschau', async () => {
-    await expect(renderInvoicePdf(makeInvoice())).rejects.toMatchObject({ error: { code: 'VALIDATION' } });
+    await expect(renderInvoicePdf(makeInvoice())).rejects.toMatchObject({
+      error: { code: 'VALIDATION' },
+    });
   });
 
   it('die Entwurf-Vorschau trägt ein ENTWURF-Wasserzeichen und hat keinen gültigen Zahlteil', async () => {
@@ -121,10 +127,13 @@ describe('PDF mit Zahlteil', () => {
   });
 
   it('eine stornierte Rechnung trägt das Wasserzeichen STORNIERT und hat keinen scannbaren Zahlteil', async () => {
-    const invoice = makeIssuedInvoice({ status: 'cancelled', cancelledAt: '2026-03-10T08:00:00.000Z' });
+    const invoice = makeIssuedInvoice({
+      status: 'cancelled',
+      cancelledAt: '2026-03-10T08:00:00.000Z',
+    });
     const pdf = await inspect(await renderInvoicePdf(invoice));
     const text = pdf.texts.join(' ');
-    // pdf.js trennt das gedrehte Wasserzeichen teils durch Leerzeichen («STORNIER T»)
+    // pdf.js sometimes separates the rotated watermark with spaces ("STORNIER T")
     expect(text.replace(/\s+/g, '')).toContain('STORNIERT');
     expect(text).toContain('RE-2026-0001');
     expect(text).not.toContain('Zahlteil');

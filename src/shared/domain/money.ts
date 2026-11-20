@@ -1,7 +1,7 @@
-/** Betrag in ganzen Rappen (CHF). Es werden nie Fliesskommawerte gespeichert oder verrechnet. */
+/** Amount in whole rappen (CHF). Floating point values are never stored or calculated with. */
 export type Rappen = number;
 
-/** Menge in Tausendsteln (1.5 Stück = 1500). */
+/** Quantity in thousandths (1.5 pieces = 1500). */
 export type Milli = number;
 
 function assertNonNegativeInteger(value: number, name: string): void {
@@ -11,7 +11,7 @@ function assertNonNegativeInteger(value: number, name: string): void {
 }
 
 /**
- * Positionsbetrag = round_half_up(menge * einzelpreis / 1000), rein ganzzahlig gerechnet.
+ * Item amount = round_half_up(quantity * unit price / 1000), calculated purely with integers.
  */
 export function lineAmount(quantityMilli: Milli, unitPriceRappen: Rappen): Rappen {
   assertNonNegativeInteger(quantityMilli, 'Menge');
@@ -50,7 +50,7 @@ export function formatChf(rappen: Rappen): string {
   return `${rappen < 0 ? '-' : ''}${groupThousands(String(francs))}.${cents}`;
 }
 
-/** `123450` → `1234.50` (ohne Tausendertrenner, für Eingabefelder) */
+/** `123450` → `1234.50` (without thousands separator, for input fields) */
 export function formatChfInput(rappen: Rappen): string {
   if (!Number.isSafeInteger(rappen) || rappen < 0) {
     throw new RangeError('Betrag muss eine nicht-negative ganze Zahl in Rappen sein.');
@@ -60,7 +60,7 @@ export function formatChfInput(rappen: Rappen): string {
 
 const CHF_PATTERN = /^(?:\d{1,3}(?:'\d{3})+|\d+)(?:[.,]\d{1,2})?$/;
 
-/** Liest `1'234.50`, `1234,5`, `1234` usw. Liefert `null` bei ungültiger Eingabe. */
+/** Reads `1'234.50`, `1234,5`, `1234` etc. Returns `null` for invalid input. */
 export function parseChf(input: string): Rappen | null {
   const text = input.trim().replace(/[’‘]/g, "'");
   if (!CHF_PATTERN.test(text)) return null;
@@ -71,7 +71,7 @@ export function parseChf(input: string): Rappen | null {
 
 const MILLI_PATTERN = /^\d+(?:[.,]\d{1,3})?$/;
 
-/** `1.5` → `1500`. Liefert `null` bei ungültiger Eingabe oder mehr als drei Nachkommastellen. */
+/** `1.5` → `1500`. Returns `null` for invalid input or more than three decimal places. */
 export function parseMilli(input: string): Milli | null {
   const text = input.trim();
   if (!MILLI_PATTERN.test(text)) return null;

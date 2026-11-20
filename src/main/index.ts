@@ -1,19 +1,21 @@
+import 'reflect-metadata';
 import { join } from 'node:path';
 import { app, BrowserWindow, dialog } from 'electron';
-import type Database from 'better-sqlite3';
-import { DB_FILENAME } from './db/connection';
+import type { DataSource } from 'typeorm';
+import { DB_FILENAME } from './db/data-source';
 import { DatabaseStartupError, openAndMigrate } from './db/startup';
 import { registerIpc } from './ipc/register';
 import { initLogger, log } from './log';
 import { installMenu } from './menu';
 import { createMainWindow, hardenSession } from './window';
 
-let db: Database.Database | null = null;
+let dataSource: DataSource | null = null;
+let databasePath = '';
 
-function startDatabase(): Database.Database {
-  const path = join(app.getPath('userData'), DB_FILENAME);
-  const database = openAndMigrate(path);
-  log.info(`Datenbank geöffnet (Version ${database.pragma('user_version', { simple: true })})`);
+async function startDatabase(): Promise<DataSource> {
+  databasePath = join(app.getPath('userData'), DB_FILENAME);
+  const database = await openAndMigrate(databasePath);
+  log.info(`Datenbank geöffnet (${database.migrations.length} Migrationen)`);
   return database;
 }
 
@@ -28,11 +30,11 @@ if (!app.requestSingleInstanceLock()) {
     }
   });
 
-  void app.whenReady().then(() => {
+  void app.whenReady().then(async () => {
     initLogger(join(app.getPath('userData'), 'logs'));
     hardenSession();
     try {
-      db = startDatabase();
+      dataSource = await startDatabase();
     } catch (error) {
       log.error('Datenbank konnte nicht geöffnet werden', error);
       dialog.showErrorBox(
@@ -45,8 +47,8 @@ if (!app.requestSingleInstanceLock()) {
       app.exit(1);
       return;
     }
-    registerIpc(db);
-    installMenu(db.name);
+    registerIpc(dataSource);
+    installMenu(databasePath);
     createMainWindow();
   });
 
@@ -55,6 +57,6 @@ if (!app.requestSingleInstanceLock()) {
   });
 
   app.on('quit', () => {
-    db?.close();
+    void dataSource?.destroy();
   });
 }

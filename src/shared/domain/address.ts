@@ -6,7 +6,7 @@ export interface Address {
   houseNo: string;
   zip: string;
   city: string;
-  /** ISO-3166-Alpha-2, Standard `CH` */
+  /** ISO 3166 alpha-2, default `CH` */
   country: string;
 }
 
@@ -28,7 +28,7 @@ const LABELS: Record<keyof typeof ADDRESS_LIMITS, string> = {
 
 const REQUIRED = new Set<keyof typeof ADDRESS_LIMITS>(['name', 'zip', 'city']);
 
-/** Lateinischer Zeichensatz des Swiss-QR-Standards: Basic Latin, Latin-1 und Latin Extended-A. */
+/** Latin character set of the Swiss QR standard: Basic Latin, Latin-1 and Latin Extended-A. */
 const ALLOWED_CHARS = /^[ -~¡-ſ]*$/;
 
 export function isAllowedText(value: string): boolean {
@@ -36,10 +36,10 @@ export function isAllowedText(value: string): boolean {
 }
 
 /**
- * Prüft eine Adresse gegen die Feldgrenzen und den Zeichensatz des Swiss-QR-Standards.
- * `prefix` bestimmt den Feldnamen in den Fehlern (z. B. `sender` → `sender.name`).
- * Pro Feld wird höchstens ein Fehler gemeldet. Mit `partial` (Entwurf) sind Pflichtfelder noch leer erlaubt;
- * Länge und Zeichensatz werden trotzdem geprüft.
+ * Checks an address against the field limits and the character set of the Swiss QR standard.
+ * `prefix` determines the field name in the errors (e.g. `sender` → `sender.name`).
+ * At most one error is reported per field. With `partial` (draft) required fields may still be empty;
+ * length and character set are checked anyway.
  */
 export function validateAddress(
   address: Address,
@@ -78,12 +78,12 @@ export function validateAddress(
 }
 
 /**
- * Prüft den Rechnungsempfänger: nur der Name ist Pflicht (im Entwurf nicht einmal der),
- * Strasse, Nr., PLZ, Ort und Land sind optional. Vorhandene Angaben werden auf Länge und Zeichensatz geprüft,
- * ein angegebenes Land muss ein zweistelliger Ländercode sein.
+ * Checks the debtor: only the name is required (not even that in a draft),
+ * street, number, postal code, city and country are optional. Given values are checked for length and character set,
+ * a given country must be a two-letter country code.
  *
- * Hinweis: Der Swiss-QR-Standard verlangt bei einer Adresse PLZ und Ort. Fehlen sie, wird der Empfänger im
- * QR-Code weggelassen (siehe qrDebtor), auf der Rechnung erscheint er trotzdem.
+ * Note: the Swiss QR standard requires postal code and city for an address. If they are missing, the debtor is
+ * omitted from the QR code (see qrDebtor), but still appears on the invoice.
  */
 export function validateDebtor(
   address: Address,
@@ -91,10 +91,14 @@ export function validateDebtor(
   options: { requireName?: boolean } = {},
 ): FieldError[] {
   const requireName = options.requireName ?? true;
-  // Ein leeres Land ist erlaubt; validateAddress prüft nur ein angegebenes.
-  const errors = validateAddress({ ...address, country: address.country === '' ? 'CH' : address.country }, prefix, {
-    partial: true,
-  });
+  // An empty country is allowed; validateAddress only checks a given one.
+  const errors = validateAddress(
+    { ...address, country: address.country === '' ? 'CH' : address.country },
+    prefix,
+    {
+      partial: true,
+    },
+  );
   if (requireName && address.name.trim() === '') {
     errors.unshift({ field: `${prefix}.name`, message: 'Name ist erforderlich.' });
   }

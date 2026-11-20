@@ -56,7 +56,7 @@ describe('sumAmounts', () => {
     ];
     const amounts = items.map((i) => lineAmount(i.qty, i.price));
     expect(amounts).toEqual([5, 5, 5]);
-    expect(sumAmounts(amounts)).toBe(15); // nicht round(13.5) = 14
+    expect(sumAmounts(amounts)).toBe(15); // not round(13.5) = 14
   });
 
   it('lehnt Nicht-Ganzzahlen ab', () => {

@@ -33,7 +33,12 @@ describe('toSuggestions (Antwort von Geoapify → Vorschläge)', () => {
   });
 
   it('lässt eine fehlende Hausnummer leer', () => {
-    expect(suggestions[1]).toMatchObject({ street: 'Beispielgasse', houseNo: '', zip: '3011', city: 'Bern' });
+    expect(suggestions[1]).toMatchObject({
+      street: 'Beispielgasse',
+      houseNo: '',
+      zip: '3011',
+      city: 'Bern',
+    });
   });
 
   it('übernimmt Auslandsadressen mit ihrem Ländercode', () => {
@@ -52,7 +57,9 @@ describe('toSuggestions (Antwort von Geoapify → Vorschläge)', () => {
 
   it('kürzt nichts', () => {
     const long = 'A'.repeat(100);
-    const [one] = toSuggestions({ results: [{ street: long, postcode: '1', city: 'B', country_code: 'ch' }] });
+    const [one] = toSuggestions({
+      results: [{ street: long, postcode: '1', city: 'B', country_code: 'ch' }],
+    });
     expect(one?.street).toBe(long);
   });
 });

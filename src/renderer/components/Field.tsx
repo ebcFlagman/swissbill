@@ -9,7 +9,7 @@ interface FieldProps {
   className?: string;
 }
 
-/** Beschriftung, Eingabe und Fehlermeldung eines Formularfelds. */
+/** Label, input and error message of a form field. */
 export function Field({ label, htmlFor, error, children, className }: FieldProps) {
   return (
     <div className={`field${className ? ` ${className}` : ''}`}>

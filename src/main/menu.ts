@@ -1,8 +1,8 @@
 import { app, BrowserWindow, dialog, Menu, shell } from 'electron';
-import { MENU_EVENT, type MenuAction } from '../shared/ipc/menu';
+import { MENU_EVENT, type MenuAction } from '@shared/ipc/menu';
 import { buildMenuTemplate } from './menu-template';
 
-/** Setzt das Anwendungsmenü (ersetzt das englische Standardmenü von Electron). */
+/** Sets the application menu (replaces the English default menu of Electron). */
 export function installMenu(databasePath: string): void {
   const send = (action: MenuAction) => {
     const win = BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0];

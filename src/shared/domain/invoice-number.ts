@@ -1,4 +1,4 @@
-/** `PRÄFIX-JAHR-ZÄHLER`, z. B. `RE-2026-0001`. Der Zähler ist mindestens vierstellig und wächst darüber hinaus. */
+/** `PREFIX-YEAR-COUNTER`, e.g. `RE-2026-0001`. The counter has at least four digits and grows beyond that. */
 export function formatInvoiceNumber(prefix: string, year: number, seq: number): string {
   if (!Number.isInteger(year) || year < 1000 || year > 9999) {
     throw new RangeError('Das Jahr muss vierstellig sein.');
@@ -9,7 +9,7 @@ export function formatInvoiceNumber(prefix: string, year: number, seq: number): 
   return `${prefix}-${year}-${String(seq).padStart(4, '0')}`;
 }
 
-/** Präfix: 1 bis 10 Zeichen aus `A-Z`, `0-9` und `-`. Liefert eine deutsche Meldung oder `null`. */
+/** Prefix: 1 to 10 characters from `A-Z`, `0-9` and `-`. Returns a German message or `null`. */
 export function validatePrefix(prefix: string): string | null {
   if (prefix === '') return 'Der Präfix ist erforderlich.';
   if ([...prefix].length > 10) return 'Der Präfix darf höchstens 10 Zeichen lang sein.';

@@ -62,7 +62,14 @@ describe('validateAddress', () => {
 });
 
 describe('validateDebtor (Rechnungsempfänger: nur der Name ist Pflicht)', () => {
-  const nameOnly: Address = { name: 'Pia Muster', street: '', houseNo: '', zip: '', city: '', country: '' };
+  const nameOnly: Address = {
+    name: 'Pia Muster',
+    street: '',
+    houseNo: '',
+    zip: '',
+    city: '',
+    country: '',
+  };
   const fields = (address: Partial<Address>) =>
     validateDebtor({ ...nameOnly, ...address }, 'debtor').map((e) => e.field);
 

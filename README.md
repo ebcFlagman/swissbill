@@ -11,7 +11,7 @@ an Geoapify gesendet (siehe «Adressvorschläge»).
 - Rechnungen mit Positionen in **CHF** erfassen und als A4-PDF mit **Swiss-QR-Zahlteil** ausgeben (SIX Swiss Implementation Guidelines).
 - Prüfung von IBAN und QR-IBAN, automatische Zahlungsreferenz (QR-Referenz bei QR-IBAN, Creditor Reference bei normaler IBAN).
 - Rechnungsnummern `PRÄFIX-JAHR-ZÄHLER` (z. B. `RE-2026-0001`), lückenlos, Nummer wird erst beim Ausstellen vergeben.
-- Ausgestellte Rechnungen sind **unveränderlich** (auch auf Datenbankebene); Korrektur über Duplizieren oder Stornieren.
+- Ausgestellte Rechnungen sind **unveränderlich** (die Persistenzschicht der Anwendung lehnt jede Änderung ab); Korrektur über Duplizieren oder Stornieren.
 - Rechnungsliste mit Suche und Statusfilter, Status: Entwurf, ausgestellt, bezahlt, storniert.
 - Globaler Absender und Schlusstext, pro Rechnung überschreibbar; Kundenverwaltung.
 - Sicherung der Datenbank als einzelne Datei.
@@ -48,12 +48,12 @@ Falls die Electron-Binärdatei fehlt (npm blockiert Install-Skripte), einmalig `
 
 ## Prüfen und testen
 
-| Befehl | Zweck |
-|--------|-------|
-| `npm run typecheck` | TypeScript (strict) für Main, Renderer und Tests |
-| `npm run lint` | ESLint |
-| `npm test` | Unit- und Integrationstests (Vitest, SQLite in Memory) |
-| `npm run test:e2e` | End-to-End-Tests der gebauten App (Playwright mit Electron) |
+| Befehl              | Zweck                                                           |
+| ------------------- | --------------------------------------------------------------- |
+| `npm run typecheck` | TypeScript (strict) für Main, Renderer und Tests                |
+| `npm run lint`      | ESLint                                                          |
+| `npm test`          | Unit- und Integrationstests (Vitest, SQLite in Memory, TypeORM) |
+| `npm run test:e2e`  | End-to-End-Tests der gebauten App (Playwright mit Electron)     |
 
 Tests verwenden ausschliesslich fiktive Daten und einen eigenen temporären Datenordner.
 
@@ -69,17 +69,17 @@ N-API-Binaries mit; ein Rebuild ist nicht nötig.
 ## Continuous Integration
 
 Der GitHub-Actions-Workflow `CI` (`.github/workflows/ci.yml`) läuft bei jedem Push, bei Pull Requests gegen `main` und
-manuell (*Actions → CI → Run workflow*). Ältere Läufe desselben Branches werden abgebrochen. Bei Branches mit offenem
+manuell (_Actions → CI → Run workflow_). Ältere Läufe desselben Branches werden abgebrochen. Bei Branches mit offenem
 Pull Request laufen ein Push- und ein PR-Lauf parallel; das ist gewollt. Reine Dokumentationsänderungen lösen den Lauf ebenfalls aus.
 
-| Job | Inhalt | Lokale Entsprechung |
-|-----|--------|---------------------|
-| `verify` (Pflicht-Check) | Installation, Lint, Typprüfung, Unit-/Integrationstests, Build und Paketierung, Upload des Artefakts | `npm ci --ignore-scripts`, `node node_modules/electron/install.js`, `npm run lint`, `npm run typecheck`, `npm test`, `npm run package` |
-| `e2e` (optional) | Playwright-Tests gegen die gebaute und verpackte App; Ergebnis als Tabelle in der Lauf-Zusammenfassung, Fehler als Annotationen, HTML-Bericht und JUnit-XML als Artefakt `e2e-reports-<commit>` | `npm run test:e2e` |
+| Job                      | Inhalt                                                                                                                                                                                          | Lokale Entsprechung                                                                                                                    |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `verify` (Pflicht-Check) | Installation, Lint, Typprüfung, Unit-/Integrationstests, Build und Paketierung, Upload des Artefakts                                                                                            | `npm ci --ignore-scripts`, `node node_modules/electron/install.js`, `npm run lint`, `npm run typecheck`, `npm test`, `npm run package` |
+| `e2e` (optional)         | Playwright-Tests gegen die gebaute und verpackte App; Ergebnis als Tabelle in der Lauf-Zusammenfassung, Fehler als Annotationen, HTML-Bericht und JUnit-XML als Artefakt `e2e-reports-<commit>` | `npm run test:e2e`                                                                                                                     |
 
 - **Artefakt:** Aus einem erfolgreichen Lauf lässt sich `swissbill-win-unpacked-<commit>` herunterladen (14 Tage). Entpacken und
   `SwissBill.exe` starten. Es enthält keine Datenbank und keine Rechnungsdaten.
-- **Lizenzschlüssel:** Optional als Repository-Secret `PRIMEUI_LICENSE` hinterlegen (*Settings → Secrets and variables → Actions*).
+- **Lizenzschlüssel:** Optional als Repository-Secret `PRIMEUI_LICENSE` hinterlegen (_Settings → Secrets and variables → Actions_).
   Er wird beim Build in die App eingebettet; das Artefakt ist daher nur für Personen mit Repository-Zugriff gedacht. Ohne Secret
   (z. B. bei Forks) baut die Pipeline trotzdem, die App zeigt dann das Lizenz-Banner.
 - **Pflicht-Check:** Nur `CI / verify` sollte in den Branch-Schutzregeln als erforderlich gesetzt werden. Ein Fehler in `e2e`
@@ -92,7 +92,7 @@ Pull Request laufen ein Push- und ein PR-Lauf parallel; das ist gewollt. Reine D
 Der Workflow `Release` (`.github/workflows/release.yml`) prüft den Stand, baut die Artefakte und veröffentlicht ein
 GitHub-Release inklusive Git-Tag.
 
-- **Auslösen:** *Actions → Release → Run workflow* auf `main` mit der Version (z. B. `1.2.0`, Vorabversion `1.2.0-rc.1`; ohne
+- **Auslösen:** _Actions → Release → Run workflow_ auf `main` mit der Version (z. B. `1.2.0`, Vorabversion `1.2.0-rc.1`; ohne
   führendes `v`). Der Tag `v<Version>` entsteht erst, wenn Prüfung und Build erfolgreich waren. Alternativ einen Tag
   `v<Version>` pushen (`git tag v1.2.0 && git push origin v1.2.0`); der Tag bleibt dabei unverändert.
 - **Ablauf:** `prepare` (Version prüfen, Duplikate ablehnen) → `verify` (Lint, Typprüfung, Tests) → `build` (Windows und Linux) →
@@ -109,7 +109,7 @@ GitHub-Release inklusive Git-Tag.
 ## Daten und Sicherung
 
 Die Datenbank liegt als **einzelne Datei** `swissbill.db` im Electron-Datenordner
-(Windows: `%APPDATA%\swissbill\`). Der genaue Pfad steht unter *Einstellungen → Datenbank und Sicherung*.
+(Windows: `%APPDATA%\swissbill\`). Der genaue Pfad steht unter _Einstellungen → Datenbank und Sicherung_.
 
 - **Sichern:** Dort «Datenbank sichern» wählen (oder die Datei bei geschlossener Anwendung kopieren).
 - **Wiederherstellen:** Anwendung schliessen und die Sicherung als `swissbill.db` in den Datenordner kopieren.

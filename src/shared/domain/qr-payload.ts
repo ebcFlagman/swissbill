@@ -9,19 +9,27 @@ export interface QrPayloadData {
   iban: string;
   creditor: Address;
   amountRappen: Rappen;
-  /** Fehlt der Zahlungspflichtige, bleiben seine 7 Zeilen leer (vom Standard erlaubt). */
+  /** If the debtor is missing, its 7 lines stay empty (allowed by the standard). */
   debtor?: Address | undefined;
   referenceType: QrReferenceType;
   reference: string;
-  /** Unstrukturierte Mitteilung */
+  /** Unstructured message */
   message?: string | undefined;
-  /** Rechnungsinformationen (Billing Information) */
+  /** Billing information */
   billingInfo?: string | undefined;
 }
 
 function addressLines(address: Address): string[] {
-  // Adresstyp S = strukturierte Adresse
-  return ['S', address.name, address.street, address.houseNo, address.zip, address.city, address.country];
+  // Address type S = structured address
+  return [
+    'S',
+    address.name,
+    address.street,
+    address.houseNo,
+    address.zip,
+    address.city,
+    address.country,
+  ];
 }
 
 function formatAmount(rappen: Rappen): string {
@@ -29,9 +37,9 @@ function formatAmount(rappen: Rappen): string {
 }
 
 /**
- * Baut den QR-Code-Inhalt nach den Swiss Implementation Guidelines for the QR-bill (Version 2.0):
- * Header, Gläubiger-IBAN und -Adresse, leerer Ultimate Creditor (7 Zeilen), Betrag, Währung,
- * Zahlungspflichtiger, Referenz, Mitteilung, Trailer `EPD` und Rechnungsinformationen. Zeilen sind durch LF getrennt.
+ * Builds the QR code content according to the Swiss Implementation Guidelines for the QR-bill (version 2.0):
+ * header, creditor IBAN and address, empty ultimate creditor (7 lines), amount, currency,
+ * debtor, reference, message, trailer `EPD` and billing information. Lines are separated by LF.
  */
 export function buildQrPayload(data: QrPayloadData): string {
   const lines = [
@@ -48,22 +56,23 @@ export function buildQrPayload(data: QrPayloadData): string {
     data.reference.replace(/\s+/g, ''),
     data.message ?? '',
     'EPD',
-    // Rechnungsinformationen sind optional und entfallen samt Zeile, wenn leer.
+    // Billing information is optional and omitted together with its line if empty.
     ...(data.billingInfo ? [data.billingInfo] : []),
   ];
   return lines.join('\n');
 }
 
 /**
- * Der Zahlungspflichtige im QR-Code: Der Standard verlangt bei einer Adresse Name, PLZ, Ort und Land.
- * Fehlen Name, PLZ oder Ort, entfällt der Empfänger im QR-Code (Ergebnis undefined); ein fehlendes Land gilt als CH.
+ * The debtor in the QR code: the standard requires name, postal code, city and country for an address.
+ * If name, postal code or city are missing, the debtor is omitted from the QR code (result undefined); a missing country counts as CH.
  */
 export function qrDebtor(debtor: Address): Address | undefined {
-  if (debtor.name.trim() === '' || debtor.zip.trim() === '' || debtor.city.trim() === '') return undefined;
+  if (debtor.name.trim() === '' || debtor.zip.trim() === '' || debtor.city.trim() === '')
+    return undefined;
   return { ...debtor, country: debtor.country === '' ? 'CH' : debtor.country };
 }
 
-/** QR-Inhalt einer ausgestellten Rechnung. */
+/** QR content of an issued invoice. */
 export function qrPayloadFromInvoice(invoice: Invoice): string {
   if (invoice.referenceType === null || invoice.reference === null || invoice.number === null) {
     throw new Error('Die Rechnung ist noch nicht ausgestellt.');

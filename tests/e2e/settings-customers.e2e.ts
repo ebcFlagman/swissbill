@@ -4,7 +4,10 @@ import { fillAddress, fillItem, goTo, launchApp, QR_IBAN } from './helpers';
 
 async function issue(page: Page): Promise<string> {
   await page.getByRole('button', { name: 'Ausstellen', exact: true }).click();
-  await page.getByRole('dialog', { name: 'Rechnung ausstellen?' }).getByRole('button', { name: 'Ausstellen' }).click();
+  await page
+    .getByRole('dialog', { name: 'Rechnung ausstellen?' })
+    .getByRole('button', { name: 'Ausstellen' })
+    .click();
   const issued = page.getByRole('dialog', { name: 'Rechnung ausgestellt' });
   const number = (await issued.getByTestId('issued-number').textContent()) ?? '';
   await issued.getByRole('button', { name: 'Schliessen' }).click();
@@ -16,7 +19,7 @@ test('Absender und Kunden einmal erfassen, in Rechnungen wiederverwenden und üb
   try {
     const { app, page } = launched;
 
-    // Einstellungen: beim ersten Start fehlt der Absender
+    // Settings: on the first start the sender is missing
     await goTo(app, 'Einstellungen');
     await expect(page.getByText('Bitte erfassen Sie zuerst Ihren Absender')).toBeVisible();
     await fillAddress(page, 'sender', {
@@ -25,7 +28,7 @@ test('Absender und Kunden einmal erfassen, in Rechnungen wiederverwenden und üb
       houseNo: '1268',
       zip: '2501',
       city: 'Biel',
-      iban: 'CH44 3199 9123 0008 8901 3', // falsche Prüfsumme
+      iban: 'CH44 3199 9123 0008 8901 3', // wrong checksum
     });
     await page.locator('#defaultClosingText').fill('Zahlbar innert 30 Tagen.');
     await page.getByRole('button', { name: 'Speichern' }).click();
@@ -36,7 +39,7 @@ test('Absender und Kunden einmal erfassen, in Rechnungen wiederverwenden und üb
     await page.getByRole('button', { name: 'Speichern' }).click();
     await expect(page.getByText('Einstellungen gespeichert.')).toBeVisible();
 
-    // Kunden anlegen
+    // Create customers
     await goTo(app, 'Kunden');
     await page.getByRole('button', { name: 'Neuer Kunde' }).click();
     const dialog = page.getByRole('dialog', { name: 'Neuer Kunde' });
@@ -53,11 +56,11 @@ test('Absender und Kunden einmal erfassen, in Rechnungen wiederverwenden und üb
     await expect(page.getByTestId('customer-row')).toHaveCount(1);
     await expect(page.getByTestId('customer-row')).toContainText('Müller AG');
 
-    // Rechnung 1: Absender und Schlusstext sind vorausgefüllt, Kunde wird übernommen
+    // Invoice 1: sender and closing text are prefilled, the customer is taken over
     await goTo(app, 'Rechnungen');
     await page.getByRole('button', { name: 'Neue Rechnung' }).click();
     await expect(page.locator('#sender-name')).toHaveValue('Robert Schneider AG');
-    await expect(page.locator('#sender-iban')).toHaveValue(QR_IBAN); // gespeichert ohne Leerzeichen, angezeigt in Vierergruppen
+    await expect(page.locator('#sender-iban')).toHaveValue(QR_IBAN); // stored without spaces, displayed in groups of four
     await expect(page.locator('#closingText')).toHaveValue('Zahlbar innert 30 Tagen.');
     await page.getByLabel('Kunde übernehmen').selectOption({ label: 'Müller AG, Zürich' });
     await expect(page.locator('#debtor-name')).toHaveValue('Müller AG');
@@ -66,7 +69,7 @@ test('Absender und Kunden einmal erfassen, in Rechnungen wiederverwenden und üb
     const first = await issue(page);
     await page.getByRole('button', { name: '← Zurück' }).click();
 
-    // Rechnung 2: Absender nur in dieser Rechnung überschreiben
+    // Invoice 2: override the sender only in this invoice
     await page.getByRole('button', { name: 'Neue Rechnung' }).click();
     await page.locator('#sender-name').fill('Andere Firma GmbH');
     await page.getByLabel('Kunde übernehmen').selectOption({ label: 'Müller AG, Zürich' });
@@ -75,11 +78,11 @@ test('Absender und Kunden einmal erfassen, in Rechnungen wiederverwenden und üb
     expect([first.endsWith('0001'), second.endsWith('0002')]).toEqual([true, true]);
     await page.getByRole('button', { name: '← Zurück' }).click();
 
-    // Der globale Absender bleibt unverändert
+    // The global sender stays unchanged
     await goTo(app, 'Einstellungen');
     await expect(page.locator('#sender-name')).toHaveValue('Robert Schneider AG');
 
-    // Globalen Absender ändern: ausgestellte Rechnungen zeigen weiterhin den damaligen Absender
+    // Change the global sender: issued invoices still show the sender of that time
     await page.locator('#sender-name').fill('Neue Firma AG');
     await page.getByRole('button', { name: 'Speichern' }).click();
     await expect(page.getByText('Einstellungen gespeichert.')).toBeVisible();
@@ -89,7 +92,7 @@ test('Absender und Kunden einmal erfassen, in Rechnungen wiederverwenden und üb
     await expect(page.locator('#sender-name')).toHaveValue('Robert Schneider AG');
     await page.getByRole('button', { name: '← Zurück' }).click();
 
-    // Neue Entwürfe übernehmen den neuen Standard; «Auf Standard zurücksetzen» stellt ihn wieder her
+    // New drafts take over the new default; "Auf Standard zurücksetzen" restores it
     await page.getByRole('button', { name: 'Neue Rechnung' }).click();
     await expect(page.locator('#sender-name')).toHaveValue('Neue Firma AG');
     await page.locator('#sender-name').fill('Etwas anderes');
@@ -97,7 +100,7 @@ test('Absender und Kunden einmal erfassen, in Rechnungen wiederverwenden und üb
     await expect(page.locator('#sender-name')).toHaveValue('Neue Firma AG');
     await page.getByRole('button', { name: '← Zurück' }).click();
 
-    // Kundenadresse ändern: die ausgestellte Rechnung behält die damalige Adresse
+    // Change the customer address: the issued invoice keeps the address of that time
     await goTo(app, 'Kunden');
     await page.getByRole('button', { name: 'Bearbeiten' }).click();
     const edit = page.getByRole('dialog', { name: 'Kunde bearbeiten' });

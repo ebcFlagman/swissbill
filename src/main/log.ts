@@ -8,9 +8,9 @@ const MAX_BYTES = 1_000_000;
 let logFile: string | null = null;
 
 /**
- * Lokales Logging in eine Datei (rotiert bei 1 MB, eine Vorgängerdatei).
- * Es gibt keine Telemetrie. Rechnungsinhalte, Namen, Adressen und IBANs dürfen NICHT geloggt werden,
- * nur technische Meldungen.
+ * Local logging to a file (rotated at 1 MB, one previous file).
+ * There is no telemetry. Invoice contents, names, addresses and IBANs must NOT be logged,
+ * only technical messages.
  */
 export function initLogger(dir: string): void {
   mkdirSync(dir, { recursive: true });
@@ -27,7 +27,7 @@ function write(level: LogLevel, message: string): void {
     try {
       if (statSync(logFile).size > MAX_BYTES) renameSync(logFile, `${logFile}.1`);
     } catch {
-      // Datei existiert noch nicht
+      // file does not exist yet
     }
     appendFileSync(logFile, line, 'utf8');
   } catch {

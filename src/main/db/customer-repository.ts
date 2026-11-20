@@ -1,19 +1,8 @@
-import type Database from 'better-sqlite3';
-import type { Customer, CustomerInput } from '../../shared/domain/customer';
-import { registerUnicodeLower } from './functions';
-
-interface CustomerRow {
-  id: number;
-  name: string;
-  street: string;
-  house_no: string;
-  zip: string;
-  city: string;
-  country: string;
-  notes: string | null;
-  created_at: string;
-  updated_at: string;
-}
+import type { DataSource } from 'typeorm';
+import { type Customer, type CustomerInput, validateCustomer } from '@shared/domain/customer';
+import { AppException } from '@shared/ipc/errors';
+import { CustomerEntity, type CustomerRow } from './entities/customer.entity';
+import { unitOfWorkFor } from './unit-of-work';
 
 function toCustomer(row: CustomerRow): Customer {
   return {
@@ -30,52 +19,78 @@ function toCustomer(row: CustomerRow): Customer {
   };
 }
 
+/** Database-independent lower-casing for the search (also with umlauts). */
+const lower = (value: string): string => value.toLowerCase();
+
+/** Data rules apply to every write path (formerly CHECK constraints of the database). */
+function assertValid(input: CustomerInput): void {
+  const errors = validateCustomer(input);
+  if (errors.length > 0)
+    throw new AppException('VALIDATION', 'Bitte die markierten Felder prüfen.', errors);
+}
+
+function compare(a: string, b: string): number {
+  return a < b ? -1 : a > b ? 1 : 0;
+}
+
 export class CustomerRepository {
-  constructor(private readonly db: Database.Database) {
-    registerUnicodeLower(db);
+  constructor(private readonly dataSource: DataSource) {}
+
+  /** Sorted by name (case-insensitive), ties broken by `id`. */
+  async list(search = ''): Promise<Customer[]> {
+    const rows = await this.dataSource.getRepository(CustomerEntity).find();
+    const term = lower(search.trim());
+    return rows
+      .filter((r) => term === '' || lower(r.name).includes(term) || lower(r.city).includes(term))
+      .sort((a, b) => compare(lower(a.name), lower(b.name)) || a.id - b.id)
+      .map(toCustomer);
   }
 
-  list(search = ''): Customer[] {
-    const term = search.trim().toLowerCase();
-    const rows = (
-      term === ''
-        ? this.db.prepare('SELECT * FROM customers ORDER BY unicode_lower(name), id').all()
-        : this.db
-            .prepare(
-              `SELECT * FROM customers
-               WHERE instr(unicode_lower(name), ?) > 0 OR instr(unicode_lower(city), ?) > 0
-               ORDER BY unicode_lower(name), id`,
-            )
-            .all(term, term)
-    ) as CustomerRow[];
-    return rows.map(toCustomer);
-  }
-
-  get(id: number): Customer | undefined {
-    const row = this.db.prepare('SELECT * FROM customers WHERE id = ?').get(id) as CustomerRow | undefined;
+  async get(id: number): Promise<Customer | undefined> {
+    const row = await this.dataSource.getRepository(CustomerEntity).findOneBy({ id });
     return row ? toCustomer(row) : undefined;
   }
 
-  insert(input: CustomerInput, now: string): number {
-    const info = this.db
-      .prepare(
-        `INSERT INTO customers (name, street, house_no, zip, city, country, notes, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      )
-      .run(input.name, input.street, input.houseNo, input.zip, input.city, input.country, input.notes, now, now);
-    return Number(info.lastInsertRowid);
+  async insert(input: CustomerInput, now: string): Promise<number> {
+    assertValid(input);
+    return unitOfWorkFor(this.dataSource).run(async (manager) => {
+      const result = await manager.insert(CustomerEntity, {
+        name: input.name,
+        street: input.street,
+        house_no: input.houseNo,
+        zip: input.zip,
+        city: input.city,
+        country: input.country,
+        notes: input.notes,
+        created_at: now,
+        updated_at: now,
+      });
+      return Number((result.identifiers[0] as { id: number }).id);
+    });
   }
 
-  update(id: number, input: CustomerInput, now: string): void {
-    this.db
-      .prepare(
-        `UPDATE customers SET name = ?, street = ?, house_no = ?, zip = ?, city = ?, country = ?,
-           notes = ?, updated_at = ? WHERE id = ?`,
-      )
-      .run(input.name, input.street, input.houseNo, input.zip, input.city, input.country, input.notes, now, id);
+  async update(id: number, input: CustomerInput, now: string): Promise<void> {
+    assertValid(input);
+    await unitOfWorkFor(this.dataSource).run((manager) =>
+      manager.update(
+        CustomerEntity,
+        { id },
+        {
+          name: input.name,
+          street: input.street,
+          house_no: input.houseNo,
+          zip: input.zip,
+          city: input.city,
+          country: input.country,
+          notes: input.notes,
+          updated_at: now,
+        },
+      ),
+    );
   }
 
-  delete(id: number): void {
-    this.db.prepare('DELETE FROM customers WHERE id = ?').run(id);
+  /** Invoices keep their snapshot; their reference `customer_id` becomes NULL through the foreign key. */
+  async delete(id: number): Promise<void> {
+    await unitOfWorkFor(this.dataSource).run((manager) => manager.delete(CustomerEntity, { id }));
   }
 }

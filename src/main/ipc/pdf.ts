@@ -1,10 +1,10 @@
 import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { app, BrowserWindow, dialog, shell } from 'electron';
-import { CHANNELS } from '../../shared/ipc/api';
-import type { Invoice } from '../../shared/domain/invoice';
-import { AppException } from '../../shared/ipc/errors';
-import { pdfRequestSchema, type PdfRequest, type PdfSaveResult } from '../../shared/ipc/invoices';
+import { CHANNELS } from '@shared/ipc/api';
+import type { Invoice } from '@shared/domain/invoice';
+import { AppException } from '@shared/ipc/errors';
+import { pdfRequestSchema, type PdfRequest, type PdfSaveResult } from '@shared/ipc/invoices';
 import type { InvoiceService } from '../services/invoice-service';
 import { renderInvoicePdf } from '../services/pdf-service';
 import { handle } from './handle';
@@ -27,7 +27,7 @@ async function write(path: string, data: Buffer): Promise<void> {
 
 export function registerPdfHandlers(service: InvoiceService): void {
   handle<PdfRequest, PdfSaveResult>(CHANNELS.pdfSave, pdfRequestSchema, async ({ invoiceId }) => {
-    const invoice = service.get(invoiceId);
+    const invoice = await service.get(invoiceId);
     const pdf = await renderInvoicePdf(invoice);
     const parent = BrowserWindow.getFocusedWindow() ?? undefined;
     const options = {
@@ -43,14 +43,18 @@ export function registerPdfHandlers(service: InvoiceService): void {
     return { path: result.filePath };
   });
 
-  handle<PdfRequest, { base64: string }>(CHANNELS.pdfPreview, pdfRequestSchema, async ({ invoiceId }) => {
-    const invoice = service.get(invoiceId);
-    const pdf = await renderInvoicePdf(invoice, { preview: invoice.status === 'draft' });
-    return { base64: pdf.toString('base64') };
-  });
+  handle<PdfRequest, { base64: string }>(
+    CHANNELS.pdfPreview,
+    pdfRequestSchema,
+    async ({ invoiceId }) => {
+      const invoice = await service.get(invoiceId);
+      const pdf = await renderInvoicePdf(invoice, { preview: invoice.status === 'draft' });
+      return { base64: pdf.toString('base64') };
+    },
+  );
 
   handle<PdfRequest, void>(CHANNELS.pdfOpen, pdfRequestSchema, async ({ invoiceId }) => {
-    const invoice = service.get(invoiceId);
+    const invoice = await service.get(invoiceId);
     const pdf = await renderInvoicePdf(invoice);
     const path = join(app.getPath('temp'), `swissbill-${fileName(invoice)}`);
     await write(path, pdf);

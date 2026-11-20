@@ -38,7 +38,9 @@ describe('wrapHandler', () => {
       throw new Error('IMMUTABLE: Eine ausgestellte Rechnung kann nicht geändert werden.');
     });
     const result = await run({ id: 1 });
-    expect(result).toEqual(err('IMMUTABLE', 'Eine ausgestellte Rechnung kann nicht geändert werden.'));
+    expect(result).toEqual(
+      err('IMMUTABLE', 'Eine ausgestellte Rechnung kann nicht geändert werden.'),
+    );
   });
 
   it('gibt bei unerwarteten Fehlern keine Interna weiter', async () => {

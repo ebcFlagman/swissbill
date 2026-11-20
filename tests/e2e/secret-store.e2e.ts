@@ -2,8 +2,8 @@ import { expect, test } from '@playwright/test';
 import { goTo, launchApp, setupSettings } from './helpers';
 
 /**
- * Echte Betriebssystem-Verschlüsselung (ohne Speicher-Store): Der Key bleibt nach einem Neustart lesbar,
- * und Electron meldet keine veralteten safeStorage-Funktionen.
+ * Real operating system encryption (without memory store): the key stays readable after a restart,
+ * and Electron reports no deprecated safeStorage functions.
  */
 test('API-Key wird mit der echten Betriebssystem-Verschlüsselung gespeichert und gelesen', async () => {
   let launched = await launchApp();
@@ -12,7 +12,10 @@ test('API-Key wird mit der echten Betriebssystem-Verschlüsselung gespeichert un
   try {
     await goTo(launched.app, 'Einstellungen');
     const status = (await launched.page.getByTestId('key-status').textContent()) ?? '';
-    test.skip(status.includes('Verschlüsselung auf diesem Gerät nicht verfügbar'), 'keine Verschlüsselung auf diesem Gerät');
+    test.skip(
+      status.includes('Verschlüsselung auf diesem Gerät nicht verfügbar'),
+      'keine Verschlüsselung auf diesem Gerät',
+    );
 
     await setupSettings(launched.app, launched.page, 'test-key-0123456789');
     await expect(launched.page.getByTestId('key-status')).toHaveText('Key gespeichert.');

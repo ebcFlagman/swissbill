@@ -1,4 +1,4 @@
-import type { InvoiceStatus } from '../../shared/domain/invoice';
+import type { InvoiceStatus } from '@shared/domain/invoice';
 
 export const STATUS_LABEL: Record<InvoiceStatus, string> = {
   draft: 'Entwurf',

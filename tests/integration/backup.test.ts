@@ -1,11 +1,10 @@
 import { existsSync, mkdtempSync, readdirSync, rmSync, statSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import Database from 'better-sqlite3';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { AppException } from '@shared/ipc/errors';
-import { openDatabase } from '../../src/main/db/connection';
-import { loadMigrations, migrate } from '../../src/main/db/migrate';
+import { loadMigrations } from '../../src/main/db/data-source';
+import { openAndMigrate } from '../../src/main/db/startup';
 import { BackupService } from '../../src/main/services/backup-service';
 import { InvoiceService } from '../../src/main/services/invoice-service';
 import { createFilledDraft } from '../fixtures/db';
@@ -18,74 +17,72 @@ afterEach(() => {
   rmSync(dir, { recursive: true, force: true });
 });
 
-function setup() {
+async function setup() {
   const path = join(dir, 'swissbill.db');
-  const db = openDatabase(path);
-  migrate(db, loadMigrations());
+  const db = await openAndMigrate(path);
   const invoices = new InvoiceService(db, { now: () => new Date(2026, 2, 1, 10, 0) });
-  const a = invoices.issue(createFilledDraft(invoices).id);
-  const b = createFilledDraft(invoices);
+  const a = await invoices.issue((await createFilledDraft(invoices)).id);
+  const b = await createFilledDraft(invoices);
   return { db, path, backup: new BackupService(db), a, b };
 }
 
 describe('BackupService', () => {
-  it('zeigt Speicherort, Grösse und Schemaversion', () => {
-    const { db, path, backup } = setup();
-    const info = backup.info();
+  it('zeigt Speicherort, Grösse und Schemastand (Anzahl Migrationen)', async () => {
+    const { db, path, backup } = await setup();
+    const info = await backup.info();
     expect(info.path).toBe(path);
     expect(info.sizeBytes).toBe(statSync(path).size);
     expect(info.sizeBytes).toBeGreaterThan(0);
     expect(info.schemaVersion).toBe(loadMigrations().length);
-    db.close();
+    await db.destroy();
   });
 
   it('erzeugt eine einzelne Datei mit allen Rechnungen', async () => {
-    const { db, backup, a, b } = setup();
+    const { db, backup, a, b } = await setup();
     const target = join(dir, 'sicherung', 'kopie.db');
     await backup.backup(target);
 
-    // genau eine Datei, keine Zusatzdateien (-journal, -wal, -shm)
+    // exactly one file, no additional files (-journal, -wal, -shm)
     expect(readdirSync(join(dir, 'sicherung'))).toEqual(['kopie.db']);
 
-    const copy = new Database(target, { readonly: true });
-    const rows = copy.prepare('SELECT id, status, number FROM invoices ORDER BY id').all();
-    expect(rows).toEqual([
+    const copy = await openAndMigrate(target);
+    expect(await copy.query('SELECT id, status, number FROM invoices ORDER BY id')).toEqual([
       { id: a.id, status: 'issued', number: 'RE-2026-0001' },
       { id: b.id, status: 'draft', number: null },
     ]);
-    expect(copy.prepare('SELECT COUNT(*) AS n FROM invoice_items').get()).toEqual({ n: 4 });
-    expect(copy.pragma('user_version', { simple: true })).toBe(loadMigrations().length);
-    copy.close();
-    db.close();
+    expect(await copy.query('SELECT COUNT(*) AS n FROM invoice_items')).toEqual([{ n: 4 }]);
+    await copy.destroy();
+    await db.destroy();
   });
 
   it('die Sicherung lässt sich als Datenbank öffnen und weiterverwenden', async () => {
-    const { db, backup } = setup();
+    const { db, backup } = await setup();
     const target = join(dir, 'kopie.db');
     await backup.backup(target);
-    db.close();
+    await db.destroy();
 
-    const restored = openDatabase(target);
-    migrate(restored, loadMigrations());
+    const restored = await openAndMigrate(target);
     const service = new InvoiceService(restored, { now: () => new Date(2026, 2, 1, 10, 0) });
-    expect(service.list({})).toHaveLength(2);
-    expect(service.issue(createFilledDraft(service).id).number).toBe('RE-2026-0002');
-    restored.close();
+    expect(await service.list({})).toHaveLength(2);
+    expect((await service.issue((await createFilledDraft(service)).id)).number).toBe(
+      'RE-2026-0002',
+    );
+    await restored.destroy();
   });
 
   it('verweigert die Sicherung auf die Datenbank selbst', async () => {
-    const { db, path, backup } = setup();
+    const { db, path, backup } = await setup();
     await expect(backup.backup(path)).rejects.toBeInstanceOf(AppException);
     expect(existsSync(path)).toBe(true);
-    expect(db.prepare('SELECT COUNT(*) AS n FROM invoices').get()).toEqual({ n: 2 });
-    db.close();
+    expect(await db.query('SELECT COUNT(*) AS n FROM invoices')).toEqual([{ n: 2 }]);
+    await db.destroy();
   });
 
   it('meldet einen verständlichen IO-Fehler, wenn das Ziel nicht beschreibbar ist', async () => {
-    const { db, backup } = setup();
+    const { db, backup } = await setup();
     await expect(backup.backup(join(dir, 'nicht', 'vorhanden\0', 'x.db'))).rejects.toMatchObject({
       error: { code: 'IO' },
     });
-    db.close();
+    await db.destroy();
   });
 });

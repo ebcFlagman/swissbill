@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { formatIban, ibanFeedback, isQrIban, normalizeIban, validateIban } from '@shared/domain/iban';
+import {
+  formatIban,
+  ibanFeedback,
+  isQrIban,
+  normalizeIban,
+  validateIban,
+} from '@shared/domain/iban';
 
 const CH_IBAN = 'CH93 0076 2011 6238 5295 7';
 const QR_IBAN = 'CH44 3199 9123 0008 8901 2';
@@ -109,7 +115,12 @@ describe('ibanFeedback (Sofortprüfung beim Tippen)', () => {
   });
 
   it('entspricht bei verlassenem Feld der vollständigen Prüfung', () => {
-    for (const input of ['CH44 3199 9123 0008 8901 2', 'CH93 0076 2011 6238 5295 8', 'DE89 3704 0044 0532 0130 00', 'CH44']) {
+    for (const input of [
+      'CH44 3199 9123 0008 8901 2',
+      'CH93 0076 2011 6238 5295 8',
+      'DE89 3704 0044 0532 0130 00',
+      'CH44',
+    ]) {
       expect(ibanFeedback(input, true)).toBe(validateIban(input));
     }
   });

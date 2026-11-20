@@ -5,9 +5,9 @@ import react from '@vitejs/plugin-react';
 const shared = resolve(__dirname, 'src/shared');
 
 /**
- * Content-Security-Policy nur im Produktions-Build (im Dev-Modus braucht Vite Inline-Skripte für HMR).
- * Keine externen Quellen (Prinzip II). `style-src 'unsafe-inline'` ist nötig, weil PrimeReact seine Styles
- * zur Laufzeit als <style> einfügt; Skripte bleiben auf 'self' beschränkt.
+ * Content security policy only in the production build (in dev mode Vite needs inline scripts for HMR).
+ * No external sources (principle II). `style-src 'unsafe-inline'` is needed because PrimeReact inserts its styles
+ * at runtime as <style>; scripts stay restricted to 'self'.
  */
 const CSP = [
   "default-src 'self'",
@@ -26,7 +26,10 @@ const cspPlugin = {
   name: 'swissbill-csp',
   apply: 'build' as const,
   transformIndexHtml: (html: string) =>
-    html.replace('</title>', `</title>\n    <meta http-equiv="Content-Security-Policy" content="${CSP}" />`),
+    html.replace(
+      '</title>',
+      `</title>\n    <meta http-equiv="Content-Security-Policy" content="${CSP}" />`,
+    ),
 };
 
 export default defineConfig({

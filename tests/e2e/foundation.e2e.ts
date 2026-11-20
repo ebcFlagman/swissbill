@@ -13,14 +13,14 @@ test('App startet, IPC-Brücke antwortet und der Renderer ist isoliert', async (
     const info = await page.evaluate(() => window.swissbill.app.info());
     expect(info.ok).toBe(true);
 
-    // Kein Node im Renderer
+    // No Node in the renderer
     const nodeAccess = await page.evaluate(() => ({
       require: typeof (window as unknown as { require?: unknown }).require,
       process: typeof (window as unknown as { process?: unknown }).process,
     }));
     expect(nodeAccess).toEqual({ require: 'undefined', process: 'undefined' });
 
-    // Die Datenbank liegt als einzelne Datei im userData-Ordner
+    // The database is a single file in the userData folder
     expect(existsSync(join(userDataDir, 'swissbill.db'))).toBe(true);
     expect(existsSync(join(userDataDir, 'swissbill.db-wal'))).toBe(false);
   } finally {

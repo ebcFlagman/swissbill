@@ -9,8 +9,8 @@ import type { MenuAction } from './menu';
 import type { InvoiceIdInput, PdfRequest, PdfSaveResult } from './invoices';
 
 /**
- * IPC-Vertrag zwischen Renderer und Main (siehe specs/001-swiss-qr-invoices/contracts/ipc-api.md).
- * Jede User Story ergänzt hier ihre Namensräume. Der Renderer erhält diese API als `window.swissbill`.
+ * IPC contract between renderer and main (see specs/001-swiss-qr-invoices/contracts/ipc-api.md).
+ * Each user story adds its namespaces here. The renderer receives this API as `window.swissbill`.
  */
 
 export interface AppInfo {
@@ -30,54 +30,54 @@ export interface SwissbillApi {
     issue(input: InvoiceIdInput): Promise<Result<Invoice>>;
     /** issued → paid */
     markPaid(input: InvoiceIdInput): Promise<Result<Invoice>>;
-    /** paid → issued (Korrektur einer Fehlbuchung) */
+    /** paid → issued (correction of a wrong booking) */
     reopen(input: InvoiceIdInput): Promise<Result<Invoice>>;
-    /** issued/paid → cancelled, endgültig; die Nummer bleibt vergeben */
+    /** issued/paid → cancelled, final; the number stays assigned */
     cancel(input: InvoiceIdInput): Promise<Result<Invoice>>;
-    /** Nur Entwürfe (FR-021) */
+    /** Drafts only (FR-021) */
     deleteDraft(input: InvoiceIdInput): Promise<Result<void>>;
-    /** Neuer Entwurf aus einer bestehenden Rechnung (FR-009) */
+    /** New draft from an existing invoice (FR-009) */
     duplicate(input: InvoiceIdInput): Promise<Result<Invoice>>;
   };
   customers: {
     list(input: CustomerSearchInput): Promise<Result<Customer[]>>;
-    /** Ohne id anlegen, mit id ändern */
+    /** Create without id, change with id */
     save(input: CustomerInput): Promise<Result<Customer>>;
-    /** Bestehende Rechnungen bleiben unverändert */
+    /** Existing invoices stay unchanged */
     delete(input: CustomerIdInput): Promise<Result<void>>;
   };
   settings: {
     get(): Promise<Result<Settings>>;
-    /** Wirkt nur auf neue Entwürfe */
+    /** Only affects new drafts */
     save(input: SettingsInput): Promise<Result<Settings>>;
   };
   addresses: {
-    /** Adressvorschläge (nur mit hinterlegtem Geoapify-Key, sonst `disabled`); der Key bleibt im Main */
+    /** Address suggestions (only with a stored Geoapify key, otherwise `disabled`); the key stays in main */
     suggest(input: SuggestInput): Promise<Result<SuggestResult>>;
-    /** Prüft einen noch nicht gespeicherten Key mit einer Probeanfrage */
+    /** Checks a not yet stored key with a test request */
     testKey(input: TestKeyInput): Promise<Result<KeyCheckResult>>;
   };
   menu: {
-    /** Meldet sich für Aktionen des Anwendungsmenüs an; liefert die Funktion zum Abmelden */
+    /** Subscribes to application menu actions; returns the function to unsubscribe */
     onAction(callback: (action: MenuAction) => void): () => void;
   };
   db: {
-    /** Speicherort, Grösse und Schemaversion der Datenbank (FR-016) */
+    /** Location, size and schema version of the database (FR-016) */
     info(): Promise<Result<DbInfo>>;
-    /** Sicherung als einzelne Datei über einen Speichern-Dialog im Main */
+    /** Backup as a single file via a save dialog in main */
     backup(): Promise<Result<BackupResult>>;
   };
   pdf: {
-    /** Speichern-Dialog im Main; schreibt das PDF aus der Momentaufnahme */
+    /** Save dialog in main; writes the PDF from the snapshot */
     save(input: PdfRequest): Promise<Result<PdfSaveResult>>;
-    /** PDF als base64 für die Vorschau (Entwürfe mit Wasserzeichen, ohne Zahlteil) */
+    /** PDF as base64 for the preview (drafts with watermark, without payment part) */
     preview(input: PdfRequest): Promise<Result<{ base64: string }>>;
-    /** Öffnet das PDF im Standardprogramm zum Drucken */
+    /** Opens the PDF in the default program for printing */
     open(input: PdfRequest): Promise<Result<void>>;
   };
 }
 
-/** Kanalnamen: eine Quelle für Main (Handler) und Preload (Aufrufe). */
+/** Channel names: one source for main (handlers) and preload (calls). */
 export const CHANNELS = {
   appInfo: 'app:info',
   invoicesList: 'invoices:list',

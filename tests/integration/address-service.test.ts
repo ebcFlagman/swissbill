@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { AddressService } from '../../src/main/services/address-service';
-import type { GeoapifyClient, GeoapifyFailure, GeoapifyResult } from '../../src/main/services/geoapify-client';
+import type {
+  GeoapifyClient,
+  GeoapifyFailure,
+  GeoapifyResult,
+} from '../../src/main/services/geoapify-client';
 import { SettingsService } from '../../src/main/services/settings-service';
 import { createTestDb } from '../fixtures/db';
 import { QR_IBAN } from '../fixtures/invoice';
@@ -30,11 +34,19 @@ async function setup(
   options: { key?: string; secrets?: ReturnType<typeof createFakeSecretStore> } = {},
   client?: GeoapifyClient,
 ) {
-  const db = createTestDb();
+  const db = await createTestDb();
   const secrets = options.secrets ?? createFakeSecretStore();
   const settings = new SettingsService(db, secrets);
   await settings.save({
-    sender: { name: 'Muster AG', street: 'Weg', houseNo: '1', zip: '8000', city: 'Zürich', country: 'CH', iban: QR_IBAN },
+    sender: {
+      name: 'Muster AG',
+      street: 'Weg',
+      houseNo: '1',
+      zip: '8000',
+      city: 'Zürich',
+      country: 'CH',
+      iban: QR_IBAN,
+    },
     invoicePrefix: 'RE',
     defaultClosingText: null,
     defaultPaymentDays: 30,
@@ -60,12 +72,23 @@ describe('AddressService.suggest', () => {
     if (result.status !== 'ok') throw new Error('unreachable');
     expect(result.suggestions.length).toBeGreaterThan(0);
     expect(result.suggestions.length).toBeLessThanOrEqual(5);
-    expect(result.suggestions[0]).toMatchObject({ street: 'Bahnhofstrasse', zip: '8001', country: 'CH' });
+    expect(result.suggestions[0]).toMatchObject({
+      street: 'Bahnhofstrasse',
+      zip: '8001',
+      country: 'CH',
+    });
     expect(calls).toEqual([{ text: 'Bahnhofstr 1 Zür', apiKey: KEY }]);
   });
 
   it('kürzt die Liste auf höchstens 5 Vorschläge', async () => {
-    const many = { results: Array.from({ length: 9 }, (_, i) => ({ street: `S${i}`, postcode: '8000', city: 'Z', country_code: 'ch' })) };
+    const many = {
+      results: Array.from({ length: 9 }, (_, i) => ({
+        street: `S${i}`,
+        postcode: '8000',
+        city: 'Z',
+        country_code: 'ch',
+      })),
+    };
     const { client } = fakeClient({ ok: true, body: many });
     const { service } = await setup({ key: KEY }, client);
     const result = await service.suggest('abc');
@@ -114,8 +137,10 @@ describe('AddressService.testKey', () => {
     const { service, calls, db, secrets } = await setup();
     await service.testKey(`  ${KEY} `);
     expect(calls).toEqual([{ text: 'Bahnhofstrasse', apiKey: KEY }]);
-    const row = db.prepare('SELECT geoapify_api_key AS key FROM settings WHERE id = 1').get() as { key: Buffer | null };
-    expect(row.key).toBeNull();
+    const rows = (await db.query('SELECT geoapify_api_key AS key FROM settings WHERE id = 1')) as {
+      key: Buffer | null;
+    }[];
+    expect(rows[0]?.key).toBeNull();
     expect(await secrets.isAvailable()).toBe(true);
   });
 });

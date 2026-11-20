@@ -16,6 +16,6 @@ export const settingsSchema: z.ZodType<SettingsInput> = z.object({
   invoicePrefix: text(100),
   defaultClosingText: text(10000).nullable(),
   defaultPaymentDays: z.number(),
-  // nicht angegeben = unverändert, '' = entfernen
+  // not specified = unchanged, '' = remove
   geoapifyApiKey: text(500).optional(),
 });

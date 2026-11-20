@@ -1,10 +1,10 @@
 import { contextBridge, ipcRenderer } from 'electron';
-import { CHANNELS, type SwissbillApi } from '../shared/ipc/api';
-import { isMenuAction, MENU_EVENT } from '../shared/ipc/menu';
+import { CHANNELS, type SwissbillApi } from '@shared/ipc/api';
+import { isMenuAction, MENU_EVENT } from '@shared/ipc/menu';
 
 /**
- * Schmale, typisierte API für den Renderer. Es werden nur die hier aufgeführten Kanäle freigegeben;
- * `ipcRenderer` selbst wird nie exponiert.
+ * Narrow, typed API for the renderer. Only the channels listed here are exposed;
+ * `ipcRenderer` itself is never exposed.
  */
 const api: SwissbillApi = {
   app: {

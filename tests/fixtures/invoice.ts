@@ -1,8 +1,13 @@
-import { LAYOUT_VERSION, type Invoice, type DraftInput, type InvoiceItem } from '@shared/domain/invoice';
+import {
+  LAYOUT_VERSION,
+  type Invoice,
+  type DraftInput,
+  type InvoiceItem,
+} from '@shared/domain/invoice';
 import { lineAmount } from '@shared/domain/money';
 import { buildCreditorReference, buildQrReference } from '@shared/domain/reference';
 
-/** Nur fiktive Daten (Constitution). Die QR-IBAN stammt aus den SIX-Beispielen. */
+/** Fictitious data only (constitution). The QR-IBAN comes from the SIX examples. */
 export const QR_IBAN = 'CH4431999123000889012';
 export const NORMAL_IBAN = 'CH9300762011623852957';
 
@@ -51,7 +56,7 @@ export function makeDraftInput(overrides: Partial<DraftInput> = {}): DraftInput 
   };
 }
 
-/** Eine ausgestellte Rechnung (Momentaufnahme), ohne Datenbank. */
+/** An issued invoice (snapshot), without a database. */
 export function makeIssuedInvoice(overrides: Partial<Invoice> = {}): Invoice {
   const base = makeInvoice();
   const qr = (overrides.sender ?? base.sender).iban === QR_IBAN;
@@ -68,7 +73,7 @@ export function makeIssuedInvoice(overrides: Partial<Invoice> = {}): Invoice {
   });
 }
 
-/** Eine vollständige, gültige Rechnung (Entwurf). */
+/** A complete, valid invoice (draft). */
 export function makeInvoice(overrides: Partial<Invoice> = {}): Invoice {
   const input = makeDraftInput();
   const items = input.items.map((i) => makeItem(i.description, i.quantityMilli, i.unitPriceRappen));

@@ -2,10 +2,10 @@ import { isQrIban, mod97 } from './iban';
 
 export type ReferenceType = 'QRR' | 'SCOR';
 
-/** Tabelle für Modulo 10 rekursiv (ISR/QR-Referenz). */
+/** Table for recursive modulo 10 (ISR/QR reference). */
 const MOD10_TABLE = [0, 9, 4, 6, 8, 2, 7, 1, 3, 5] as const;
 
-/** Prüfziffer einer QR-Referenz aus den ersten 26 Ziffern (Modulo 10 rekursiv). */
+/** Check digit of a QR reference from the first 26 digits (recursive modulo 10). */
 export function qrrCheckDigit(digits: string): number {
   let carry = 0;
   for (const char of digits) {
@@ -24,8 +24,8 @@ function assertYearAndSeq(year: number, seq: number): void {
 }
 
 /**
- * QR-Referenz (27 Ziffern): Jahr, links mit Nullen aufgefüllter Zähler (zusammen 26 Ziffern), Prüfziffer.
- * Der Präfix der Rechnungsnummer fliesst nicht ein.
+ * QR reference (27 digits): year, counter padded with zeros on the left (together 26 digits), check digit.
+ * The prefix of the invoice number is not included.
  */
 export function buildQrReference(year: number, seq: number): string {
   assertYearAndSeq(year, seq);
@@ -33,15 +33,15 @@ export function buildQrReference(year: number, seq: number): string {
   return payload + qrrCheckDigit(payload);
 }
 
-/** Prüfziffern (2 Stellen) einer Creditor Reference nach ISO 11649 / Mod 97-10. */
+/** Check digits (2 digits) of a creditor reference according to ISO 11649 / mod 97-10. */
 export function creditorCheckDigits(payload: string): string {
   const check = 98 - mod97(`${payload}RF00`);
   return String(check).padStart(2, '0');
 }
 
 /**
- * Creditor Reference (ISO 11649): `RF` + 2 Prüfziffern + Jahr + mindestens vierstelliger Zähler.
- * Der Präfix der Rechnungsnummer fliesst nicht ein.
+ * Creditor reference (ISO 11649): `RF` + 2 check digits + year + counter of at least four digits.
+ * The prefix of the invoice number is not included.
  */
 export function buildCreditorReference(year: number, seq: number): string {
   assertYearAndSeq(year, seq);
@@ -49,12 +49,12 @@ export function buildCreditorReference(year: number, seq: number): string {
   return `RF${creditorCheckDigits(payload)}${payload}`;
 }
 
-/** QR-IBAN führt zu QR-Referenz (QRR), jede andere IBAN zu Creditor Reference (SCOR). */
+/** A QR-IBAN leads to a QR reference (QRR), any other IBAN to a creditor reference (SCOR). */
 export function referenceTypeFor(iban: string): ReferenceType {
   return isQrIban(iban) ? 'QRR' : 'SCOR';
 }
 
-/** Liefert eine deutsche Fehlermeldung oder `null`, wenn die Referenz zum Typ passt. */
+/** Returns a German error message or `null` if the reference matches the type. */
 export function validateReference(type: ReferenceType, reference: string): string | null {
   const ref = reference.replace(/\s+/g, '').toUpperCase();
   if (type === 'QRR') {

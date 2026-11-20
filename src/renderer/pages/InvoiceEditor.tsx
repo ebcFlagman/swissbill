@@ -1,15 +1,23 @@
-import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState, type ChangeEvent } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useEffectEvent,
+  useMemo,
+  useRef,
+  useState,
+  type ChangeEvent,
+} from 'react';
 import { Button } from '@primereact/ui/button';
 import { Message } from '@primereact/ui/message';
 import { Textarea } from '@primereact/ui/textarea';
 import { InputText } from '@primereact/ui/inputtext';
-import type { Address } from '../../shared/domain/address';
-import type { Customer } from '../../shared/domain/customer';
-import { formatIban } from '../../shared/domain/iban';
-import type { Settings } from '../../shared/domain/settings';
-import type { Invoice, Sender } from '../../shared/domain/invoice';
-import { formatChf } from '../../shared/domain/money';
-import type { AppError, FieldError } from '../../shared/ipc/errors';
+import type { Address } from '@shared/domain/address';
+import type { Customer } from '@shared/domain/customer';
+import { formatIban } from '@shared/domain/iban';
+import type { Settings } from '@shared/domain/settings';
+import type { Invoice, Sender } from '@shared/domain/invoice';
+import { formatChf } from '@shared/domain/money';
+import type { AppError, FieldError } from '@shared/ipc/errors';
 import { AddressFields } from '../components/AddressFields';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Field } from '../components/Field';
@@ -30,11 +38,11 @@ import { notifyError, notifySuccess } from '../lib/notify';
 interface InvoiceEditorProps {
   invoiceId: number;
   onBack: () => void;
-  /** Öffnet eine andere Rechnung (z. B. das Duplikat) */
+  /** Opens another invoice (e.g. the duplicate) */
   onOpenInvoice: (id: number) => void;
 }
 
-/** Autosave von Entwürfen nach dieser Zeit ohne Eingabe */
+/** Autosave of drafts after this time without input */
 const AUTOSAVE_MS = 1500;
 
 function toMap(errors: FieldError[]): Record<string, string> {
@@ -59,9 +67,12 @@ export function InvoiceEditor({ invoiceId, onBack, onOpenInvoice }: InvoiceEdito
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [defaults, setDefaults] = useState<Settings | null>(null);
   const dirty = useRef(false);
-  const latest = useRef<{ form: InvoiceForm | null; invoice: Invoice | null }>({ form: null, invoice: null });
+  const latest = useRef<{ form: InvoiceForm | null; invoice: Invoice | null }>({
+    form: null,
+    invoice: null,
+  });
 
-  // Beim Verlassen des Editors (Menü, Navigation) werden noch nicht gespeicherte Eingaben im Entwurf gesichert.
+  // When leaving the editor (menu, navigation), inputs not yet saved are stored in the draft.
   useEffect(() => {
     latest.current = { form, invoice };
   });
@@ -75,7 +86,7 @@ export function InvoiceEditor({ invoiceId, onBack, onOpenInvoice }: InvoiceEdito
     [invoiceId],
   );
 
-  // Kunden zur Auswahl und die Standardwerte zum Zurücksetzen
+  // Customers for the selection and the default values for resetting
   useEffect(() => {
     let cancelled = false;
     void Promise.all([window.swissbill.customers.list({}), window.swissbill.settings.get()]).then(
@@ -119,8 +130,8 @@ export function InvoiceEditor({ invoiceId, onBack, onOpenInvoice }: InvoiceEdito
     setForm((current) => (current ? { ...current, ...changes } : current));
   }, []);
 
-  // Entwürfe werden nach kurzer Pause automatisch gespeichert. Fehler (z. B. unvollständige Eingaben)
-  // bleiben still; die Meldungen erscheinen beim ausdrücklichen Speichern oder Ausstellen.
+  // Drafts are saved automatically after a short pause. Errors (e.g. incomplete inputs)
+  // stay silent; the messages appear on explicit saving or issuing.
   const autosave = useEffectEvent(async () => {
     if (!form || !invoice || invoice.status !== 'draft' || busy || !dirty.current) return;
     dirty.current = false;
@@ -155,7 +166,7 @@ export function InvoiceEditor({ invoiceId, onBack, onOpenInvoice }: InvoiceEdito
   const readOnly = invoice.status !== 'draft';
   const total = formTotal(form);
 
-  /** Speichert den Entwurf; liefert `true`, wenn er gespeichert ist. */
+  /** Saves the draft; returns `true` if it is saved. */
   async function save(): Promise<boolean> {
     if (!form) return false;
     const result = await window.swissbill.invoices.saveDraft(toDraftInput(invoiceId, form));
@@ -275,17 +286,31 @@ export function InvoiceEditor({ invoiceId, onBack, onOpenInvoice }: InvoiceEdito
           {readOnly ? (
             <>
               {invoice.status === 'issued' ? (
-                <Button variant="outlined" onClick={() => void changeStatus('markPaid', 'Als bezahlt markiert.')} disabled={busy}>
+                <Button
+                  variant="outlined"
+                  onClick={() => void changeStatus('markPaid', 'Als bezahlt markiert.')}
+                  disabled={busy}
+                >
                   Als bezahlt markieren
                 </Button>
               ) : null}
               {invoice.status === 'paid' ? (
-                <Button variant="outlined" severity="secondary" onClick={() => void changeStatus('reopen', 'Zurückgesetzt auf ausgestellt.')} disabled={busy}>
+                <Button
+                  variant="outlined"
+                  severity="secondary"
+                  onClick={() => void changeStatus('reopen', 'Zurückgesetzt auf ausgestellt.')}
+                  disabled={busy}
+                >
                   Zurücksetzen
                 </Button>
               ) : null}
               {invoice.status === 'issued' || invoice.status === 'paid' ? (
-                <Button variant="outlined" severity="danger" onClick={() => setCancelOpen(true)} disabled={busy}>
+                <Button
+                  variant="outlined"
+                  severity="danger"
+                  onClick={() => setCancelOpen(true)}
+                  disabled={busy}
+                >
                   Stornieren
                 </Button>
               ) : null}
@@ -332,7 +357,8 @@ export function InvoiceEditor({ invoiceId, onBack, onOpenInvoice }: InvoiceEdito
         <Message.Root severity="error" role="alert">
           <Message.Content>
             <Message.Text>
-              Die Rechnung kann noch nicht ausgestellt werden. Bitte die markierten Felder prüfen ({errorList.length}).
+              Die Rechnung kann noch nicht ausgestellt werden. Bitte die markierten Felder prüfen (
+              {errorList.length}).
             </Message.Text>
           </Message.Content>
         </Message.Root>
@@ -342,7 +368,13 @@ export function InvoiceEditor({ invoiceId, onBack, onOpenInvoice }: InvoiceEdito
         <div className="card-header">
           <h2>Absender</h2>
           {!readOnly && defaults ? (
-            <Button variant="text" severity="secondary" onClick={() => patch({ sender: { ...defaults.sender, iban: formatIban(defaults.sender.iban) } })}>
+            <Button
+              variant="text"
+              severity="secondary"
+              onClick={() =>
+                patch({ sender: { ...defaults.sender, iban: formatIban(defaults.sender.iban) } })
+              }
+            >
               Auf Standard zurücksetzen
             </Button>
           ) : null}
@@ -398,10 +430,12 @@ export function InvoiceEditor({ invoiceId, onBack, onOpenInvoice }: InvoiceEdito
           errors={errors}
           disabled={readOnly}
         />
-        {!readOnly && form.debtor.name.trim() !== '' && (form.debtor.zip.trim() === '' || form.debtor.city.trim() === '') ? (
+        {!readOnly &&
+        form.debtor.name.trim() !== '' &&
+        (form.debtor.zip.trim() === '' || form.debtor.city.trim() === '') ? (
           <p className="hint" data-testid="debtor-qr-hint">
-            Ohne PLZ und Ort steht der Empfänger nicht im QR-Zahlteil (das Feld «Zahlbar durch» bleibt dort leer).
-            Auf der Rechnung erscheint er trotzdem.
+            Ohne PLZ und Ort steht der Empfänger nicht im QR-Zahlteil (das Feld «Zahlbar durch»
+            bleibt dort leer). Auf der Rechnung erscheint er trotzdem.
           </p>
         ) : null}
       </div>
@@ -409,13 +443,20 @@ export function InvoiceEditor({ invoiceId, onBack, onOpenInvoice }: InvoiceEdito
       <div className="card">
         <h2>Rechnung</h2>
         <div className="grid">
-          <Field label="Rechnungsdatum" htmlFor="invoiceDate" error={errors['invoiceDate']} className="span-3">
+          <Field
+            label="Rechnungsdatum"
+            htmlFor="invoiceDate"
+            error={errors['invoiceDate']}
+            className="span-3"
+          >
             <InputText
               id="invoiceDate"
               type="date"
               fluid
               value={form.invoiceDate}
-              onChange={(e: ChangeEvent<HTMLInputElement>) => patch({ invoiceDate: e.target.value })}
+              onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                patch({ invoiceDate: e.target.value })
+              }
               invalid={!!errors['invoiceDate']}
               disabled={readOnly}
             />
@@ -436,7 +477,12 @@ export function InvoiceEditor({ invoiceId, onBack, onOpenInvoice }: InvoiceEdito
 
       <div className="card">
         <h2>Positionen</h2>
-        <ItemsTable items={form.items} onChange={(items) => patch({ items })} errors={errors} disabled={readOnly} />
+        <ItemsTable
+          items={form.items}
+          onChange={(items) => patch({ items })}
+          errors={errors}
+          disabled={readOnly}
+        />
         <div className="total-row">
           <span>Total CHF</span>
           <strong data-testid="total">{formatChf(total)}</strong>
@@ -461,12 +507,18 @@ export function InvoiceEditor({ invoiceId, onBack, onOpenInvoice }: InvoiceEdito
             </Button>
           ) : null}
         </div>
-        <Field label="Text unter der Positionstabelle (optional)" htmlFor="closingText" error={errors['closingText']}>
+        <Field
+          label="Text unter der Positionstabelle (optional)"
+          htmlFor="closingText"
+          error={errors['closingText']}
+        >
           <Textarea
             id="closingText"
             rows={3}
             value={form.closingText}
-            onChange={(e: ChangeEvent<HTMLTextAreaElement>) => patch({ closingText: e.target.value })}
+            onChange={(e: ChangeEvent<HTMLTextAreaElement>) =>
+              patch({ closingText: e.target.value })
+            }
             disabled={readOnly}
           />
         </Field>
@@ -496,12 +548,17 @@ export function InvoiceEditor({ invoiceId, onBack, onOpenInvoice }: InvoiceEdito
         onCancel={() => setCancelOpen(false)}
       >
         <p>
-          Die Rechnung {invoice.number} wird storniert. <strong>Das kann nicht rückgängig gemacht werden.</strong> Die
-          Nummer bleibt vergeben und die Rechnung bleibt in der Liste sichtbar. Das PDF zeigt danach «STORNIERT» und
-          enthält keinen Zahlteil mehr.
+          Die Rechnung {invoice.number} wird storniert.{' '}
+          <strong>Das kann nicht rückgängig gemacht werden.</strong> Die Nummer bleibt vergeben und
+          die Rechnung bleibt in der Liste sichtbar. Das PDF zeigt danach «STORNIERT» und enthält
+          keinen Zahlteil mehr.
         </p>
       </ConfirmDialog>
-      <PdfPreviewDialog invoiceId={invoiceId} open={previewOpen} onClose={() => setPreviewOpen(false)} />
+      <PdfPreviewDialog
+        invoiceId={invoiceId}
+        open={previewOpen}
+        onClose={() => setPreviewOpen(false)}
+      />
     </section>
   );
 }

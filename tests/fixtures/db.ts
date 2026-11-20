@@ -1,19 +1,21 @@
-import type Database from 'better-sqlite3';
-import { openDatabase } from '../../src/main/db/connection';
-import { loadMigrations, migrate } from '../../src/main/db/migrate';
+import 'reflect-metadata';
+import type { DataSource } from 'typeorm';
+import { openAndMigrate } from '../../src/main/db/startup';
 import { InvoiceService } from '../../src/main/services/invoice-service';
 import type { Invoice } from '@shared/domain/invoice';
 import { makeDraftInput } from './invoice';
 
-export function createTestDb(): Database.Database {
-  const db = openDatabase(':memory:');
-  migrate(db, loadMigrations());
-  return db;
+/** Fresh, fully migrated in-memory database. */
+export function createTestDb(): Promise<DataSource> {
+  return openAndMigrate(':memory:');
 }
 
-export function createService(db: Database.Database, clock: () => Date = () => new Date(2026, 2, 1, 10, 0)) {
+export function createService(
+  dataSource: DataSource,
+  clock: () => Date = () => new Date(2026, 2, 1, 10, 0),
+) {
   let current = clock;
-  const service = new InvoiceService(db, { now: () => current() });
+  const service = new InvoiceService(dataSource, { now: () => current() });
   return {
     service,
     setClock(next: () => Date) {
@@ -22,11 +24,11 @@ export function createService(db: Database.Database, clock: () => Date = () => n
   };
 }
 
-/** Legt einen vollständig gefüllten Entwurf an (gültige fiktive Daten). */
-export function createFilledDraft(
+/** Creates a completely filled draft (valid fictitious data). */
+export async function createFilledDraft(
   service: InvoiceService,
   overrides: Parameters<typeof makeDraftInput>[0] = {},
-): Invoice {
-  const draft = service.createDraft();
+): Promise<Invoice> {
+  const draft = await service.createDraft();
   return service.saveDraft(makeDraftInput({ ...overrides, id: draft.id }));
 }

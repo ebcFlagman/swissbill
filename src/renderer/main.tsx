@@ -5,11 +5,11 @@ import Aura from '@primeuix/themes/aura';
 import { de } from 'primelocale/js/de.js';
 import { App } from './App';
 
-// PrimeReact 11 verlangt einen Lizenzschlüssel (Community License). Er steht in `.env.local`
-// (VITE_PRIMEUI_LICENSE) und wird nicht committet; die Prüfung läuft offline.
+// PrimeReact 11 requires a license key (Community License). It is in `.env.local`
+// (VITE_PRIMEUI_LICENSE) and is not committed; the check runs offline.
 const license = import.meta.env.VITE_PRIMEUI_LICENSE;
 
-// `primelocale` kennt die Einträge `toggleSidebar` und `filter` noch nicht, PrimeReact 11 verlangt sie.
+// `primelocale` does not know the entries `toggleSidebar` and `filter` yet, PrimeReact 11 requires them.
 const deLocale = {
   ...de,
   aria: { ...de.aria, toggleSidebar: 'Seitenleiste umschalten', filter: 'Filter' },

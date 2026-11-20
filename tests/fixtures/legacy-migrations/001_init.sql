@@ -1,8 +1,8 @@
--- 001_init: Grundschema gemäss specs/001-swiss-qr-invoices/data-model.md
--- Beträge: ganze Rappen (INTEGER). Mengen: Tausendstel (INTEGER). Zeitpunkte: ISO-8601 (UTC).
+-- 001_init: base schema according to specs/001-swiss-qr-invoices/data-model.md
+-- Amounts: whole rappen (INTEGER). Quantities: thousandths (INTEGER). Timestamps: ISO-8601 (UTC).
 
 -- ---------------------------------------------------------------------------
--- Globale Einstellungen (genau eine Zeile)
+-- Global settings (exactly one row)
 -- ---------------------------------------------------------------------------
 CREATE TABLE settings (
   id                   INTEGER PRIMARY KEY CHECK (id = 1),
@@ -24,7 +24,7 @@ CREATE TABLE settings (
 INSERT INTO settings (id) VALUES (1);
 
 -- ---------------------------------------------------------------------------
--- Kunden
+-- Customers
 -- ---------------------------------------------------------------------------
 CREATE TABLE customers (
   id         INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -40,9 +40,9 @@ CREATE TABLE customers (
 );
 
 -- ---------------------------------------------------------------------------
--- Rechnungen (jede Rechnung trägt ihre eigene Momentaufnahme von Absender, Schuldner, Schlusstext)
--- Bei Entwürfen dürfen sender_*, debtor_* und closing_text leer/NULL sein und total_rappen 0 sein;
--- die Pflichtprüfung läuft beim Ausstellen.
+-- Invoices (each invoice carries its own snapshot of sender, debtor, closing text)
+-- For drafts sender_*, debtor_* and closing_text may be empty/NULL and total_rappen may be 0;
+-- the mandatory check runs on issuing.
 -- ---------------------------------------------------------------------------
 CREATE TABLE invoices (
   id              INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -82,7 +82,7 @@ CREATE TABLE invoices (
   updated_at      TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
 
   CHECK (due_date >= invoice_date),
-  -- Entwürfe haben keine Nummer; alle anderen Rechnungen sind vollständig festgeschrieben.
+  -- Drafts have no number; all other invoices are completely fixed.
   CHECK (status <> 'draft' OR number IS NULL),
   CHECK (status = 'draft' OR (number IS NOT NULL AND number_year IS NOT NULL
                               AND number_seq IS NOT NULL AND reference IS NOT NULL
@@ -94,7 +94,7 @@ CREATE INDEX idx_invoices_status_date ON invoices (status, invoice_date);
 CREATE INDEX idx_invoices_debtor_name ON invoices (debtor_name);
 
 -- ---------------------------------------------------------------------------
--- Positionen
+-- Items
 -- ---------------------------------------------------------------------------
 CREATE TABLE invoice_items (
   id                INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -108,7 +108,7 @@ CREATE TABLE invoice_items (
 );
 
 -- ---------------------------------------------------------------------------
--- Rechnungsnummern-Zähler pro Jahr (Jahr der Ausstellung)
+-- Invoice number counter per year (year of issuing)
 -- ---------------------------------------------------------------------------
 CREATE TABLE number_counters (
   year     INTEGER PRIMARY KEY,
@@ -116,10 +116,10 @@ CREATE TABLE number_counters (
 );
 
 -- ---------------------------------------------------------------------------
--- Unveränderlichkeit (Constitution Prinzip III)
--- Die Trigger prüfen den ALTEN Status; der Übergang draft -> issued bleibt dadurch erlaubt.
--- Nach dem Ausstellen dürfen nur status, paid_at, cancelled_at, updated_at und customer_id
--- (Herkunftshinweis, wird bei Kundenlöschung auf NULL gesetzt) geändert werden.
+-- Immutability (constitution principle III)
+-- The triggers check the OLD status; the transition draft -> issued therefore stays allowed.
+-- After issuing only status, paid_at, cancelled_at, updated_at and customer_id may change
+-- (origin hint, set to NULL when a customer is deleted).
 -- ---------------------------------------------------------------------------
 CREATE TRIGGER invoices_immutable_update
 BEFORE UPDATE ON invoices
@@ -161,7 +161,7 @@ BEGIN
   SELECT RAISE(ABORT, 'IMMUTABLE: Eine ausgestellte Rechnung kann nicht gelöscht werden.');
 END;
 
--- Erlaubte Statusübergänge: draft->issued, issued->paid, paid->issued, issued->cancelled, paid->cancelled
+-- Allowed status transitions: draft->issued, issued->paid, paid->issued, issued->cancelled, paid->cancelled
 CREATE TRIGGER invoices_status_transition
 BEFORE UPDATE OF status ON invoices
 WHEN NEW.status <> OLD.status

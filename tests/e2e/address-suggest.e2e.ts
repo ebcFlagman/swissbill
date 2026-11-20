@@ -6,7 +6,10 @@ const OPTION = 'Bahnhofstrasse 1, 8001 Zürich, Schweiz';
 
 test('Adressvorschlag wählen füllt Strasse, Nr., PLZ, Ort und Land; Name bleibt; alles bleibt änderbar', async () => {
   const fake = await startFakeGeoapify();
-  const launched = await launchApp(undefined, { ...FAKE_ENV, SWISSBILL_GEOAPIFY_BASE_URL: fake.url });
+  const launched = await launchApp(undefined, {
+    ...FAKE_ENV,
+    SWISSBILL_GEOAPIFY_BASE_URL: fake.url,
+  });
   try {
     const { app, page } = launched;
     await setupSettings(app, page, 'test-key-0123456789');
@@ -15,7 +18,7 @@ test('Adressvorschlag wählen füllt Strasse, Nr., PLZ, Ort und Land; Name bleib
     await page.getByRole('button', { name: 'Neue Rechnung' }).click();
     await page.locator('#debtor-name').fill('Pia Muster');
 
-    // Maus: Vorschläge erscheinen ab 3 Zeichen
+    // Mouse: suggestions appear from 3 characters
     await page.locator('#debtor-street').pressSequentially('Bahnhofstr 1 Zür');
     await expect(page.getByRole('option', { name: OPTION })).toBeVisible();
     await page.getByRole('option', { name: OPTION }).click();
@@ -27,12 +30,12 @@ test('Adressvorschlag wählen füllt Strasse, Nr., PLZ, Ort und Land; Name bleib
     await expect(page.locator('#debtor-country')).toHaveValue('CH');
     await expect(page.locator('#debtor-name')).toHaveValue('Pia Muster');
 
-    // Danach von Hand änderbar, nichts wird zurückgesetzt
+    // Afterwards editable by hand, nothing is reset
     await page.locator('#debtor-city').fill('Zürich-Enge');
     await expect(page.locator('#debtor-city')).toHaveValue('Zürich-Enge');
     await expect(page.locator('#debtor-street')).toHaveValue('Bahnhofstrasse');
 
-    // Tastatur: Pfeiltasten, Enter, Escape
+    // Keyboard: arrow keys, Enter, Escape
     await page.locator('#debtor-street').fill('');
     await page.locator('#debtor-street').pressSequentially('Bahnhofq');
     await expect(page.getByRole('option', { name: /Zürich/ }).first()).toBeVisible();
@@ -44,7 +47,7 @@ test('Adressvorschlag wählen füllt Strasse, Nr., PLZ, Ort und Land; Name bleib
     await expect(page.locator('#debtor-zip')).toHaveValue(/^800[12]$/);
     await expect(page.locator('#debtor-name')).toHaveValue('Pia Muster');
 
-    // Ab 3 Zeichen: zu kurze Eingabe sendet nichts
+    // From 3 characters: input that is too short sends nothing
     const before = fake.requests.length;
     await page.locator('#debtor-street').fill('');
     await page.locator('#debtor-street').pressSequentially('Ba');
@@ -58,7 +61,10 @@ test('Adressvorschlag wählen füllt Strasse, Nr., PLZ, Ort und Land; Name bleib
 
 test('Vorschläge gibt es auch beim Absender (Einstellungen) und beim Kunden', async () => {
   const fake = await startFakeGeoapify();
-  const launched = await launchApp(undefined, { ...FAKE_ENV, SWISSBILL_GEOAPIFY_BASE_URL: fake.url });
+  const launched = await launchApp(undefined, {
+    ...FAKE_ENV,
+    SWISSBILL_GEOAPIFY_BASE_URL: fake.url,
+  });
   try {
     const { app, page } = launched;
     await setupSettings(app, page, 'test-key-0123456789');

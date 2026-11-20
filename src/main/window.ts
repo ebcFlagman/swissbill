@@ -11,13 +11,13 @@ export function hardenSession(): void {
   ses.setPermissionRequestHandler((_webContents, _permission, callback) => callback(false));
 }
 
-/** Seitenhintergrund passend zu `--page-bg` in styles.css (verhindert Aufblitzen vor dem ersten Rendern). */
+/** Page background matching `--page-bg` in styles.css (prevents a flash before the first render). */
 function backgroundColor(): string {
   return nativeTheme.shouldUseDarkColors ? '#09090b' : '#f8fafc';
 }
 
 export function createMainWindow(): BrowserWindow {
-  // Hell/Dunkel folgt dem System (Standardverhalten ausdrücklich festhalten)
+  // Light/dark follows the system (explicitly record the default behavior)
   nativeTheme.themeSource = 'system';
 
   const win = new BrowserWindow({
@@ -35,19 +35,19 @@ export function createMainWindow(): BrowserWindow {
       sandbox: true,
       webSecurity: true,
       allowRunningInsecureContent: false,
-      // Entwicklerwerkzeuge nur im Entwicklungsmodus
+      // Developer tools only in development mode
       devTools: !app.isPackaged,
     },
   });
 
   win.once('ready-to-show', () => win.show());
 
-  // Wechselt das System zwischen hell und dunkel, folgt auch der Fensterhintergrund.
+  // When the system switches between light and dark, the window background follows too.
   const onThemeChanged = () => win.setBackgroundColor(backgroundColor());
   nativeTheme.on('updated', onThemeChanged);
   win.on('closed', () => nativeTheme.removeListener('updated', onThemeChanged));
 
-  // Keine Navigation weg von der App und keine neuen Fenster.
+  // No navigation away from the app and no new windows.
   const devOrigin = readDevOrigin();
   win.webContents.on('will-navigate', (event, url) => {
     if (!(devOrigin && url.startsWith(devOrigin))) event.preventDefault();

@@ -1,6 +1,6 @@
 import { Button } from '@primereact/ui/button';
 import { Dialog } from '@primereact/ui/dialog';
-import { formatChf } from '../../shared/domain/money';
+import { formatChf } from '@shared/domain/money';
 
 interface ConfirmIssueDialogProps {
   open: boolean;
@@ -10,10 +10,19 @@ interface ConfirmIssueDialogProps {
   onCancel: () => void;
 }
 
-/** Bestätigung vor dem Ausstellen: danach ist die Rechnung unveränderlich. */
-export function ConfirmIssueDialog({ open, totalRappen, busy, onConfirm, onCancel }: ConfirmIssueDialogProps) {
+/** Confirmation before issuing: afterwards the invoice is immutable. */
+export function ConfirmIssueDialog({
+  open,
+  totalRappen,
+  busy,
+  onConfirm,
+  onCancel,
+}: ConfirmIssueDialogProps) {
   return (
-    <Dialog.Root open={open} onOpenChange={(event: { value?: boolean | undefined }) => !event.value && !busy && onCancel()}>
+    <Dialog.Root
+      open={open}
+      onOpenChange={(event: { value?: boolean | undefined }) => !event.value && !busy && onCancel()}
+    >
       <Dialog.Portal>
         <Dialog.Positioner>
           <Dialog.Popup style={{ width: '30rem' }}>
@@ -23,8 +32,8 @@ export function ConfirmIssueDialog({ open, totalRappen, busy, onConfirm, onCance
             <Dialog.Content>
               <p>
                 Beim Ausstellen erhält die Rechnung ihre Nummer und die Zahlungsreferenz (Total CHF{' '}
-                {formatChf(totalRappen)}). <strong>Danach ist die Rechnung unveränderlich.</strong> Korrekturen sind nur über
-                Duplizieren oder Stornieren möglich.
+                {formatChf(totalRappen)}). <strong>Danach ist die Rechnung unveränderlich.</strong>{' '}
+                Korrekturen sind nur über Duplizieren oder Stornieren möglich.
               </p>
               <div className="dialog-actions">
                 <Button severity="secondary" variant="outlined" onClick={onCancel} disabled={busy}>
@@ -50,10 +59,13 @@ interface IssuedDialogProps {
   onClose: () => void;
 }
 
-/** Nach dem Ausstellen: Nummer anzeigen und PDF speichern oder öffnen. */
+/** After issuing: show the number and save or open the PDF. */
 export function IssuedDialog({ open, number, onSave, onOpen, onClose }: IssuedDialogProps) {
   return (
-    <Dialog.Root open={open} onOpenChange={(event: { value?: boolean | undefined }) => !event.value && onClose()}>
+    <Dialog.Root
+      open={open}
+      onOpenChange={(event: { value?: boolean | undefined }) => !event.value && onClose()}
+    >
       <Dialog.Portal>
         <Dialog.Positioner>
           <Dialog.Popup style={{ width: '30rem' }}>

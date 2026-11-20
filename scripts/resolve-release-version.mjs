@@ -1,12 +1,12 @@
-// Validiert eine Release-Version (SemVer) und leitet Tag und Vorabversions-Status ab.
-// Aufruf in der Release-Pipeline: node scripts/resolve-release-version.mjs <version|tag>
+// Validates a release version (SemVer) and derives the tag and pre-release status.
+// Called in the release pipeline: node scripts/resolve-release-version.mjs <version|tag>
 import { appendFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 const SEMVER = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(-[0-9A-Za-z.-]+)?$/;
 
 /**
- * @param {string | undefined} input Version mit oder ohne führendes «v»
+ * @param {string | undefined} input Version with or without a leading "v"
  * @returns {{ version: string, tag: string, prerelease: boolean }}
  */
 export function resolveReleaseVersion(input) {

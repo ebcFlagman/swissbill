@@ -1,20 +1,20 @@
 import type { Address } from './address';
 
-/** Ab dieser Länge (nach dem Trimmen) wird nach Vorschlägen gesucht. */
+/** From this length (after trimming) suggestions are searched. */
 export const MIN_QUERY_LENGTH = 3;
 
-/** Höchstzahl der angezeigten Vorschläge. */
+/** Maximum number of suggestions shown. */
 export const MAX_SUGGESTIONS = 5;
 
-/** Ein vorübergehendes Suchergebnis; wird nie gespeichert, sondern nur in die Adressfelder übernommen. */
+/** A temporary search result; never stored, only taken over into the address fields. */
 export interface AddressSuggestion {
-  /** Anzeigezeile, z. B. «Bahnhofstrasse 1, 8001 Zürich, Schweiz» */
+  /** Display line, e.g. "Bahnhofstrasse 1, 8001 Zürich, Schweiz" */
   label: string;
   street: string;
   houseNo: string;
   zip: string;
   city: string;
-  /** ISO-3166-Alpha-2, gross */
+  /** ISO 3166 alpha-2, upper case */
   country: string;
 }
 
@@ -27,8 +27,8 @@ function str(value: unknown): string {
 }
 
 /**
- * Bildet die Antwort des Dienstes (`format=json`) auf Vorschläge ab. Treffer ohne PLZ und Ort sind keine
- * Adressen (z. B. nur ein Land) und werden verworfen. Werte werden nie gekürzt oder korrigiert (Constitution I).
+ * Maps the response of the service (`format=json`) to suggestions. Hits without postal code and city are not
+ * addresses (e.g. only a country) and are discarded. Values are never shortened or corrected (constitution I).
  */
 export function toSuggestions(response: unknown): AddressSuggestion[] {
   const results = (response as { results?: unknown } | null)?.results;
@@ -42,7 +42,9 @@ export function toSuggestions(response: unknown): AddressSuggestion[] {
     const city = str(record['city']);
     if (zip === '' && city === '') continue;
     suggestions.push({
-      label: str(record['formatted']) || [str(record['street']), `${zip} ${city}`.trim()].filter(Boolean).join(', '),
+      label:
+        str(record['formatted']) ||
+        [str(record['street']), `${zip} ${city}`.trim()].filter(Boolean).join(', '),
       street: str(record['street']),
       houseNo: str(record['housenumber']),
       zip,
@@ -53,7 +55,7 @@ export function toSuggestions(response: unknown): AddressSuggestion[] {
   return suggestions;
 }
 
-/** Übernimmt einen gewählten Vorschlag: Strasse, Nr., PLZ, Ort und Land werden ersetzt, alles andere bleibt. */
+/** Takes over a chosen suggestion: street, number, postal code, city and country are replaced, everything else stays. */
 export function applySuggestion<T extends Address>(address: T, suggestion: AddressSuggestion): T {
   return {
     ...address,

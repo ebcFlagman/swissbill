@@ -19,11 +19,11 @@ Geprüft wurde die Musterrechnung `docs/muster-rechnung.pdf` (fiktive Daten, SIX
 `CH44 3199 9123 0008 8901 2`, QR-Referenz `21 00000 00003 13947 14300 09017`, Betrag CHF 1949.75, Zahlungspflichtiger mit
 vollständiger Adresse).
 
-| Prüfung | Datum | Werkzeug / App | Ergebnis |
-|---------|-------|----------------|----------|
-| QR-Code im SIX-Validator (Variante QR-IBAN + QRR) | 2026-10-30 | GEFEG.FX Check, Standard `QR;2.3;CH` | **bestanden**, «The file contains no errors» |
-| QR-Code scannen, Banking-App 1 | bis 2026-10-30 | Raiffeisen-App | **bestanden** (Variante nicht festgehalten) |
-| QR-Code scannen, Banking-App 2 | bis 2026-10-30 | PostFinance-App | **bestanden** (Variante nicht festgehalten) |
+| Prüfung                                           | Datum          | Werkzeug / App                       | Ergebnis                                     |
+| ------------------------------------------------- | -------------- | ------------------------------------ | -------------------------------------------- |
+| QR-Code im SIX-Validator (Variante QR-IBAN + QRR) | 2026-10-30     | GEFEG.FX Check, Standard `QR;2.3;CH` | **bestanden**, «The file contains no errors» |
+| QR-Code scannen, Banking-App 1                    | bis 2026-10-30 | Raiffeisen-App                       | **bestanden** (Variante nicht festgehalten)  |
+| QR-Code scannen, Banking-App 2                    | bis 2026-10-30 | PostFinance-App                      | **bestanden** (Variante nicht festgehalten)  |
 
 Hinweise zum SIX-Validator:
 
@@ -55,11 +55,11 @@ verglichen. Sie ist durch die Validierung des tatsächlich erzeugten QR-Codes we
 
 Manuell geprüft (Angaben des Benutzers, 2026-11-12) mit einem echten Geoapify-API-Key in der laufenden Anwendung:
 
-| Prüfung | Ergebnis |
-|---------|----------|
-| Vorschlag wählen füllt Strasse, Nr., PLZ, Ort und Land | **bestanden**, alles wurde ausgefüllt |
-| Falscher API-Key | **bestanden**, wird nicht akzeptiert und kann nicht verwendet werden (bestätigt die Zuordnung ungültiger Key → Fehlerfall) |
-| SC-001 (Adresse in unter 10 Sekunden) und SC-002 (Testadressen unter den ersten 5 Vorschlägen) | **erfüllt** |
+| Prüfung                                                                                        | Ergebnis                                                                                                                   |
+| ---------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| Vorschlag wählen füllt Strasse, Nr., PLZ, Ort und Land                                         | **bestanden**, alles wurde ausgefüllt                                                                                      |
+| Falscher API-Key                                                                               | **bestanden**, wird nicht akzeptiert und kann nicht verwendet werden (bestätigt die Zuordnung ungültiger Key → Fehlerfall) |
+| SC-001 (Adresse in unter 10 Sekunden) und SC-002 (Testadressen unter den ersten 5 Vorschlägen) | **erfüllt**                                                                                                                |
 
 Nicht festgehalten: der genaue HTTP-Statuscode bei ungültigem Key (angenommen 401 oder 403) und bei erschöpftem
 Kontingent (angenommen 429). Beides ist durch Tests mit einem Fake-Dienst abgedeckt.

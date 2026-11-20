@@ -1,7 +1,7 @@
 import type { ChangeEvent } from 'react';
 import { Button } from '@primereact/ui/button';
 import { InputText } from '@primereact/ui/inputtext';
-import { formatChf } from '../../shared/domain/money';
+import { formatChf } from '@shared/domain/money';
 import { emptyItem, itemAmount, type ItemForm } from '../lib/invoice-form';
 
 interface ItemsTableProps {
@@ -22,9 +22,15 @@ export function ItemsTable({ items, onChange, errors, disabled }: ItemsTableProp
         <thead>
           <tr>
             <th scope="col">Beschreibung</th>
-            <th scope="col" className="num">Menge</th>
-            <th scope="col" className="num">Einzelpreis (CHF)</th>
-            <th scope="col" className="num">Betrag (CHF)</th>
+            <th scope="col" className="num">
+              Menge
+            </th>
+            <th scope="col" className="num">
+              Einzelpreis (CHF)
+            </th>
+            <th scope="col" className="num">
+              Betrag (CHF)
+            </th>
             <th scope="col" aria-label="Aktionen" />
           </tr>
         </thead>
@@ -39,11 +45,17 @@ export function ItemsTable({ items, onChange, errors, disabled }: ItemsTableProp
                     aria-label={`Beschreibung Position ${index + 1}`}
                     fluid
                     value={item.description}
-                    onChange={(e: ChangeEvent<HTMLInputElement>) => update(index, { description: e.target.value })}
+                    onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                      update(index, { description: e.target.value })
+                    }
                     invalid={!!err('description')}
                     disabled={disabled}
                   />
-                  {err('description') ? <small className="field-error" role="alert">{err('description')}</small> : null}
+                  {err('description') ? (
+                    <small className="field-error" role="alert">
+                      {err('description')}
+                    </small>
+                  ) : null}
                 </td>
                 <td className="num">
                   <InputText
@@ -51,11 +63,17 @@ export function ItemsTable({ items, onChange, errors, disabled }: ItemsTableProp
                     inputMode="decimal"
                     className="num-input"
                     value={item.quantity}
-                    onChange={(e: ChangeEvent<HTMLInputElement>) => update(index, { quantity: e.target.value })}
+                    onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                      update(index, { quantity: e.target.value })
+                    }
                     invalid={!!err('quantity')}
                     disabled={disabled}
                   />
-                  {err('quantity') ? <small className="field-error" role="alert">{err('quantity')}</small> : null}
+                  {err('quantity') ? (
+                    <small className="field-error" role="alert">
+                      {err('quantity')}
+                    </small>
+                  ) : null}
                 </td>
                 <td className="num">
                   <InputText
@@ -63,11 +81,17 @@ export function ItemsTable({ items, onChange, errors, disabled }: ItemsTableProp
                     inputMode="decimal"
                     className="num-input"
                     value={item.unitPrice}
-                    onChange={(e: ChangeEvent<HTMLInputElement>) => update(index, { unitPrice: e.target.value })}
+                    onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                      update(index, { unitPrice: e.target.value })
+                    }
                     invalid={!!err('unitPrice')}
                     disabled={disabled}
                   />
-                  {err('unitPrice') ? <small className="field-error" role="alert">{err('unitPrice')}</small> : null}
+                  {err('unitPrice') ? (
+                    <small className="field-error" role="alert">
+                      {err('unitPrice')}
+                    </small>
+                  ) : null}
                 </td>
                 <td className="num amount" aria-label={`Betrag Position ${index + 1}`}>
                   {amount === null ? '–' : formatChf(amount)}
@@ -88,9 +112,17 @@ export function ItemsTable({ items, onChange, errors, disabled }: ItemsTableProp
           })}
         </tbody>
       </table>
-      {errors['items'] ? <small className="field-error" role="alert">{errors['items']}</small> : null}
+      {errors['items'] ? (
+        <small className="field-error" role="alert">
+          {errors['items']}
+        </small>
+      ) : null}
       <div className="items-actions">
-        <Button variant="outlined" onClick={() => onChange([...items, emptyItem()])} disabled={disabled}>
+        <Button
+          variant="outlined"
+          onClick={() => onChange([...items, emptyItem()])}
+          disabled={disabled}
+        >
           Position hinzufügen
         </Button>
       </div>
