@@ -11,6 +11,7 @@ import { BackupService } from '../services/backup-service';
 import { createGeoapifyClient, resolveBaseUrl } from '../services/geoapify-client';
 import { CustomerService } from '../services/customer-service';
 import { InvoiceService } from '../services/invoice-service';
+import { createLogService } from '../logging/log-service';
 import type { Recovery } from '../recovery';
 import type { ConnectionService } from '../services/connection-service';
 import { SettingsService } from '../services/settings-service';
@@ -24,12 +25,14 @@ import { registerDbHandlers } from './db';
 import { handle } from './handle';
 import { registerInvoiceHandlers } from './invoices';
 import { registerLockHandlers } from './locks';
+import { registerLogHandlers } from './log';
 import { registerPdfHandlers } from './pdf';
 import { registerSettingsHandlers } from './settings';
 
 /** Channels that must work before (or without) an open database; call once, before starting the database. */
 export function registerPreDatabaseIpc(connection: ConnectionService, recovery: Recovery): void {
   registerConnectionHandlers(connection, recovery);
+  registerLogHandlers(createLogService());
 }
 
 /**

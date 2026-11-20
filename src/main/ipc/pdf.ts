@@ -5,6 +5,7 @@ import { CHANNELS } from '@shared/ipc/api';
 import type { Invoice } from '@shared/domain/invoice';
 import { AppException } from '@shared/ipc/errors';
 import { pdfRequestSchema, type PdfRequest, type PdfSaveResult } from '@shared/ipc/invoices';
+import { getLogger } from '../logging';
 import type { InvoiceService } from '../services/invoice-service';
 import { renderInvoicePdf } from '../services/pdf-service';
 import { handle } from './handle';
@@ -18,6 +19,7 @@ async function write(path: string, data: Buffer): Promise<void> {
     await writeFile(path, data);
   } catch (error) {
     const reason = error instanceof Error ? error.message : String(error);
+    getLogger('pdf').error({ err: error }, 'PDF konnte nicht gespeichert werden');
     throw new AppException(
       'IO',
       `Die Datei konnte nicht gespeichert werden (${reason}). Die Rechnung bleibt unverändert.`,

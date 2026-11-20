@@ -4,6 +4,7 @@ import { Message } from '@primereact/ui/message';
 import type { DbConnectionState } from '@shared/ipc/db-connection';
 import { notifyError } from '../lib/notify';
 import { DbConnectionForm } from './DbConnectionForm';
+import { LogLevelSelect } from './LogLevelSelect';
 
 interface RecoveryViewProps {
   state: DbConnectionState;
@@ -65,10 +66,16 @@ export function RecoveryView({ state, onRecovered }: RecoveryViewProps) {
         </Button>
       </div>
       {showSettings ? (
-        <div className="card">
-          <h2>Datenbankverbindung</h2>
-          <DbConnectionForm />
-        </div>
+        <>
+          <div className="card">
+            <h2>Datenbankverbindung</h2>
+            <DbConnectionForm />
+          </div>
+          <div className="card">
+            <h2>Protokoll</h2>
+            <LogLevelSelect />
+          </div>
+        </>
       ) : null}
     </section>
   );

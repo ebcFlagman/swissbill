@@ -162,11 +162,18 @@ npm test
 Ohne die Variablen laufen nur die SQLite-Tests, die Server-Tests werden übersprungen. In der CI läuft der Job `db-matrix`
 mit Service-Containern.
 
+## Protokoll
+
+Technische Meldungen schreibt SwissBill strukturiert (pino, eine JSON-Zeile pro Eintrag) in `logs/swissbill.log` im
+Datenordner; die Datei rotiert bei 1 MB und belegt höchstens etwa 5 MB. Der Detailgrad ist in _Einstellungen →
+Protokoll_ pro Gerät wählbar. Passwörter, Schlüssel und Rechnungsdaten stehen nie im Protokoll, es gibt keine
+Telemetrie. Details: `docs/logging.md`.
+
 ## Projektstruktur
 
 ```text
 src/shared/    reine Domänenlogik (Geld, IBAN, Referenzen, Validierung, Zustände) und IPC-Schemas
-src/main/      Electron Main-Prozess: Datenbank, Services, PDF, IPC-Handler
+src/main/      Electron Main-Prozess: Datenbank, Services, PDF, IPC-Handler, Logging (`logging/`)
 src/preload/   schmale, typisierte API für den Renderer
 src/renderer/  React-Oberfläche (PrimeReact)
 tests/         unit, integration, e2e, fixtures

@@ -4,6 +4,7 @@ import { PrimeReactProvider } from '@primereact/core';
 import Aura from '@primeuix/themes/aura';
 import { de } from 'primelocale/js/de.js';
 import { App } from './App';
+import { installErrorReporting } from './lib/report-errors';
 
 // PrimeReact 11 requires a license key (Community License). It is in `.env.local`
 // (VITE_PRIMEUI_LICENSE) and is not committed; the check runs offline.
@@ -19,6 +20,9 @@ const theme = {
   preset: Aura,
   options: { darkModeSelector: 'system', cssLayer: false },
 };
+
+// Unexpected errors of the interface end up in the log file (written by the main process)
+installErrorReporting(window, window.swissbill.log);
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

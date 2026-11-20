@@ -60,6 +60,7 @@ test('Electron-Sicherheit: Isolation, CSP, keine Netzwerkzugriffe, keine fremden
         'dbConnection',
         'invoices',
         'locks',
+        'log',
         'menu',
         'pdf',
         'settings',

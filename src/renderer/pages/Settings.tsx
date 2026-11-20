@@ -11,6 +11,7 @@ import type { DbInfo } from '@shared/ipc/db';
 import type { FieldError } from '@shared/ipc/errors';
 import { AddressFields } from '../components/AddressFields';
 import { DbConnectionForm } from '../components/DbConnectionForm';
+import { LogLevelSelect } from '../components/LogLevelSelect';
 import { Field } from '../components/Field';
 import { backupDatabase } from '../lib/backup';
 import { notifyError, notifySuccess } from '../lib/notify';
@@ -326,6 +327,11 @@ export function Settings() {
           nie in der Datenbank oder in einer Datei.
         </p>
         <DbConnectionForm />
+      </div>
+
+      <div className="card">
+        <h2>Protokoll</h2>
+        <LogLevelSelect />
       </div>
 
       <div className="card">

@@ -19,6 +19,11 @@ const api: SwissbillApi = {
     useLocalOnce: () => ipcRenderer.invoke(CHANNELS.dbConnectionUseLocalOnce),
     retry: () => ipcRenderer.invoke(CHANNELS.dbConnectionRetry),
   },
+  log: {
+    getLevel: () => ipcRenderer.invoke(CHANNELS.logGetLevel),
+    setLevel: (input) => ipcRenderer.invoke(CHANNELS.logSetLevel, input),
+    report: (input) => ipcRenderer.invoke(CHANNELS.logReport, input),
+  },
   locks: {
     acquire: (input) => ipcRenderer.invoke(CHANNELS.locksAcquire, input),
     heartbeat: (input) => ipcRenderer.invoke(CHANNELS.locksHeartbeat, input),

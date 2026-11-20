@@ -3,6 +3,7 @@ import { MAX_SUGGESTIONS, toSuggestions } from '@shared/domain/address-suggestio
 import { normalizeApiKey } from '@shared/domain/settings';
 import type { KeyCheckResult, SuggestResult } from '@shared/ipc/addresses';
 import { readApiKey } from '../db/settings-repository';
+import { redactFromLogs } from '../logging';
 import type { SecretStore } from '../secret-store';
 import type { GeoapifyClient } from './geoapify-client';
 
@@ -28,7 +29,9 @@ export class AddressService {
 
   /** Checks a (not yet stored) key with a test request. The key is neither stored nor logged. */
   async testKey(apiKey: string): Promise<KeyCheckResult> {
-    const result = await this.client.autocomplete('Bahnhofstrasse', normalizeApiKey(apiKey));
+    const key = normalizeApiKey(apiKey);
+    redactFromLogs(key);
+    const result = await this.client.autocomplete('Bahnhofstrasse', key);
     return result.ok ? 'valid' : result.reason;
   }
 }

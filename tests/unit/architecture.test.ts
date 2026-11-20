@@ -87,3 +87,37 @@ describe('Architektur der Persistenz (Verfassung III/V, FR-012, FR-015)', () => 
     expect(offenders.map(rel)).toEqual([]);
   });
 });
+
+describe('Eine einzige Logging-Einrichtung (Feature 007, FR-001, FR-014)', () => {
+  const code = (file: string) =>
+    readFileSync(file, 'utf8')
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .replace(/^\s*\/\/.*$/gm, '');
+
+  it('pino wird nur in src/main/logging/ importiert', () => {
+    const offenders = all
+      .filter((f) => !rel(f).startsWith('src/main/logging/'))
+      .filter((f) => /from 'pino'|import\('pino'\)|require\('pino'\)/.test(code(f)));
+    expect(offenders.map(rel)).toEqual([]);
+  });
+
+  it('in src/ gibt es keine Konsolenausgaben', () => {
+    const offenders = all.filter((f) => /\bconsole\.\w+\(/.test(code(f)));
+    expect(offenders.map(rel)).toEqual([]);
+  });
+
+  it('die alte Eigenlösung src/main/log.ts existiert nicht mehr', () => {
+    expect(all.map(rel)).not.toContain('src/main/log.ts');
+  });
+
+  it('das Logging bleibt lokal: keine Transporte, kein pino-pretty/-roll, keine Netzwerk-Importe', () => {
+    const offenders = all
+      .filter((f) => rel(f).startsWith('src/main/logging/'))
+      .filter((f) =>
+        /pino\.transport|pino-pretty|pino-roll|pino\/file|node:(http|https|net|dgram|tls)|\bfetch\(/.test(
+          code(f),
+        ),
+      );
+    expect(offenders.map(rel)).toEqual([]);
+  });
+});

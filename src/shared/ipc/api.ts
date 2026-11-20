@@ -13,6 +13,7 @@ import type {
   PickCaFileResult,
 } from './db-connection';
 import type { Result } from './errors';
+import type { LogLevelState, ReportInput, SetLevelInput } from './log';
 import type { MenuAction } from './menu';
 import type { InvoiceIdInput, PdfRequest, PdfSaveResult } from './invoices';
 
@@ -45,6 +46,15 @@ export interface SwissbillApi {
     useLocalOnce(): Promise<Result<void>>;
     /** Recovery mode only: try to connect again */
     retry(): Promise<Result<void>>;
+  };
+  /** Logging (available before the database is open, also in recovery mode) */
+  log: {
+    /** Log level of this device */
+    getLevel(): Promise<Result<LogLevelState>>;
+    /** Stores the level on this device and applies it immediately */
+    setLevel(input: SetLevelInput): Promise<Result<LogLevelState>>;
+    /** Reports an unexpected error of the user interface; the main process writes it to the log */
+    report(input: ReportInput): Promise<Result<void>>;
   };
   /** Edit locks of a server database (no-op for the local database) */
   locks: {
@@ -117,6 +127,9 @@ export const CHANNELS = {
   dbConnectionPickCaFile: 'dbConnection:pickCaFile',
   dbConnectionUseLocalOnce: 'dbConnection:useLocalOnce',
   dbConnectionRetry: 'dbConnection:retry',
+  logGetLevel: 'log:getLevel',
+  logSetLevel: 'log:setLevel',
+  logReport: 'log:report',
   locksAcquire: 'locks:acquire',
   locksHeartbeat: 'locks:heartbeat',
   locksRelease: 'locks:release',
