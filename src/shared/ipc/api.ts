@@ -4,6 +4,14 @@ import type { Settings, SettingsInput } from '../domain/settings';
 import type { CustomerIdInput, CustomerSearchInput } from './customers';
 import type { KeyCheckResult, SuggestInput, SuggestResult, TestKeyInput } from './addresses';
 import type { BackupResult, DbInfo } from './db';
+import type {
+  AcquireLockResult,
+  DbConnectionInput,
+  DbConnectionState,
+  DbConnectionTestResult,
+  EditLockKey,
+  PickCaFileResult,
+} from './db-connection';
 import type { Result } from './errors';
 import type { MenuAction } from './menu';
 import type { InvoiceIdInput, PdfRequest, PdfSaveResult } from './invoices';
@@ -21,6 +29,28 @@ export interface AppInfo {
 export interface SwissbillApi {
   app: {
     info(): Promise<Result<AppInfo>>;
+    /** Restarts the application (after the database connection was changed) */
+    relaunch(): Promise<Result<void>>;
+  };
+  /** Database connection (available before the database is open, also in recovery mode) */
+  dbConnection: {
+    get(): Promise<Result<DbConnectionState>>;
+    /** Trial connection, changes nothing */
+    test(input: DbConnectionInput): Promise<Result<DbConnectionTestResult>>;
+    /** Stores settings and password (OS keychain); takes effect after a restart */
+    save(input: DbConnectionInput): Promise<Result<{ restartRequired: true }>>;
+    /** Dialog in main to choose a CA certificate file */
+    pickCaFile(): Promise<Result<PickCaFileResult>>;
+    /** Recovery mode only: start this session with the local database */
+    useLocalOnce(): Promise<Result<void>>;
+    /** Recovery mode only: try to connect again */
+    retry(): Promise<Result<void>>;
+  };
+  /** Edit locks of a server database (no-op for the local database) */
+  locks: {
+    acquire(input: EditLockKey): Promise<Result<AcquireLockResult>>;
+    heartbeat(input: EditLockKey): Promise<Result<{ held: boolean }>>;
+    release(input: EditLockKey): Promise<Result<void>>;
   };
   invoices: {
     list(input: InvoiceFilter): Promise<Result<InvoiceSummary[]>>;
@@ -80,6 +110,16 @@ export interface SwissbillApi {
 /** Channel names: one source for main (handlers) and preload (calls). */
 export const CHANNELS = {
   appInfo: 'app:info',
+  appRelaunch: 'app:relaunch',
+  dbConnectionGet: 'dbConnection:get',
+  dbConnectionTest: 'dbConnection:test',
+  dbConnectionSave: 'dbConnection:save',
+  dbConnectionPickCaFile: 'dbConnection:pickCaFile',
+  dbConnectionUseLocalOnce: 'dbConnection:useLocalOnce',
+  dbConnectionRetry: 'dbConnection:retry',
+  locksAcquire: 'locks:acquire',
+  locksHeartbeat: 'locks:heartbeat',
+  locksRelease: 'locks:release',
   invoicesList: 'invoices:list',
   invoicesCreateDraft: 'invoices:createDraft',
   invoicesSaveDraft: 'invoices:saveDraft',

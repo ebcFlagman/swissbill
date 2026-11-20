@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 import type { SettingsInput } from '@shared/domain/settings';
 import { AppException } from '@shared/ipc/errors';
 import { readApiKey } from '../../src/main/db/settings-repository';
-import { backupTo } from '../../src/main/db/sqlite-adapter';
+import { backupTo } from '../../src/main/db/adapters/sqlite';
 import { BackupService } from '../../src/main/services/backup-service';
 import { SettingsService } from '../../src/main/services/settings-service';
 import { createTestDb } from '../fixtures/db';

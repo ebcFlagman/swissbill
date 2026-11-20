@@ -37,8 +37,10 @@ describe('Architektur der Persistenz (Verfassung III/V, FR-012, FR-015)', () => 
 
   it('SQLite-spezifisches steht nur im Adapter (und im geschützten Trigger-Aufräumen)', () => {
     const allowed = new Set([
-      'src/main/db/sqlite-adapter.ts',
+      'src/main/db/adapters/sqlite.ts',
       'src/main/db/migrations/1700000000003-DropLegacyTriggers.ts',
+      'src/main/db/schema-types.ts', // picks the column types per driver
+      'src/main/db/migrations/1700000000001-InitSchema.ts',
     ]);
     const sqliteOnly =
       /PRAGMA|sqlite_|RETURNING|ON CONFLICT|DROP TRIGGER|better-sqlite3|AUTOINCREMENT|unicode_lower|strftime/;
@@ -54,9 +56,29 @@ describe('Architektur der Persistenz (Verfassung III/V, FR-012, FR-015)', () => 
     expect(offenders.map(rel)).toEqual([]);
   });
 
+  it('Datenbanktreiber und die Schlüsselbund-Anbindung werden nur im Adapter-Ordner und im Schlüsselbund-Speicher importiert (FR-002)', () => {
+    const allowed = (file: string) =>
+      file.startsWith('src/main/db/adapters/') || file === 'src/main/keyring-credential-store.ts';
+    const offenders = all
+      .filter((f) => !allowed(rel(f)))
+      .filter((f) =>
+        /from '(pg|mysql2|mysql2\/promise|better-sqlite3|@napi-rs\/keyring)'|import\('(pg|mysql2|@napi-rs\/keyring)'\)/.test(
+          readFileSync(f, 'utf8'),
+        ),
+      );
+    expect(offenders.map(rel)).toEqual([]);
+  });
+
+  it('die Server-Adapter werden nur über adapterFor geladen (dynamischer Import)', () => {
+    const offenders = all
+      .filter((f) => rel(f) !== 'src/main/db/adapters/index.ts')
+      .filter((f) => /from '[^']*adapters\/(postgres|mysql)'/.test(readFileSync(f, 'utf8')));
+    expect(offenders.map(rel)).toEqual([]);
+  });
+
   it('nur Repositories und Startcode des Datenbankmoduls werden ausserhalb benutzt', () => {
     const allowedImports =
-      /db\/(customer-repository|invoice-repository|settings-repository|startup|data-source|sqlite-adapter)/;
+      /db\/(customer-repository|invoice-repository|settings-repository|startup|data-source|connect|ca-file|connection-config|lock-guard|lock-repository|adapters(\/(index|sqlite))?)/;
     const offenders = outsideDb.filter((f) =>
       [...readFileSync(f, 'utf8').matchAll(/from '(\.\.?\/[^']*db\/[^']*)'/g)].some(
         (m) => !allowedImports.test(m[1] ?? ''),

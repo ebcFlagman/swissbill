@@ -9,6 +9,20 @@ import { isMenuAction, MENU_EVENT } from '@shared/ipc/menu';
 const api: SwissbillApi = {
   app: {
     info: () => ipcRenderer.invoke(CHANNELS.appInfo),
+    relaunch: () => ipcRenderer.invoke(CHANNELS.appRelaunch),
+  },
+  dbConnection: {
+    get: () => ipcRenderer.invoke(CHANNELS.dbConnectionGet),
+    test: (input) => ipcRenderer.invoke(CHANNELS.dbConnectionTest, input),
+    save: (input) => ipcRenderer.invoke(CHANNELS.dbConnectionSave, input),
+    pickCaFile: () => ipcRenderer.invoke(CHANNELS.dbConnectionPickCaFile),
+    useLocalOnce: () => ipcRenderer.invoke(CHANNELS.dbConnectionUseLocalOnce),
+    retry: () => ipcRenderer.invoke(CHANNELS.dbConnectionRetry),
+  },
+  locks: {
+    acquire: (input) => ipcRenderer.invoke(CHANNELS.locksAcquire, input),
+    heartbeat: (input) => ipcRenderer.invoke(CHANNELS.locksHeartbeat, input),
+    release: (input) => ipcRenderer.invoke(CHANNELS.locksRelease, input),
   },
   invoices: {
     list: (input) => ipcRenderer.invoke(CHANNELS.invoicesList, input),

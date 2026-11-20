@@ -2,6 +2,12 @@ import js from '@eslint/js';
 import tseslint from 'typescript-eslint';
 import reactHooks from 'eslint-plugin-react-hooks';
 
+/** Database drivers and the keychain binding: only the adapters and the keychain store may import them. */
+const DRIVER_IMPORTS = ['pg', 'mysql2', 'better-sqlite3', '@napi-rs/keyring'].map((name) => ({
+  name,
+  message: 'Nur in src/main/db/adapters/ und src/main/keyring-credential-store.ts verwenden.',
+}));
+
 export default tseslint.config(
   {
     ignores: [
@@ -40,6 +46,7 @@ export default tseslint.config(
               message: 'TypeORM nur in src/main/db/ verwenden.',
             },
             { name: 'reflect-metadata', message: 'Nur im Datenbankmodul und im Main-Einstieg.' },
+            ...DRIVER_IMPORTS,
           ],
           patterns: [
             { group: ['**/db/entities/*'], message: 'Entitäten gehören zum Datenbankmodul.' },
@@ -47,6 +54,19 @@ export default tseslint.config(
         },
       ],
     },
+  },
+  {
+    // Database drivers and the keychain binding are confined to the adapters and the keychain store,
+    // also inside the database module (feature 006).
+    files: ['src/main/db/**/*.ts'],
+    ignores: ['src/main/db/adapters/**'],
+    rules: {
+      'no-restricted-imports': ['error', { paths: DRIVER_IMPORTS }],
+    },
+  },
+  {
+    files: ['src/main/keyring-credential-store.ts'],
+    rules: { 'no-restricted-imports': 'off' },
   },
   {
     // The main entry point loads reflect-metadata once for TypeORM

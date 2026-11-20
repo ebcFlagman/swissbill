@@ -10,6 +10,7 @@ import type { KeyCheckResult } from '@shared/ipc/addresses';
 import type { DbInfo } from '@shared/ipc/db';
 import type { FieldError } from '@shared/ipc/errors';
 import { AddressFields } from '../components/AddressFields';
+import { DbConnectionForm } from '../components/DbConnectionForm';
 import { Field } from '../components/Field';
 import { backupDatabase } from '../lib/backup';
 import { notifyError, notifySuccess } from '../lib/notify';
@@ -317,25 +318,50 @@ export function Settings() {
       </div>
 
       <div className="card">
+        <h2>Datenbankverbindung</h2>
+        <p className="hint">
+          Standardmässig liegen alle Daten in einer lokalen Datei auf diesem Gerät. Alternativ
+          können Sie einen eigenen PostgreSQL-, MySQL- oder MariaDB-Server verwenden, zum Beispiel
+          für mehrere Geräte. Das Passwort wird im Schlüsselbund des Betriebssystems gespeichert,
+          nie in der Datenbank oder in einer Datei.
+        </p>
+        <DbConnectionForm />
+      </div>
+
+      <div className="card">
         <h2>Datenbank und Sicherung</h2>
         {dbInfo ? (
           <dl className="db-info">
-            <dt>Speicherort</dt>
+            <dt>{dbInfo.type === 'sqlite' ? 'Speicherort' : 'Datenbankserver'}</dt>
             <dd data-testid="db-path">{dbInfo.path}</dd>
-            <dt>Grösse</dt>
-            <dd>{formatSize(dbInfo.sizeBytes)}</dd>
+            {dbInfo.sizeBytes !== null ? (
+              <>
+                <dt>Grösse</dt>
+                <dd>{formatSize(dbInfo.sizeBytes)}</dd>
+              </>
+            ) : null}
             <dt>Schemaversion</dt>
             <dd>{dbInfo.schemaVersion}</dd>
           </dl>
         ) : null}
-        <p className="hint">
-          Alle Rechnungen liegen in dieser einen Datei. Zum Sichern genügt eine Kopie. Zum
-          Wiederherstellen die Anwendung schliessen und die Sicherung unter dem Namen swissbill.db
-          in den Speicherort kopieren.
-        </p>
-        <Button variant="outlined" onClick={() => void backup()} disabled={backingUp}>
-          Datenbank sichern
-        </Button>
+        {dbInfo && dbInfo.type !== 'sqlite' ? (
+          <p className="hint" data-testid="server-backup-hint">
+            Die Daten liegen auf Ihrem Datenbankserver. Die Sicherung und Wiederherstellung liegt in
+            der Verantwortung des Betreibers des Servers (z. B. mit den Werkzeugen der Datenbank).
+            Die Anwendung kann keine Sicherungsdatei erstellen.
+          </p>
+        ) : (
+          <>
+            <p className="hint">
+              Alle Rechnungen liegen in dieser einen Datei. Zum Sichern genügt eine Kopie. Zum
+              Wiederherstellen die Anwendung schliessen und die Sicherung unter dem Namen
+              swissbill.db in den Speicherort kopieren.
+            </p>
+            <Button variant="outlined" onClick={() => void backup()} disabled={backingUp}>
+              Datenbank sichern
+            </Button>
+          </>
+        )}
       </div>
     </section>
   );

@@ -41,6 +41,7 @@ describe('TypeORM-Migrationen', () => {
       'InitSchema1700000000001',
       'AddGeoapifyKey1700000000002',
       'DropLegacyTriggers1700000000003',
+      'AddEditLocks1700000000004',
     ]);
   });
 
@@ -52,7 +53,7 @@ describe('TypeORM-Migrationen', () => {
 
   it('wendet alle Migrationen auf eine leere Datenbank an und legt die Einstellungszeile an', async () => {
     const db = await openAndMigrate(':memory:');
-    expect(await db.query('SELECT COUNT(*) AS n FROM migrations')).toEqual([{ n: 3 }]);
+    expect(await db.query('SELECT COUNT(*) AS n FROM migrations')).toEqual([{ n: 4 }]);
     expect(
       await db.query(
         'SELECT id, sender_country, invoice_prefix, default_payment_days, geoapify_api_key FROM settings',
@@ -73,9 +74,9 @@ describe('TypeORM-Migrationen', () => {
     const file = join(dir, 'swissbill.db');
     await (await openAndMigrate(file)).destroy();
     const again = await openAndMigrate(file);
-    expect(await again.query('SELECT COUNT(*) AS n FROM migrations')).toEqual([{ n: 3 }]);
+    expect(await again.query('SELECT COUNT(*) AS n FROM migrations')).toEqual([{ n: 4 }]);
     await again.destroy();
-    expect(existsSync(`${file}.bak-3`)).toBe(false);
+    expect(existsSync(`${file}.bak-4`)).toBe(false);
   });
 
   it('legt vor einer neuen Migration einer bestehenden Datei eine Kopie mit dem alten Stand an', async () => {
@@ -86,8 +87,8 @@ describe('TypeORM-Migrationen', () => {
     expect(await hasTable(db, 'extra_a')).toBe(true);
     await db.destroy();
 
-    expect(existsSync(`${file}.bak-3`)).toBe(true);
-    const copy = await openAndMigrate(`${file}.bak-3`);
+    expect(existsSync(`${file}.bak-4`)).toBe(true);
+    const copy = await openAndMigrate(`${file}.bak-4`);
     expect(await hasTable(copy, 'extra_a')).toBe(false);
     await copy.destroy();
   });
@@ -103,7 +104,7 @@ describe('TypeORM-Migrationen', () => {
     });
     const db = await openAndMigrate(file);
     expect(await hasTable(db, 'extra_b')).toBe(false);
-    expect(await db.query('SELECT COUNT(*) AS n FROM migrations')).toEqual([{ n: 3 }]);
+    expect(await db.query('SELECT COUNT(*) AS n FROM migrations')).toEqual([{ n: 4 }]);
     await db.destroy();
   });
 

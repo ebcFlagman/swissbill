@@ -6,8 +6,9 @@
 import { copyFileSync, existsSync, mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 import Database from 'better-sqlite3';
-import type { DataSource } from 'typeorm';
+import type { DataSource, DataSourceOptions } from 'typeorm';
 import type { BetterSqlite3DataSourceOptions } from 'typeorm/driver/better-sqlite3/BetterSqlite3DataSourceOptions.js';
+import type { ClassifiedError, DbAdapter, DbTarget } from './index';
 
 /** Driver options: a single file without `-wal`/`-shm`, full durability, foreign keys on. */
 export function sqliteOptions(path: string): BetterSqlite3DataSourceOptions {
@@ -61,3 +62,35 @@ export async function backupTo(dataSource: DataSource, targetPath: string): Prom
   mkdirSync(dirname(targetPath), { recursive: true });
   await connection.backup(targetPath);
 }
+
+/** Seconds-based expiry against the SQLite clock (UTC, same format as `CURRENT_TIMESTAMP`). */
+function expiredCondition(column: string, ttlSeconds: number): string {
+  return `"${column}" < datetime('now', '-${Math.trunc(ttlSeconds)} seconds')`;
+}
+
+function classifyError(error: unknown): ClassifiedError {
+  const reason = error instanceof Error ? error.message : String(error);
+  return {
+    stage: 'reachable',
+    message: `Die lokale Datenbank konnte nicht geöffnet werden (${reason}).`,
+  };
+}
+
+/** Local single-file database: the default. No migration lock is needed (one device, one app instance). */
+export const sqliteAdapter: DbAdapter = {
+  type: 'sqlite',
+  dataSourceOptions(target: DbTarget): DataSourceOptions {
+    if (target.kind !== 'file') throw new Error('SQLite braucht einen Dateipfad.');
+    return sqliteOptions(target.path);
+  },
+  withMigrationLock: (_dataSource, work) => work(),
+  async countForeignTables(dataSource) {
+    const rows = (await dataSource.query(
+      "SELECT COUNT(*) AS n FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' AND name <> 'migrations'",
+    )) as { n: number }[];
+    return Number(rows[0]?.n ?? 0);
+  },
+  expiredCondition,
+  classifyError,
+  file: { isFileDatabase, verifyIntegrity, isCorruption, copyBeforeMigration, backupTo },
+};

@@ -1,23 +1,19 @@
 import 'reflect-metadata';
 import { join } from 'node:path';
-import { app, BrowserWindow, dialog } from 'electron';
+import { app, BrowserWindow } from 'electron';
 import type { DataSource } from 'typeorm';
-import { DB_FILENAME } from './db/data-source';
-import { DatabaseStartupError, openAndMigrate } from './db/startup';
-import { registerIpc } from './ipc/register';
+import { openActiveDatabase, openLocal, type ActiveDatabase } from './db/connect';
+import type { LockRepository } from './db/lock-repository';
+import { createCredentialStore } from './keyring-credential-store';
+import { registerIpc, registerPreDatabaseIpc } from './ipc/register';
 import { initLogger, log } from './log';
 import { installMenu } from './menu';
+import { createRecovery } from './recovery';
+import { ConnectionService } from './services/connection-service';
 import { createMainWindow, hardenSession } from './window';
 
 let dataSource: DataSource | null = null;
-let databasePath = '';
-
-async function startDatabase(): Promise<DataSource> {
-  databasePath = join(app.getPath('userData'), DB_FILENAME);
-  const database = await openAndMigrate(databasePath);
-  log.info(`Datenbank geöffnet (${database.migrations.length} Migrationen)`);
-  return database;
-}
+let locks: LockRepository | null = null;
 
 if (!app.requestSingleInstanceLock()) {
   app.quit();
@@ -31,29 +27,48 @@ if (!app.requestSingleInstanceLock()) {
   });
 
   void app.whenReady().then(async () => {
-    initLogger(join(app.getPath('userData'), 'logs'));
+    const userData = app.getPath('userData');
+    initLogger(join(userData, 'logs'));
     hardenSession();
-    try {
-      dataSource = await startDatabase();
-    } catch (error) {
-      log.error('Datenbank konnte nicht geöffnet werden', error);
-      dialog.showErrorBox(
-        'SwissBill kann nicht gestartet werden',
-        error instanceof DatabaseStartupError
-          ? error.message
-          : 'Die Datenbank konnte nicht geöffnet werden. Es wurden keine Daten verändert.\n\n' +
-              (error instanceof Error ? error.message : String(error)),
+
+    // A database is open: register the data channels, install the menu
+    const onReady = (database: ActiveDatabase) => {
+      dataSource = database.dataSource;
+      log.info(
+        `Datenbank geöffnet (${database.kind}, ${database.dataSource.migrations.length} Migrationen)`,
       );
-      app.exit(1);
-      return;
+      locks = registerIpc(database.dataSource, database.adapter);
+      installMenu(database.place, database.kind === 'server');
+      // In recovery mode the window already exists and shows the recovery view; the renderer reloads itself
+    };
+
+    const connection: ConnectionService = new ConnectionService({
+      dir: userData,
+      credentials: createCredentialStore(process.env, app.isPackaged),
+      active: () => recovery.state().active,
+      startupError: () => recovery.state().startupError,
+    });
+    const recovery = createRecovery({
+      open: () =>
+        openActiveDatabase({ dir: userData, resolvePassword: () => connection.resolvePassword() }),
+      openLocal: () => openLocal(userData),
+      onReady,
+    });
+
+    // The connection settings and the recovery actions work without a database
+    registerPreDatabaseIpc(connection, recovery);
+    await recovery.start();
+    if (recovery.state().active === 'recovery') {
+      log.error(`Datenbank konnte nicht geöffnet werden: ${recovery.state().startupError ?? ''}`);
     }
-    registerIpc(dataSource);
-    installMenu(databasePath);
     createMainWindow();
   });
 
+  // Give the edit locks of this device back before leaving (they would also expire on their own)
   app.on('window-all-closed', () => {
-    app.quit();
+    void (locks?.releaseAll() ?? Promise.resolve())
+      .catch(() => undefined)
+      .finally(() => app.quit());
   });
 
   app.on('quit', () => {

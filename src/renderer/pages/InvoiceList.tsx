@@ -7,6 +7,7 @@ import type { InvoiceStatus, InvoiceSummary } from '@shared/domain/invoice';
 import { formatChf } from '@shared/domain/money';
 import { StatusBadge, STATUS_LABEL } from '../components/StatusBadge';
 import { notifyError, notifySuccess } from '../lib/notify';
+import { withLock } from '../lib/use-edit-lock';
 
 interface InvoiceListProps {
   onOpen: (id: number) => void;
@@ -55,8 +56,20 @@ export function InvoiceList({ onOpen, onCreate, creating }: InvoiceListProps) {
 
   async function confirmDelete() {
     if (!toDelete) return;
-    const result = await window.swissbill.invoices.deleteDraft({ id: toDelete.id });
+    const outcome = await withLock({ entityType: 'invoice', entityId: toDelete.id }, () =>
+      window.swissbill.invoices.deleteDraft({ id: toDelete.id }),
+    );
     setToDelete(null);
+    if ('locked' in outcome) {
+      notifyError({
+        code: 'LOCKED',
+        message: outcome.locked
+          ? `Der Entwurf wird gerade von «${outcome.locked}» bearbeitet und kann jetzt nicht gelöscht werden.`
+          : 'Der Entwurf kann jetzt nicht gelöscht werden.',
+      });
+      return;
+    }
+    const result = outcome.value;
     if (result.ok) {
       notifySuccess('Entwurf gelöscht.');
       void load(search, status);

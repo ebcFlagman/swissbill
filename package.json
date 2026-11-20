@@ -19,12 +19,15 @@
     "test:e2e": "npm run build && playwright test"
   },
   "dependencies": {
+    "@napi-rs/keyring": "2.1.2",
     "@primeicons/react": "8.0.2",
     "@primereact/core": "11.2.3",
     "@primereact/ui": "11.2.3",
     "@primeuix/themes": "3.1.1",
     "better-sqlite3": "13.1.1",
+    "mysql2": "3.24.6",
     "pdfkit": "0.20.2",
+    "pg": "8.23.1",
     "primelocale": "2.6.2",
     "react": "19.3.1",
     "react-dom": "19.3.1",
@@ -40,6 +43,7 @@
     "@types/better-sqlite3": "9.6.0",
     "@types/node": "26.6.6",
     "@types/pdfkit": "0.17.7",
+    "@types/pg": "8.23.1",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
     "@vitejs/plugin-react": "6.3.0",

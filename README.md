@@ -1,10 +1,11 @@
 # SwissBill
 
 Einfache Desktop-Anwendung (Electron) zum Erstellen von Schweizer Rechnungen mit QR-Zahlteil als PDF.
-Alle Daten bleiben lokal in einer eingebetteten SQLite-Datenbank; die Anwendung läuft vollständig offline,
-ohne Konto und ohne Telemetrie. Einzige Ausnahme sind optionale Adressvorschläge: Nur wenn Sie in den
-Einstellungen einen eigenen Geoapify-API-Key hinterlegen, wird der getippte Adress-Suchtext zur Vorschlagssuche
-an Geoapify gesendet (siehe «Adressvorschläge»).
+Alle Daten bleiben standardmässig lokal in einer eingebetteten SQLite-Datenbank; die Anwendung läuft dann vollständig
+offline, ohne Konto und ohne Telemetrie. Zwei Dinge sind nur auf Ihren ausdrücklichen Wunsch möglich: Adressvorschläge
+(nur mit einem eigenen Geoapify-API-Key wird der getippte Adress-Suchtext an Geoapify gesendet, siehe
+«Adressvorschläge») und eine **eigene Datenbank auf einem Server** (PostgreSQL, MySQL oder MariaDB, siehe «Datenbank auf
+einem Server»).
 
 ## Funktionen
 
@@ -48,12 +49,12 @@ Falls die Electron-Binärdatei fehlt (npm blockiert Install-Skripte), einmalig `
 
 ## Prüfen und testen
 
-| Befehl              | Zweck                                                           |
-| ------------------- | --------------------------------------------------------------- |
-| `npm run typecheck` | TypeScript (strict) für Main, Renderer und Tests                |
-| `npm run lint`      | ESLint                                                          |
-| `npm test`          | Unit- und Integrationstests (Vitest, SQLite in Memory, TypeORM) |
-| `npm run test:e2e`  | End-to-End-Tests der gebauten App (Playwright mit Electron)     |
+| Befehl              | Zweck                                                                                                                                   |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm run typecheck` | TypeScript (strict) für Main, Renderer und Tests                                                                                        |
+| `npm run lint`      | ESLint                                                                                                                                  |
+| `npm test`          | Unit- und Integrationstests (Vitest, SQLite in Memory, TypeORM; Server-Tests nur mit den `SWISSBILL_TEST_*_URL`-Variablen, siehe unten) |
+| `npm run test:e2e`  | End-to-End-Tests der gebauten App (Playwright mit Electron)                                                                             |
 
 Tests verwenden ausschliesslich fiktive Daten und einen eigenen temporären Datenordner.
 
@@ -117,6 +118,49 @@ Die Datenbank liegt als **einzelne Datei** `swissbill.db` im Electron-Datenordne
 - Eine beschädigte oder zu neue Datenbankdatei wird nie überschrieben; die Anwendung meldet das beim Start.
 
 Die Datenbank enthält echte Rechnungs- und Bankdaten und gehört nicht ins Repository (`*.db` ist in `.gitignore`).
+
+## Datenbank auf einem Server (optional)
+
+Statt der lokalen Datei kann die Anwendung eine **eigene Datenbank auf einem Server** verwenden, zum Beispiel für mehrere
+Geräte. Unterstützt werden PostgreSQL (ab 14), MySQL (ab 8.0) und MariaDB (ab 10.6). Ohne Einrichtung bleibt alles wie
+bisher: Es wird keine Verbindung zu einem Datenbankserver aufgebaut.
+
+**Einrichten:** _Einstellungen → Datenbankverbindung_: Typ, Server, Port, Datenbankname, Benutzer und Passwort eingeben,
+«Verbindung testen» (prüft Erreichbarkeit, Anmeldung, Datenbank, Rechte und Schema), «Verbindung festlegen», die
+Anwendung neu starten. Das Schema wird in einer **leeren** Datenbank automatisch angelegt; eine Datenbank mit fremden
+Tabellen wird nie verändert.
+
+- **Rechte:** Der Datenbankbenutzer braucht in dieser Datenbank `CREATE`/`ALTER`/`DROP` (für die Schema-Aktualisierung)
+  sowie `SELECT`/`INSERT`/`UPDATE`/`DELETE`. Die Datenbank selbst legt die Anwendung nicht an.
+- **Passwort:** Es wird ausschliesslich im Schlüsselbund des Betriebssystems gespeichert (Windows
+  Anmeldeinformationsverwaltung, macOS-Schlüsselbund, unter Linux ein Secret-Service wie GNOME Keyring oder KWallet), nie
+  in der Datenbank, in einer Datei oder im Protokoll. Ohne verfügbaren Schlüsselbund wird kein Passwort gespeichert.
+  Die übrigen Angaben stehen in `db-connection.json` im Datenordner. Jedes Gerät wird einzeln eingerichtet.
+- **Verschlüsselung:** Bei aktivem TLS wird das Zertifikat des Servers immer geprüft; hat der Server ein eigenes
+  Zertifikat, wird dessen CA-Zertifikat gewählt. TLS lässt sich ausschalten (dann mit Warnung: Daten und Passwort laufen
+  unverschlüsselt über das Netz).
+- **Mehrere Geräte:** Rechnungsnummern bleiben lückenlos und eindeutig. Ein Kunde oder Entwurf ist gesperrt, solange ihn
+  ein Gerät bearbeitet; andere Geräte sehen ihn nur zur Ansicht. Die Sperre läuft nach 5 Minuten ohne Lebenszeichen
+  (Absturz, Verbindungsverlust) ab. Alle Einstellungen (Absender, IBAN, Nummernkreis, Geoapify-Key) sind geteilt; der
+  Geoapify-Key liegt dort im Klartext.
+- **Updates:** Jedes Gerät aktualisiert das Schema automatisch; eine ältere Programmversion öffnet ein neueres Schema nicht
+  und fordert zum Update auf. MySQL und MariaDB können Schemaänderungen nicht zurückrollen; ein abgebrochener Schritt wird
+  beim nächsten Start fortgesetzt.
+- **Fehler:** Ist der Server beim Start nicht erreichbar, erscheint eine Meldung mit «Erneut versuchen»,
+  «Einstellungen» und «Lokal verwenden» (nur für diese Sitzung). Es wird nie etwas teilweise gespeichert.
+- **Wechsel:** Zwischen lokal und Server (oder einem anderen Server) wird nichts kopiert oder gelöscht; die Daten bleiben
+  in der bisherigen Datenbank. Ein Datenumzug ist nicht enthalten.
+- **Sicherung:** Eine Serverdatenbank sichert der Betreiber des Servers; die Anwendung erstellt dafür keine Datei.
+
+**Tests gegen alle Datenbanken:** Die Test-Server starten (`docker compose up -d`), dann die Variablen laden und testen:
+
+```bash
+. tests/integration/helpers/env.sh
+npm test
+```
+
+Ohne die Variablen laufen nur die SQLite-Tests, die Server-Tests werden übersprungen. In der CI läuft der Job `db-matrix`
+mit Service-Containern.
 
 ## Projektstruktur
 

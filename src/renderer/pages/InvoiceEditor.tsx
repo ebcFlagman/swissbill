@@ -19,6 +19,8 @@ import type { Invoice, Sender } from '@shared/domain/invoice';
 import { formatChf } from '@shared/domain/money';
 import type { AppError, FieldError } from '@shared/ipc/errors';
 import { AddressFields } from '../components/AddressFields';
+import { LockBanner } from '../components/LockBanner';
+import { useEditLock } from '../lib/use-edit-lock';
 import { ConfirmDialog } from '../components/ConfirmDialog';
 import { Field } from '../components/Field';
 import { ConfirmIssueDialog, IssuedDialog } from '../components/IssueDialog';
@@ -76,15 +78,33 @@ export function InvoiceEditor({ invoiceId, onBack, onOpenInvoice }: InvoiceEdito
   useEffect(() => {
     latest.current = { form, invoice };
   });
-  useEffect(
-    () => () => {
-      const { form: pending, invoice: current } = latest.current;
-      if (dirty.current && pending && current?.status === 'draft') {
-        void window.swissbill.invoices.saveDraft(toDraftInput(invoiceId, pending));
-      }
-    },
-    [invoiceId],
-  );
+  // Saves pending input; runs just before the edit lock is released (the lock is still held then)
+  const flushDraft = useCallback(async () => {
+    const { form: pending, invoice: current } = latest.current;
+    if (dirty.current && pending && current?.status === 'draft') {
+      dirty.current = false;
+      await window.swissbill.invoices.saveDraft(toDraftInput(invoiceId, pending));
+    }
+  }, [invoiceId]);
+  // Server database: a draft is locked for other devices while it is open (FR-009a)
+  const lock = useEditLock('invoice', invoiceId, invoice?.status === 'draft', flushDraft);
+  const lockedOut =
+    lock.status === 'readonly' || lock.status === 'lost' || lock.status === 'pending';
+
+  // After a read-only period (or a lost lock) a successful new lock means the draft may have changed meanwhile
+  const wasLockedOut = useRef(false);
+  useEffect(() => {
+    if (lock.status === 'readonly' || lock.status === 'lost') wasLockedOut.current = true;
+    if (lock.status === 'held' && wasLockedOut.current) {
+      wasLockedOut.current = false;
+      void window.swissbill.invoices.get({ id: invoiceId }).then((result) => {
+        if (!result.ok) return notifyError(result.error);
+        dirty.current = false;
+        setInvoice(result.value);
+        setForm(toForm(result.value));
+      });
+    }
+  }, [lock.status, invoiceId]);
 
   // Customers for the selection and the default values for resetting
   useEffect(() => {
@@ -164,6 +184,8 @@ export function InvoiceEditor({ invoiceId, onBack, onOpenInvoice }: InvoiceEdito
   }
 
   const readOnly = invoice.status !== 'draft';
+  /** Fields are not editable: issued invoice, or the draft is locked by another device */
+  const inputsDisabled = readOnly || lockedOut;
   const total = formTotal(form);
 
   /** Saves the draft; returns `true` if it is saved. */
@@ -327,19 +349,21 @@ export function InvoiceEditor({ invoiceId, onBack, onOpenInvoice }: InvoiceEdito
             </>
           ) : (
             <>
-              <Button variant="outlined" onClick={() => void onSave()} disabled={busy}>
+              <Button variant="outlined" onClick={() => void onSave()} disabled={busy || lockedOut}>
                 Speichern
               </Button>
               <Button variant="outlined" onClick={() => void onPreview()} disabled={busy}>
                 Vorschau
               </Button>
-              <Button onClick={onRequestIssue} disabled={busy}>
+              <Button onClick={onRequestIssue} disabled={busy || lockedOut}>
                 Ausstellen
               </Button>
             </>
           )}
         </div>
       </div>
+
+      <LockBanner status={lock.status} ownerLabel={lock.ownerLabel} onRetry={lock.retry} />
 
       {readOnly ? (
         <Message.Root severity="info">
@@ -384,7 +408,7 @@ export function InvoiceEditor({ invoiceId, onBack, onOpenInvoice }: InvoiceEdito
           value={form.sender}
           onChange={(sender) => patch({ sender })}
           errors={errors}
-          disabled={readOnly}
+          disabled={inputsDisabled}
           withIban
         />
       </div>
@@ -428,7 +452,7 @@ export function InvoiceEditor({ invoiceId, onBack, onOpenInvoice }: InvoiceEdito
           value={form.debtor}
           onChange={(debtor) => patch({ debtor })}
           errors={errors}
-          disabled={readOnly}
+          disabled={inputsDisabled}
         />
         {!readOnly &&
         form.debtor.name.trim() !== '' &&
@@ -458,7 +482,7 @@ export function InvoiceEditor({ invoiceId, onBack, onOpenInvoice }: InvoiceEdito
                 patch({ invoiceDate: e.target.value })
               }
               invalid={!!errors['invoiceDate']}
-              disabled={readOnly}
+              disabled={inputsDisabled}
             />
           </Field>
           <Field label="Zahlbar bis" htmlFor="dueDate" error={errors['dueDate']} className="span-3">
@@ -469,7 +493,7 @@ export function InvoiceEditor({ invoiceId, onBack, onOpenInvoice }: InvoiceEdito
               value={form.dueDate}
               onChange={(e: ChangeEvent<HTMLInputElement>) => patch({ dueDate: e.target.value })}
               invalid={!!errors['dueDate']}
-              disabled={readOnly}
+              disabled={inputsDisabled}
             />
           </Field>
         </div>
@@ -481,7 +505,7 @@ export function InvoiceEditor({ invoiceId, onBack, onOpenInvoice }: InvoiceEdito
           items={form.items}
           onChange={(items) => patch({ items })}
           errors={errors}
-          disabled={readOnly}
+          disabled={inputsDisabled}
         />
         <div className="total-row">
           <span>Total CHF</span>
@@ -519,7 +543,7 @@ export function InvoiceEditor({ invoiceId, onBack, onOpenInvoice }: InvoiceEdito
             onChange={(e: ChangeEvent<HTMLTextAreaElement>) =>
               patch({ closingText: e.target.value })
             }
-            disabled={readOnly}
+            disabled={inputsDisabled}
           />
         </Field>
       </div>

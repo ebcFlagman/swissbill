@@ -1,4 +1,5 @@
 import { EntitySchema } from 'typeorm';
+import { bigintToNumber } from './column-transformers';
 import type { InvoiceStatus } from '@shared/domain/invoice';
 import type { ReferenceType } from '@shared/domain/reference';
 
@@ -67,7 +68,7 @@ export const InvoiceEntity = new EntitySchema<InvoiceRow>({
     closing_text: text,
     reference_type: text,
     reference: text,
-    total_rappen: { type: 'integer', default: 0 },
+    total_rappen: { type: 'bigint', default: 0, transformer: bigintToNumber },
     layout_version: { type: 'integer', nullable: true },
     issued_at: text,
     paid_at: text,

@@ -1,7 +1,8 @@
-import { describe, expect, it } from 'vitest';
+import { expect, it } from 'vitest';
+import { describeMatrixDb } from '../helpers/db-targets';
 import { AppException } from '@shared/ipc/errors';
 import type { Invoice } from '@shared/domain/invoice';
-import { createFilledDraft, createService, createTestDb } from '../fixtures/db';
+import { createFilledDraft, createService, createTestDb } from '../../fixtures/db';
 
 async function setup() {
   const db = await createTestDb();
@@ -24,7 +25,7 @@ function content(invoice: Invoice) {
   return rest;
 }
 
-describe('Status: bezahlt und zurücksetzen', () => {
+describeMatrixDb('Status: bezahlt und zurücksetzen', () => {
   it('markPaid ändert nur Status und paid_at', async () => {
     const { service, setClock } = await setup();
     const issued = await service.issue((await createFilledDraft(service)).id);
@@ -67,7 +68,7 @@ describe('Status: bezahlt und zurücksetzen', () => {
   });
 });
 
-describe('Status: stornieren', () => {
+describeMatrixDb('Status: stornieren', () => {
   it('storniert ausgestellte und bezahlte Rechnungen, Inhalt und Nummer bleiben', async () => {
     const { service } = await setup();
     const a = await service.issue((await createFilledDraft(service)).id);

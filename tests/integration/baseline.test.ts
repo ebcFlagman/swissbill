@@ -59,6 +59,7 @@ describe('Übernahme einer Datenbank aus der Zeit vor TypeORM (Version 2)', () =
       'InitSchema1700000000001',
       'AddGeoapifyKey1700000000002',
       'DropLegacyTriggers1700000000003',
+      'AddEditLocks1700000000004',
     ]);
     await db.destroy();
   });

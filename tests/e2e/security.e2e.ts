@@ -52,7 +52,18 @@ test('Electron-Sicherheit: Isolation, CSP, keine Netzwerkzugriffe, keine fremden
       module: 'undefined',
       ipcRenderer: 'undefined',
       electron: 'undefined',
-      api: ['addresses', 'app', 'customers', 'db', 'invoices', 'menu', 'pdf', 'settings'],
+      api: [
+        'addresses',
+        'app',
+        'customers',
+        'db',
+        'dbConnection',
+        'invoices',
+        'locks',
+        'menu',
+        'pdf',
+        'settings',
+      ],
     });
 
     // Content security policy without external sources and without eval

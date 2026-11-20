@@ -56,6 +56,55 @@ jobs:
           retention-days: 14
           if-no-files-found: error
 
+  # The same tests against PostgreSQL, MySQL and MariaDB (feature 006). The `verify` job runs SQLite only, because
+  # Windows runners cannot start Linux service containers. Independent of `verify`: neither blocks the other.
+  db-matrix:
+    name: db-matrix
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: swissbill
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: swissbill
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U swissbill" --health-interval 5s --health-timeout 5s --health-retries 20
+      mysql:
+        image: mysql:8
+        env:
+          MYSQL_ROOT_PASSWORD: root
+        ports: ['3306:3306']
+        options: >-
+          --health-cmd "mysqladmin ping -h 127.0.0.1 -proot" --health-interval 5s --health-timeout 5s --health-retries 30
+      mariadb:
+        image: mariadb:11
+        env:
+          MARIADB_ROOT_PASSWORD: root
+        ports: ['3307:3306']
+        options: >-
+          --health-cmd "healthcheck.sh --connect --innodb_initialized" --health-interval 5s --health-timeout 5s --health-retries 30
+    env:
+      # Test databases only. The users may create databases: every test gets its own fresh one.
+      SWISSBILL_TEST_PG_URL: postgres://swissbill:test@localhost:5432/swissbill
+      SWISSBILL_TEST_MYSQL_URL: mysql://root:root@localhost:3306/
+      SWISSBILL_TEST_MARIADB_URL: mysql://root:root@localhost:3307/
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 26
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Unit and integration tests on all database types
+        run: npm test
+
   # Optional: not a required check. A failure turns the run red but blocks neither verify nor the artifact.
   e2e:
     name: e2e

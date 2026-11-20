@@ -1,12 +1,13 @@
-import { describe, expect, it } from 'vitest';
+import { expect, it } from 'vitest';
+import { describeMatrixDb } from '../helpers/db-targets';
 import { AppException } from '@shared/ipc/errors';
 import type { CustomerInput } from '@shared/domain/customer';
 import type { SettingsInput } from '@shared/domain/settings';
-import { CustomerService } from '../../src/main/services/customer-service';
-import { SettingsService } from '../../src/main/services/settings-service';
-import { createFakeSecretStore } from '../fixtures/secret-store';
-import { createFilledDraft, createService, createTestDb } from '../fixtures/db';
-import { makeDraftInput, NORMAL_IBAN, QR_IBAN } from '../fixtures/invoice';
+import { CustomerService } from '../../../src/main/services/customer-service';
+import { SettingsService } from '../../../src/main/services/settings-service';
+import { createFakeSecretStore } from '../../fixtures/secret-store';
+import { createFilledDraft, createService, createTestDb } from '../../fixtures/db';
+import { makeDraftInput, NORMAL_IBAN, QR_IBAN } from '../../fixtures/invoice';
 
 const customer = (overrides: Partial<CustomerInput> = {}): CustomerInput => ({
   name: 'Müller AG',
@@ -45,7 +46,7 @@ async function failure(fn: () => unknown): Promise<AppException> {
   throw new Error('Es wurde keine AppException geworfen.');
 }
 
-describe('Kunden', () => {
+describeMatrixDb('Kunden', () => {
   it('legt Kunden an, ändert sie und listet sie sortiert nach Name', async () => {
     const customers = new CustomerService(await createTestDb());
     const a = await customers.save(customer({ name: 'Zeta GmbH' }));
@@ -137,7 +138,7 @@ describe('Kunden', () => {
   });
 });
 
-describe('Einstellungen', () => {
+describeMatrixDb('Einstellungen', () => {
   it('liefert zu Beginn leere Absenderfelder und die Standardwerte', async () => {
     const settings = await new SettingsService(await createTestDb(), createFakeSecretStore()).get();
     expect(settings.sender.name).toBe('');

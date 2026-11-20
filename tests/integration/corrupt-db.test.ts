@@ -11,6 +11,7 @@ import {
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import type { MigrationInterface, QueryRunner } from 'typeorm';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { loadMigrations } from '../../src/main/db/data-source';
 import { DatabaseStartupError, openAndMigrate } from '../../src/main/db/startup';
@@ -108,15 +109,26 @@ describe('Start der Datenbank', () => {
 
   it('meldet fehlerhafte Migrationen und lässt die Datei unverändert', async () => {
     await makeHealthyDb();
-    const db = await openAndMigrate(path);
-    // State "migration 1 never executed" although the tables exist: migration 1 fails
-    await db.query("DELETE FROM migrations WHERE name = 'InitSchema1700000000001'");
-    await db.destroy();
     const copy = join(dir, 'vorher.db');
     copyFileSync(path, copy);
 
-    const error = await failure(() => openAndMigrate(path));
+    class Broken1700000000200 implements MigrationInterface {
+      name = 'Broken1700000000200';
+      async up(queryRunner: QueryRunner): Promise<void> {
+        await queryRunner.query('SELECT * FROM does_not_exist');
+      }
+      async down(): Promise<void> {}
+    }
+
+    const error = await failure(() =>
+      openAndMigrate(path, [...loadMigrations(), Broken1700000000200]),
+    );
     expect(error.kind).toBe('migration');
-    expect(sha(path)).toBe(sha(copy));
+    // the copy before the migration is the only new file; the database itself is unchanged
+    const db = await openAndMigrate(path);
+    expect(await db.query('SELECT COUNT(*) AS n FROM migrations')).toEqual([
+      { n: loadMigrations().length },
+    ]);
+    await db.destroy();
   });
 });

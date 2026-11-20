@@ -6,6 +6,8 @@ import { Textarea } from '@primereact/ui/textarea';
 import type { Customer, CustomerInput } from '@shared/domain/customer';
 import type { FieldError } from '@shared/ipc/errors';
 import { AddressFields } from '../components/AddressFields';
+import { LockBanner } from '../components/LockBanner';
+import { useEditLock, withLock } from '../lib/use-edit-lock';
 import { Field } from '../components/Field';
 import { notifyError, notifySuccess } from '../lib/notify';
 
@@ -34,6 +36,10 @@ export function Customers() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const [toDelete, setToDelete] = useState<Customer | null>(null);
+  // Server database: an existing customer is locked for other devices while its dialog is open (FR-009a)
+  const lock = useEditLock('customer', editing?.id ?? null, editing?.id !== undefined);
+  const lockedOut =
+    lock.status === 'readonly' || lock.status === 'lost' || lock.status === 'pending';
 
   const load = useCallback(async (searchText: string) => {
     const result = await window.swissbill.customers.list({ search: searchText });
@@ -68,8 +74,20 @@ export function Customers() {
 
   async function confirmDelete() {
     if (!toDelete) return;
-    const result = await window.swissbill.customers.delete({ id: toDelete.id });
+    const outcome = await withLock({ entityType: 'customer', entityId: toDelete.id }, () =>
+      window.swissbill.customers.delete({ id: toDelete.id }),
+    );
     setToDelete(null);
+    if ('locked' in outcome) {
+      notifyError({
+        code: 'LOCKED',
+        message: outcome.locked
+          ? `Der Kunde wird gerade von «${outcome.locked}» bearbeitet und kann jetzt nicht gelöscht werden.`
+          : 'Der Kunde kann jetzt nicht gelöscht werden.',
+      });
+      return;
+    }
+    const result = outcome.value;
     if (result.ok) {
       notifySuccess('Kunde gelöscht.');
       void load(search);
@@ -154,9 +172,15 @@ export function Customers() {
                 </Dialog.Title>
               </Dialog.Header>
               <Dialog.Content>
+                <LockBanner
+                  status={lock.status}
+                  ownerLabel={lock.ownerLabel}
+                  onRetry={lock.retry}
+                />
                 {editing ? (
                   <>
                     <AddressFields<CustomerInput>
+                      disabled={lockedOut}
                       prefix="customer"
                       value={editing}
                       onChange={(value) => setEditing(value)}
@@ -170,6 +194,7 @@ export function Customers() {
                       <Textarea
                         id="customer-notes"
                         rows={3}
+                        disabled={lockedOut}
                         value={editing.notes}
                         onChange={(e: ChangeEvent<HTMLTextAreaElement>) =>
                           setEditing({ ...editing, notes: e.target.value })
@@ -187,7 +212,7 @@ export function Customers() {
                   >
                     Abbrechen
                   </Button>
-                  <Button onClick={() => void save()} disabled={saving}>
+                  <Button onClick={() => void save()} disabled={saving || lockedOut}>
                     Speichern
                   </Button>
                 </div>
