@@ -1,9 +1,10 @@
-import { describe, expect, it } from 'vitest';
+import { expect, it } from 'vitest';
+import { describeMatrixDb } from '../helpers/db-targets';
 import type { DraftInput } from '@shared/domain/invoice';
 import { AppException } from '@shared/ipc/errors';
-import { InvoiceRepository } from '../../src/main/db/invoice-repository';
-import { createFilledDraft, createService, createTestDb } from '../fixtures/db';
-import { makeDraftInput } from '../fixtures/invoice';
+import { InvoiceRepository } from '../../../src/main/db/invoice-repository';
+import { createFilledDraft, createService, createTestDb } from '../../fixtures/db';
+import { makeDraftInput } from '../../fixtures/invoice';
 
 async function setup() {
   const db = await createTestDb();
@@ -29,7 +30,7 @@ async function codeOf(fn: () => Promise<unknown>): Promise<string> {
 
 const NOW = '2026-04-01T00:00:00.000Z';
 
-describe('Persistenzschicht: ausgestellte Rechnungen sind unveränderlich', () => {
+describeMatrixDb('Persistenzschicht: ausgestellte Rechnungen sind unveränderlich', () => {
   it('lehnt jede Änderung des Inhalts ab (Kopf, Absender, Empfänger, Schlusstext, Beträge)', async () => {
     const { repo, issued } = await issuedInvoice();
     const base = makeDraftInput({ id: issued.id });
@@ -111,7 +112,12 @@ describe('Persistenzschicht: ausgestellte Rechnungen sind unveränderlich', () =
     const customerId = ((await db.query('SELECT id FROM customers')) as { id: number }[])[0]!.id;
     await service.saveDraft(makeDraftInput({ id: draft.id, customerId }));
     const issued = await service.issue(draft.id);
-    await db.query('DELETE FROM customers WHERE id = ?', [customerId]);
+    await db
+      .createQueryBuilder()
+      .delete()
+      .from('customers')
+      .where('id = :id', { id: customerId })
+      .execute();
     expect(await service.get(draft.id)).toEqual({ ...issued, customerId: null });
   });
 
@@ -128,7 +134,10 @@ describe('Persistenzschicht: ausgestellte Rechnungen sind unveränderlich', () =
     expect(changed.totalRappen).toBe(500);
     expect(changed.items).toHaveLength(1);
     await service.deleteDraft(draft.id);
-    expect(await db.query('SELECT COUNT(*) AS n FROM invoice_items')).toEqual([{ n: 0 }]);
+    const left = (await db.query('SELECT COUNT(*) AS n FROM invoice_items')) as {
+      n: string | number;
+    }[];
+    expect(Number(left[0]?.n)).toBe(0);
   });
 
   it('der Übergang draft -> issued bleibt erlaubt', async () => {

@@ -16,6 +16,25 @@ describe('wrapHandler', () => {
     expect(await run({ id: 1 })).toEqual(err('NOT_FOUND', 'Nicht gefunden.'));
   });
 
+  it('verpackt einen Rückgabewert mit boolescher Eigenschaft «ok» (kein Result) wie jeden anderen Wert', async () => {
+    const run = wrapHandler(schema, () => ({ ok: false, message: 'Server nicht erreichbar' }));
+    expect(await run({ id: 1 })).toEqual(ok({ ok: false, message: 'Server nicht erreichbar' }));
+    const success = wrapHandler(schema, () => ({ ok: true, failedStage: null }));
+    expect(await success({ id: 1 })).toEqual(ok({ ok: true, failedStage: null }));
+  });
+
+  it('meldet einen Verbindungsabbruch zum Datenbankserver verständlich als IO (Lesen wie Schreiben)', async () => {
+    const lost = Object.assign(new Error('Connection lost: The server closed the connection.'), {
+      code: 'PROTOCOL_CONNECTION_LOST',
+    });
+    const run = wrapHandler(schema, () => {
+      throw lost;
+    });
+    const result = await run({ id: 1 });
+    expect(result).toMatchObject({ ok: false, error: { code: 'IO' } });
+    if (!result.ok) expect(result.error.message).toMatch(/Verbindung zum Datenbankserver/);
+  });
+
   it('wandelt ungültige Eingaben in VALIDATION mit Feldnamen um', async () => {
     const run = wrapHandler(schema, () => 'nie');
     const result = await run({ id: 'x' });

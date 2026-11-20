@@ -1,4 +1,5 @@
 import { EntitySchema } from 'typeorm';
+import { bigintToNumber } from './column-transformers';
 
 /** Row of the `invoice_items` table. Quantity in thousandths, prices and amounts in rappen. */
 export interface InvoiceItemRow {
@@ -19,8 +20,8 @@ export const InvoiceItemEntity = new EntitySchema<InvoiceItemRow>({
     invoice_id: { type: 'integer' },
     position: { type: 'integer' },
     description: { type: 'text' },
-    quantity_milli: { type: 'integer' },
-    unit_price_rappen: { type: 'integer' },
-    amount_rappen: { type: 'integer' },
+    quantity_milli: { type: 'bigint', transformer: bigintToNumber },
+    unit_price_rappen: { type: 'bigint', transformer: bigintToNumber },
+    amount_rappen: { type: 'bigint', transformer: bigintToNumber },
   },
 });

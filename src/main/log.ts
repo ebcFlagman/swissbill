@@ -6,6 +6,18 @@ export type LogLevel = 'INFO' | 'WARN' | 'ERROR';
 const MAX_BYTES = 1_000_000;
 
 let logFile: string | null = null;
+const secrets = new Set<string>();
+
+/** Registers a secret (e.g. the database password) that must never appear in the log. */
+export function redactFromLogs(secret: string): void {
+  if (secret.length >= 3) secrets.add(secret);
+}
+
+function redact(message: string): string {
+  let result = message;
+  for (const secret of secrets) result = result.split(secret).join('***');
+  return result;
+}
 
 /**
  * Local logging to a file (rotated at 1 MB, one previous file).
@@ -18,7 +30,7 @@ export function initLogger(dir: string): void {
 }
 
 function write(level: LogLevel, message: string): void {
-  const line = `${new Date().toISOString()} ${level} ${message}\n`;
+  const line = `${new Date().toISOString()} ${level} ${redact(message)}\n`;
   if (!logFile) {
     process.stderr.write(line);
     return;

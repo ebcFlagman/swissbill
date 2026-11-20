@@ -16,6 +16,8 @@ import type { ReferenceType } from '@shared/domain/reference';
 import { AppException } from '@shared/ipc/errors';
 import { InvoiceEntity, type InvoiceRow } from './entities/invoice.entity';
 import { InvoiceItemEntity } from './entities/invoice-item.entity';
+import { isUniqueViolation } from './adapters';
+import { assertLockOwned, forgetLock } from './lock-guard';
 import { NumberCounterEntity } from './entities/number-counter.entity';
 import { unitOfWorkFor } from './unit-of-work';
 
@@ -213,6 +215,11 @@ export class InvoiceRepository {
       );
       // Items are only written if the invoice really was a draft within the same operation
       if (!result.affected) throw new AppException('IMMUTABLE', IMMUTABLE_CHANGE);
+      // Server database: only the device holding the edit lock may save (rolls everything back otherwise)
+      await assertLockOwned(this.dataSource, manager, {
+        entityType: 'invoice',
+        entityId: input.id,
+      });
       await manager.delete(InvoiceItemEntity, { invoice_id: input.id });
       if (items.length > 0) {
         await manager.insert(
@@ -234,7 +241,12 @@ export class InvoiceRepository {
   async deleteDraft(id: number): Promise<void> {
     await unitOfWorkFor(this.dataSource).run(async (manager) => {
       const result = await manager.delete(InvoiceEntity, { id, status: 'draft' });
-      if (result.affected) return;
+      if (result.affected) {
+        const key = { entityType: 'invoice', entityId: id } as const;
+        await assertLockOwned(this.dataSource, manager, key);
+        await forgetLock(this.dataSource, manager, key);
+        return;
+      }
       const existing = await manager.findOneBy(InvoiceEntity, { id });
       if (existing && !canDelete(existing.status)) {
         throw new AppException(
@@ -329,15 +341,40 @@ export class InvoiceRepository {
   }
 }
 
-/** Increments the counter of the year and returns the new sequence number (call only within a transaction). */
+const COUNTER_SAVEPOINT = 'counter_insert';
+
+/**
+ * Increments the counter of the year and returns the new sequence number (call only within a transaction).
+ * The `UPDATE` locks the counter row until the transaction ends, so devices issuing at the same time queue
+ * up and each gets the next number. If the row does not exist yet (first invoice of the year), it is inserted;
+ * when another device was faster, the insert fails on the primary key. A failed statement would poison the
+ * whole transaction on PostgreSQL, so the insert runs inside a savepoint that is rolled back to before the
+ * `UPDATE` is tried again.
+ */
 async function nextSequence(manager: EntityManager, year: number): Promise<number> {
-  const update = await manager
-    .createQueryBuilder()
-    .update(NumberCounterEntity)
-    .set({ last_seq: () => 'last_seq + 1' })
-    .where('year = :year', { year })
-    .execute();
-  if (!update.affected) await manager.insert(NumberCounterEntity, { year, last_seq: 1 });
+  const bump = () =>
+    manager
+      .createQueryBuilder()
+      .update(NumberCounterEntity)
+      .set({ last_seq: () => 'last_seq + 1' })
+      .where('year = :year', { year })
+      .execute();
+
+  if (!(await bump()).affected) {
+    const runner = manager.queryRunner;
+    if (!runner) throw new Error('Die Nummernvergabe braucht eine Transaktion.');
+    await runner.query(`SAVEPOINT ${COUNTER_SAVEPOINT}`);
+    try {
+      await manager.insert(NumberCounterEntity, { year, last_seq: 1 });
+      await runner.query(`RELEASE SAVEPOINT ${COUNTER_SAVEPOINT}`);
+      return 1;
+    } catch (error) {
+      if (!isUniqueViolation(error)) throw error;
+      await runner.query(`ROLLBACK TO SAVEPOINT ${COUNTER_SAVEPOINT}`);
+      await runner.query(`RELEASE SAVEPOINT ${COUNTER_SAVEPOINT}`);
+      if (!(await bump()).affected) throw error;
+    }
+  }
   const row = await manager.findOneByOrFail(NumberCounterEntity, { year });
   return row.last_seq;
 }

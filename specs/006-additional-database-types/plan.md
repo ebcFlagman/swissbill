@@ -108,7 +108,7 @@ src/
 │   │   ├── entities/edit-lock.entity.ts # neu
 │   │   ├── settings-repository.ts       # SettingsKeyCodec (geändert)
 │   │   └── migrations/{…001 (Typen), …004-AddEditLocks}.ts
-│   ├── services/{lock-service,connection-service}.ts   # neu
+│   ├── services/connection-service.ts   # neu; Sperren: db/lock-repository.ts + db/lock-guard.ts, recovery.ts
 │   ├── services/backup-service.ts       # nur lokal; Server → Hinweis (geändert)
 │   ├── ipc/db-connection.ts, ipc/locks.ts              # neu
 │   └── index.ts                         # Start mit Wiederherstellungsmodus (geändert)

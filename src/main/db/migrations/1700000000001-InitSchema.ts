@@ -4,171 +4,203 @@ import {
   TableIndex,
   type MigrationInterface,
   type QueryRunner,
+  type TableColumnOptions,
 } from 'typeorm';
-
-const nullableText = (name: string, extra: { default?: string } = {}) => ({
-  name,
-  type: 'text',
-  isNullable: true,
-  ...extra,
-});
+import { columnType, type TypeKind } from '../schema-types';
 
 /**
  * Base schema (equals the former schema version 2 without triggers and CHECK constraints).
  * The rules of the triggers/CHECKs apply in the application code (constitution, principle III).
  * Amounts: whole rappen, quantities: thousandths (integer). Timestamps: ISO-8601 text.
+ *
+ * Column types depend on the driver (see `schema-types.ts`): SQLite keeps `text`/`integer` exactly as
+ * before; servers get bounded `varchar`, `bigint` amounts and `bytea`/`blob`. The migration only
+ * creates what is missing, so an interrupted run (MySQL/MariaDB cannot roll back DDL) can be repeated.
  */
 export class InitSchema1700000000001 implements MigrationInterface {
   name = 'InitSchema1700000000001';
 
   async up(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.createTable(
-      new Table({
-        name: 'settings',
-        columns: [
-          { name: 'id', type: 'integer', isPrimary: true },
-          { name: 'sender_name', type: 'text', default: "''" },
-          { name: 'sender_street', type: 'text', default: "''" },
-          { name: 'sender_house_no', type: 'text', default: "''" },
-          { name: 'sender_zip', type: 'text', default: "''" },
-          { name: 'sender_city', type: 'text', default: "''" },
-          { name: 'sender_country', type: 'text', default: "'CH'" },
-          { name: 'sender_iban', type: 'text', default: "''" },
-          { name: 'invoice_prefix', type: 'text', default: "'RE'" },
-          nullableText('default_closing_text'),
-          { name: 'default_payment_days', type: 'integer', default: 30 },
-          { name: 'updated_at', type: 'text' },
-        ],
+    const col = (
+      name: string,
+      kind: TypeKind,
+      options: { length?: number; nullable?: boolean; default?: string | number } = {},
+    ): TableColumnOptions => {
+      const { length, nullable, default: def } = options;
+      return {
+        name,
+        ...columnType(queryRunner, kind, length),
+        ...(nullable ? { isNullable: true } : {}),
+        ...(def !== undefined ? { default: def } : {}),
+      };
+    };
+    const id: TableColumnOptions = {
+      name: 'id',
+      type: 'integer',
+      isPrimary: true,
+      isGenerated: true,
+      generationStrategy: 'increment',
+    };
+    const address = (prefix: string, nullable: boolean, withIban = false): TableColumnOptions[] => [
+      col(`${prefix}name`, 'short', {
+        length: 70,
+        nullable,
+        ...(nullable ? {} : { default: "''" }),
       }),
-    );
-    // The one settings row; all other columns take their default values
-    await queryRunner.query(
-      `INSERT INTO "settings" ("id", "updated_at") VALUES (1, '${new Date().toISOString()}')`,
-    );
+      col(`${prefix}street`, 'short', {
+        length: 70,
+        nullable,
+        ...(nullable ? {} : { default: "''" }),
+      }),
+      col(`${prefix}house_no`, 'short', {
+        length: 16,
+        nullable,
+        ...(nullable ? {} : { default: "''" }),
+      }),
+      col(`${prefix}zip`, 'short', {
+        length: 16,
+        nullable,
+        ...(nullable ? {} : { default: "''" }),
+      }),
+      col(`${prefix}city`, 'short', {
+        length: 35,
+        nullable,
+        ...(nullable ? {} : { default: "''" }),
+      }),
+      col(`${prefix}country`, 'short', { length: 2, nullable, default: "'CH'" }),
+      ...(withIban
+        ? [
+            col(`${prefix}iban`, 'short', {
+              length: 21,
+              nullable,
+              ...(nullable ? {} : { default: "''" }),
+            }),
+          ]
+        : []),
+    ];
 
-    await queryRunner.createTable(
-      new Table({
-        name: 'customers',
-        columns: [
-          {
-            name: 'id',
-            type: 'integer',
-            isPrimary: true,
-            isGenerated: true,
-            generationStrategy: 'increment',
-          },
-          { name: 'name', type: 'text' },
-          { name: 'street', type: 'text', default: "''" },
-          { name: 'house_no', type: 'text', default: "''" },
-          { name: 'zip', type: 'text' },
-          { name: 'city', type: 'text' },
-          { name: 'country', type: 'text', default: "'CH'" },
-          nullableText('notes'),
-          { name: 'created_at', type: 'text' },
-          { name: 'updated_at', type: 'text' },
-        ],
-      }),
-    );
+    if (!(await queryRunner.hasTable('settings'))) {
+      await queryRunner.createTable(
+        new Table({
+          name: 'settings',
+          columns: [
+            { name: 'id', type: 'integer', isPrimary: true },
+            ...address('sender_', false, true),
+            col('invoice_prefix', 'short', { length: 10, default: "'RE'" }),
+            col('default_closing_text', 'text', { nullable: true }),
+            col('default_payment_days', 'int', { default: 30 }),
+            col('updated_at', 'short', { length: 32 }),
+          ],
+        }),
+      );
+      // The one settings row; all other columns take their default values
+      await queryRunner.manager
+        .createQueryBuilder()
+        .insert()
+        .into('settings', ['id', 'updated_at'])
+        .values({ id: 1, updated_at: new Date().toISOString() })
+        .execute();
+    }
 
-    await queryRunner.createTable(
-      new Table({
-        name: 'invoices',
-        columns: [
-          {
-            name: 'id',
-            type: 'integer',
-            isPrimary: true,
-            isGenerated: true,
-            generationStrategy: 'increment',
-          },
-          { name: 'status', type: 'text', default: "'draft'" },
-          { name: 'number', type: 'text', isNullable: true, isUnique: true },
-          { name: 'number_year', type: 'integer', isNullable: true },
-          { name: 'number_seq', type: 'integer', isNullable: true },
-          { name: 'invoice_date', type: 'text' },
-          { name: 'due_date', type: 'text' },
-          { name: 'customer_id', type: 'integer', isNullable: true },
-          nullableText('sender_name'),
-          nullableText('sender_street'),
-          nullableText('sender_house_no'),
-          nullableText('sender_zip'),
-          nullableText('sender_city'),
-          nullableText('sender_country', { default: "'CH'" }),
-          nullableText('sender_iban'),
-          nullableText('debtor_name'),
-          nullableText('debtor_street'),
-          nullableText('debtor_house_no'),
-          nullableText('debtor_zip'),
-          nullableText('debtor_city'),
-          nullableText('debtor_country', { default: "'CH'" }),
-          nullableText('closing_text'),
-          nullableText('reference_type'),
-          nullableText('reference'),
-          { name: 'total_rappen', type: 'integer', default: 0 },
-          { name: 'layout_version', type: 'integer', isNullable: true },
-          nullableText('issued_at'),
-          nullableText('paid_at'),
-          nullableText('cancelled_at'),
-          { name: 'created_at', type: 'text' },
-          { name: 'updated_at', type: 'text' },
-        ],
-        foreignKeys: [
-          new TableForeignKey({
-            columnNames: ['customer_id'],
-            referencedTableName: 'customers',
-            referencedColumnNames: ['id'],
-            onDelete: 'SET NULL',
-          }),
-        ],
-        indices: [
-          new TableIndex({
-            name: 'idx_invoices_status_date',
-            columnNames: ['status', 'invoice_date'],
-          }),
-          new TableIndex({ name: 'idx_invoices_debtor_name', columnNames: ['debtor_name'] }),
-        ],
-      }),
-    );
+    if (!(await queryRunner.hasTable('customers'))) {
+      await queryRunner.createTable(
+        new Table({
+          name: 'customers',
+          columns: [
+            id,
+            col('name', 'short', { length: 70 }),
+            col('street', 'short', { length: 70, default: "''" }),
+            col('house_no', 'short', { length: 16, default: "''" }),
+            col('zip', 'short', { length: 16 }),
+            col('city', 'short', { length: 35 }),
+            col('country', 'short', { length: 2, default: "'CH'" }),
+            col('notes', 'text', { nullable: true }),
+            col('created_at', 'short', { length: 32 }),
+            col('updated_at', 'short', { length: 32 }),
+          ],
+        }),
+      );
+    }
 
-    await queryRunner.createTable(
-      new Table({
-        name: 'invoice_items',
-        columns: [
-          {
-            name: 'id',
-            type: 'integer',
-            isPrimary: true,
-            isGenerated: true,
-            generationStrategy: 'increment',
-          },
-          { name: 'invoice_id', type: 'integer' },
-          { name: 'position', type: 'integer' },
-          { name: 'description', type: 'text' },
-          { name: 'quantity_milli', type: 'integer' },
-          { name: 'unit_price_rappen', type: 'integer' },
-          { name: 'amount_rappen', type: 'integer' },
-        ],
-        foreignKeys: [
-          new TableForeignKey({
-            columnNames: ['invoice_id'],
-            referencedTableName: 'invoices',
-            referencedColumnNames: ['id'],
-            onDelete: 'CASCADE',
-          }),
-        ],
-        uniques: [{ name: 'uq_invoice_items_position', columnNames: ['invoice_id', 'position'] }],
-      }),
-    );
+    if (!(await queryRunner.hasTable('invoices'))) {
+      await queryRunner.createTable(
+        new Table({
+          name: 'invoices',
+          columns: [
+            id,
+            col('status', 'short', { length: 16, default: "'draft'" }),
+            { ...col('number', 'short', { length: 40, nullable: true }), isUnique: true },
+            col('number_year', 'int', { nullable: true }),
+            col('number_seq', 'int', { nullable: true }),
+            col('invoice_date', 'short', { length: 32 }),
+            col('due_date', 'short', { length: 32 }),
+            col('customer_id', 'int', { nullable: true }),
+            ...address('sender_', true, true),
+            ...address('debtor_', true),
+            col('closing_text', 'text', { nullable: true }),
+            col('reference_type', 'short', { length: 8, nullable: true }),
+            col('reference', 'short', { length: 40, nullable: true }),
+            col('total_rappen', 'bigint', { default: 0 }),
+            col('layout_version', 'int', { nullable: true }),
+            col('issued_at', 'short', { length: 32, nullable: true }),
+            col('paid_at', 'short', { length: 32, nullable: true }),
+            col('cancelled_at', 'short', { length: 32, nullable: true }),
+            col('created_at', 'short', { length: 32 }),
+            col('updated_at', 'short', { length: 32 }),
+          ],
+          foreignKeys: [
+            new TableForeignKey({
+              columnNames: ['customer_id'],
+              referencedTableName: 'customers',
+              referencedColumnNames: ['id'],
+              onDelete: 'SET NULL',
+            }),
+          ],
+          indices: [
+            new TableIndex({
+              name: 'idx_invoices_status_date',
+              columnNames: ['status', 'invoice_date'],
+            }),
+            new TableIndex({ name: 'idx_invoices_debtor_name', columnNames: ['debtor_name'] }),
+          ],
+        }),
+      );
+    }
 
-    await queryRunner.createTable(
-      new Table({
-        name: 'number_counters',
-        columns: [
-          { name: 'year', type: 'integer', isPrimary: true },
-          { name: 'last_seq', type: 'integer' },
-        ],
-      }),
-    );
+    if (!(await queryRunner.hasTable('invoice_items'))) {
+      await queryRunner.createTable(
+        new Table({
+          name: 'invoice_items',
+          columns: [
+            id,
+            col('invoice_id', 'int'),
+            col('position', 'int'),
+            col('description', 'short', { length: 500 }),
+            col('quantity_milli', 'bigint'),
+            col('unit_price_rappen', 'bigint'),
+            col('amount_rappen', 'bigint'),
+          ],
+          foreignKeys: [
+            new TableForeignKey({
+              columnNames: ['invoice_id'],
+              referencedTableName: 'invoices',
+              referencedColumnNames: ['id'],
+              onDelete: 'CASCADE',
+            }),
+          ],
+          uniques: [{ name: 'uq_invoice_items_position', columnNames: ['invoice_id', 'position'] }],
+        }),
+      );
+    }
+
+    if (!(await queryRunner.hasTable('number_counters'))) {
+      await queryRunner.createTable(
+        new Table({
+          name: 'number_counters',
+          columns: [{ name: 'year', type: 'integer', isPrimary: true }, col('last_seq', 'int')],
+        }),
+      );
+    }
   }
 
   /** The schema only moves forward (constitution, principle III). */

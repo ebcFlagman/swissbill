@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { AppException } from '@shared/ipc/errors';
 import { loadMigrations } from '../../src/main/db/data-source';
+import { sqliteAdapter } from '../../src/main/db/adapters/sqlite';
 import { openAndMigrate } from '../../src/main/db/startup';
 import { BackupService } from '../../src/main/services/backup-service';
 import { InvoiceService } from '../../src/main/services/invoice-service';
@@ -23,13 +24,14 @@ async function setup() {
   const invoices = new InvoiceService(db, { now: () => new Date(2026, 2, 1, 10, 0) });
   const a = await invoices.issue((await createFilledDraft(invoices)).id);
   const b = await createFilledDraft(invoices);
-  return { db, path, backup: new BackupService(db), a, b };
+  return { db, path, backup: new BackupService(db, sqliteAdapter), a, b };
 }
 
 describe('BackupService', () => {
   it('zeigt Speicherort, Grösse und Schemastand (Anzahl Migrationen)', async () => {
     const { db, path, backup } = await setup();
     const info = await backup.info();
+    expect(info.type).toBe('sqlite');
     expect(info.path).toBe(path);
     expect(info.sizeBytes).toBe(statSync(path).size);
     expect(info.sizeBytes).toBeGreaterThan(0);

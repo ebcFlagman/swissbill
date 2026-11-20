@@ -5,9 +5,19 @@ import { InvoiceService } from '../../src/main/services/invoice-service';
 import type { Invoice } from '@shared/domain/invoice';
 import { makeDraftInput } from './invoice';
 
-/** Fresh, fully migrated in-memory database. */
+/**
+ * Where `createTestDb` gets its databases from. `null` (default): a fresh in-memory SQLite database.
+ * The matrix tests (`describeMatrixDb`) set it so that the same test bodies run on every database type.
+ */
+let provider: (() => Promise<DataSource>) | null = null;
+
+export function setTestDbProvider(next: (() => Promise<DataSource>) | null): void {
+  provider = next;
+}
+
+/** Fresh, fully migrated database (in-memory SQLite unless a matrix provider is active). */
 export function createTestDb(): Promise<DataSource> {
-  return openAndMigrate(':memory:');
+  return provider ? provider() : openAndMigrate(':memory:');
 }
 
 export function createService(

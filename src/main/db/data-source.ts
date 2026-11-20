@@ -4,8 +4,9 @@ import { CustomerEntity } from './entities/customer.entity';
 import { InvoiceEntity } from './entities/invoice.entity';
 import { InvoiceItemEntity } from './entities/invoice-item.entity';
 import { NumberCounterEntity } from './entities/number-counter.entity';
-import { SettingsEntity } from './entities/settings.entity';
-import { sqliteOptions } from './sqlite-adapter';
+import { PostgresSettingsEntity, SettingsEntity } from './entities/settings.entity';
+import type { DbAdapter, DbTarget } from './adapters';
+import { sqliteAdapter } from './adapters/sqlite';
 
 export const DB_FILENAME = 'swissbill.db';
 
@@ -31,21 +32,21 @@ export function timestampOf(name: string): number {
 }
 
 /**
- * Creates the DataSource (without opening it). `path` is the full file path (in production the
- * Electron `userData` folder) or `:memory:` for tests. The schema never changes automatically:
+ * Creates the DataSource for any adapter (without opening it). The schema never changes automatically:
  * `synchronize` and `migrationsRun` are off, changes only happen through the migrations.
  */
-export function createDataSource(
-  path: string,
+export function createDataSourceFor(
+  adapter: DbAdapter,
+  target: DbTarget,
   migrations: readonly MigrationClass[] = loadMigrations(),
 ): DataSource {
   return new DataSource({
-    ...sqliteOptions(path),
+    ...adapter.dataSourceOptions(target),
     entities: [
       CustomerEntity,
       InvoiceEntity,
       InvoiceItemEntity,
-      SettingsEntity,
+      adapter.type === 'postgres' ? PostgresSettingsEntity : SettingsEntity,
       NumberCounterEntity,
     ],
     migrations: [...migrations],
@@ -53,4 +54,15 @@ export function createDataSource(
     migrationsRun: false,
     migrationsTransactionMode: 'each',
   });
+}
+
+/**
+ * Creates the local SQLite DataSource. `path` is the full file path (in production the Electron
+ * `userData` folder) or `:memory:` for tests.
+ */
+export function createDataSource(
+  path: string,
+  migrations: readonly MigrationClass[] = loadMigrations(),
+): DataSource {
+  return createDataSourceFor(sqliteAdapter, { kind: 'file', path }, migrations);
 }

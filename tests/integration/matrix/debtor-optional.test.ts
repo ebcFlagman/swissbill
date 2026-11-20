@@ -1,9 +1,10 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, expect, it } from 'vitest';
+import { describeMatrixDb } from '../helpers/db-targets';
 import { qrPayloadFromInvoice } from '@shared/domain/qr-payload';
-import { renderInvoicePdf } from '../../src/main/services/pdf-service';
-import { createFilledDraft, createService, createTestDb } from '../fixtures/db';
-import { inspectPdf, type InspectedPdf } from '../fixtures/pdf-inspect';
-import { makeDraftInput } from '../fixtures/invoice';
+import { renderInvoicePdf } from '../../../src/main/services/pdf-service';
+import { createFilledDraft, createService, createTestDb } from '../../fixtures/db';
+import { inspectPdf, type InspectedPdf } from '../../fixtures/pdf-inspect';
+import { makeDraftInput } from '../../fixtures/invoice';
 
 const nameOnly = { name: 'Pia Muster', street: '', houseNo: '', zip: '', city: '', country: '' };
 const noStreet = {
@@ -27,7 +28,7 @@ const inspect = async (buffer: Buffer) => {
 };
 const normalize = (text: string) => text.replace(/\r\n/g, '\n');
 
-describe('Rechnungsempfänger: nur der Name ist Pflicht', () => {
+describeMatrixDb('Rechnungsempfänger: nur der Name ist Pflicht', () => {
   it('eine Rechnung nur mit Empfängername lässt sich speichern, ausstellen und neu laden', async () => {
     const { service } = createService(await createTestDb());
     const draft = await createFilledDraft(service, { debtor: nameOnly });

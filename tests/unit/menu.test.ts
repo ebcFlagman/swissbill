@@ -3,13 +3,14 @@ import { describe, expect, it, vi } from 'vitest';
 import { buildMenuTemplate, type MenuDeps } from '../../src/main/menu-template';
 import { isMenuAction, type MenuAction } from '@shared/ipc/menu';
 
-function setup(isDev = false) {
+function setup(isDev = false, serverDatabase = false) {
   const sent: MenuAction[] = [];
   const deps: MenuDeps = {
     isDev,
     send: (action) => sent.push(action),
     showAbout: vi.fn(),
     showDatabaseFolder: vi.fn(),
+    serverDatabase,
   };
   return { template: buildMenuTemplate(deps), sent, deps };
 }
@@ -131,5 +132,14 @@ describe('isMenuAction', () => {
     expect(isMenuAction({ type: 'navigate' })).toBe(false);
     expect(isMenuAction({ type: 'navigate', page: 'admin' })).toBe(false);
     expect(isMenuAction({ type: 'deleteEverything' })).toBe(false);
+  });
+
+  it('bei einer Serverdatenbank sind Sichern und Datenbank-Ordner nicht wählbar', () => {
+    const local = setup(false, false).template;
+    expect(find(local, 'file-backup')?.enabled).toBe(true);
+    expect(find(local, 'help-db-folder')?.enabled).toBe(true);
+    const server = setup(false, true).template;
+    expect(find(server, 'file-backup')?.enabled).toBe(false);
+    expect(find(server, 'help-db-folder')?.enabled).toBe(false);
   });
 });

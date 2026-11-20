@@ -1,13 +1,17 @@
 import type { ZodType } from 'zod';
 import { AppException, err, ok, type Result } from '@shared/ipc/errors';
+import { CONNECTION_LOST_MESSAGE, isConnectionLost } from '../db/adapters';
 import { log } from '../log';
 
 type Handler<I, O> = (input: I) => O | Promise<O>;
 
+/**
+ * An already wrapped `Result` is `{ ok: true, value }` or `{ ok: false, error }`. A plain value that merely has a boolean
+ * `ok` (e.g. the connection test result) must still be wrapped.
+ */
 function isResult(value: unknown): value is Result<unknown> {
-  return (
-    typeof value === 'object' && value !== null && 'ok' in value && typeof value.ok === 'boolean'
-  );
+  if (typeof value !== 'object' || value === null || !('ok' in value)) return false;
+  return (value.ok === true && 'value' in value) || (value.ok === false && 'error' in value);
 }
 
 /**
@@ -35,6 +39,8 @@ export function wrapHandler<I, O>(
       return isResult(value) ? (value as Result<O>) : ok(value as O);
     } catch (error) {
       if (error instanceof AppException) return { ok: false, error: error.error };
+      // Reads and writes alike: a broken server connection is reported clearly, never as an unexpected error
+      if (isConnectionLost(error)) return err('IO', CONNECTION_LOST_MESSAGE);
       const message = error instanceof Error ? error.message : String(error);
       if (message.includes('IMMUTABLE:')) {
         return err(

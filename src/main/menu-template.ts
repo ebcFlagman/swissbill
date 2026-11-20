@@ -8,6 +8,8 @@ export interface MenuDeps {
   send: (action: MenuAction) => void;
   showAbout: () => void;
   showDatabaseFolder: () => void;
+  /** A server database has no file to back up or show: those entries are disabled */
+  serverDatabase?: boolean;
 }
 
 /**
@@ -66,6 +68,7 @@ export function buildMenuTemplate(deps: MenuDeps): MenuItemConstructorOptions[] 
         {
           id: 'file-backup',
           label: 'Datenbank sichern …',
+          enabled: !deps.serverDatabase,
           accelerator: 'CmdOrCtrl+Shift+S',
           click: () => send({ type: 'backup' }),
         },
@@ -92,6 +95,7 @@ export function buildMenuTemplate(deps: MenuDeps): MenuItemConstructorOptions[] 
         {
           id: 'help-db-folder',
           label: 'Datenbank-Ordner anzeigen',
+          enabled: !deps.serverDatabase,
           click: () => deps.showDatabaseFolder(),
         },
         { type: 'separator' },

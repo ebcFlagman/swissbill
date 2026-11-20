@@ -2,6 +2,7 @@ import type { DataSource } from 'typeorm';
 import { type Customer, type CustomerInput, validateCustomer } from '@shared/domain/customer';
 import { AppException } from '@shared/ipc/errors';
 import { CustomerEntity, type CustomerRow } from './entities/customer.entity';
+import { assertLockOwned, forgetLock } from './lock-guard';
 import { unitOfWorkFor } from './unit-of-work';
 
 function toCustomer(row: CustomerRow): Customer {
@@ -71,8 +72,10 @@ export class CustomerRepository {
 
   async update(id: number, input: CustomerInput, now: string): Promise<void> {
     assertValid(input);
-    await unitOfWorkFor(this.dataSource).run((manager) =>
-      manager.update(
+    await unitOfWorkFor(this.dataSource).run(async (manager) => {
+      // Server database: only the device holding the edit lock may change the customer
+      await assertLockOwned(this.dataSource, manager, { entityType: 'customer', entityId: id });
+      await manager.update(
         CustomerEntity,
         { id },
         {
@@ -85,12 +88,17 @@ export class CustomerRepository {
           notes: input.notes,
           updated_at: now,
         },
-      ),
-    );
+      );
+    });
   }
 
   /** Invoices keep their snapshot; their reference `customer_id` becomes NULL through the foreign key. */
   async delete(id: number): Promise<void> {
-    await unitOfWorkFor(this.dataSource).run((manager) => manager.delete(CustomerEntity, { id }));
+    await unitOfWorkFor(this.dataSource).run(async (manager) => {
+      const key = { entityType: 'customer', entityId: id } as const;
+      await assertLockOwned(this.dataSource, manager, key);
+      await manager.delete(CustomerEntity, { id });
+      await forgetLock(this.dataSource, manager, key);
+    });
   }
 }

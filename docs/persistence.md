@@ -1,20 +1,25 @@
 # Persistenz
 
-Die Anwendung speichert alles in einer eingebetteten SQLite-Datei (`swissbill.db`, Electron-`userData`-Ordner).
-Der Zugriff läuft ausschliesslich im Main-Prozess über **TypeORM** (`src/main/db/`). Der Renderer sieht nur die
-schmale, typisierte IPC-Schnittstelle.
+Die Anwendung speichert standardmässig alles in einer eingebetteten SQLite-Datei (`swissbill.db`,
+Electron-`userData`-Ordner); optional in einer PostgreSQL-, MySQL- oder MariaDB-Datenbank auf einem eigenen Server
+(Feature 006, siehe README). Der Zugriff läuft ausschliesslich im Main-Prozess über **TypeORM** (`src/main/db/`). Der
+Renderer sieht nur die schmale, typisierte IPC-Schnittstelle.
 
 ## Aufbau (`src/main/db/`)
 
-| Datei                  | Aufgabe                                                                                       |
-| ---------------------- | --------------------------------------------------------------------------------------------- |
-| `entities/*.entity.ts` | `EntitySchema` je Tabelle (reine Abbildung; das Schema selbst entsteht durch die Migrationen) |
-| `migrations/*.ts`      | TypeORM-Migrationen, nur vorwärts, Klassenname endet auf den Zeitstempel                      |
-| `data-source.ts`       | `createDataSource(pfad)`; `synchronize` und `migrationsRun` sind aus                          |
-| `startup.ts`           | `openAndMigrate(pfad)`: Integritätsprüfung → öffnen → Übernahme alter Dateien → Migrationen   |
-| `sqlite-adapter.ts`    | **einzige** SQLite-spezifische Stelle: Pragmas, Integritätsprüfung, Vorab-Kopie, Sicherung    |
-| `unit-of-work.ts`      | führt alle Schreibvorgänge als Transaktionen nacheinander aus                                 |
-| `*-repository.ts`      | einziger Schreibpfad; setzt die Regeln durch                                                  |
+| Datei                  | Aufgabe                                                                                                                                                                                        |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `entities/*.entity.ts` | `EntitySchema` je Tabelle (reine Abbildung; das Schema selbst entsteht durch die Migrationen)                                                                                                  |
+| `migrations/*.ts`      | TypeORM-Migrationen, nur vorwärts, Klassenname endet auf den Zeitstempel                                                                                                                       |
+| `data-source.ts`       | `createDataSourceFor(adapter, ziel)`; `synchronize` und `migrationsRun` sind aus                                                                                                               |
+| `startup.ts`           | `openDatabase(adapter, ziel)`: Prüfung → öffnen → Fremd-DB-Erkennung → Migrationen unter Sperre                                                                                                |
+| `adapters/*.ts`        | **einzige** datenbankspezifische Stellen: `sqlite.ts` (Pragmas, Integrität, Kopie, Sicherung), `postgres.ts`, `mysql.ts` (TLS, Migrationssperre, Fehlerabbildung); Treiber nur hier importiert |
+| `connect.ts`           | `openActiveDatabase`: lokal oder Server nach `db-connection.json`; `testConnection` in fünf Stufen                                                                                             |
+| `connection-config.ts` | liest/schreibt `db-connection.json` (nie ein Passwort; das liegt im OS-Schlüsselbund)                                                                                                          |
+| `schema-types.ts`      | Spaltentypen je Treiber (SQLite bleibt `text`/`integer`, Server `varchar`/`bigint`/`bytea`)                                                                                                    |
+| `lock-repository.ts`   | Bearbeitungssperren in `edit_locks` (Serveruhr, 5 Minuten); `lock-guard.ts` prüft sie beim Schreiben                                                                                           |
+| `unit-of-work.ts`      | führt alle Schreibvorgänge als Transaktionen nacheinander aus                                                                                                                                  |
+| `*-repository.ts`      | einziger Schreibpfad; setzt die Regeln durch                                                                                                                                                   |
 
 ## Regeln leben im Code, nicht in der Datenbank
 
@@ -47,3 +52,17 @@ einen Tabellen-Neuaufbau) und decken sich mit den Code-Regeln.
 ## Sicherung
 
 `BackupService.backup(ziel)` schreibt über den SQLite-Adapter eine konsistente Einzeldatei (kein `-wal`/`-shm`).
+
+## Mehrere Datenbanktypen und Geräte (Feature 006)
+
+- **Gleiche Migrationen überall.** Die Spaltentypen wählt `schema-types.ts` je Treiber; die Migrationen legen nur an,
+  was fehlt, damit ein abgebrochener Lauf auf MySQL/MariaDB (DDL ohne Rollback) fortgesetzt werden kann. Betragsspalten
+  sind `bigint` mit Transformer nach `number`.
+- **Nummernvergabe.** Der `UPDATE … + 1` auf der Zählerzeile sperrt sie bis zum Ende der Transaktion, parallele
+  Ausstellvorgänge reihen sich ein. Das erste Anlegen der Zeile läuft in einem Savepoint (ein Schlüsselkonflikt würde
+  sonst auf PostgreSQL die ganze Transaktion unbrauchbar machen). Deadlocks und Snapshot-Konflikte (z. B. MariaDB
+  `ER_CHECKREAD`) wiederholt `UnitOfWork` die Transaktion bis zu 8-mal mit kurzer Pause.
+- **Verbindungsabbruch.** Der Server rollt die laufende Transaktion zurück; `UnitOfWork` meldet `IO` («nicht gespeichert»).
+- **Zeit.** Sperren verwenden nur die Uhr des Datenbankservers (`CURRENT_TIMESTAMP`), nie die Uhr eines Geräts.
+- **Tests.** `tests/integration/matrix/*` laufen je Datenbanktyp (`describeMatrix`/`describeMatrixDb`); Server nur mit
+  `SWISSBILL_TEST_PG_URL`, `…_MYSQL_URL`, `…_MARIADB_URL`.

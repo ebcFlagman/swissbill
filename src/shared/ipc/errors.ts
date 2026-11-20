@@ -1,4 +1,16 @@
-export type AppErrorCode = 'VALIDATION' | 'NOT_FOUND' | 'IMMUTABLE' | 'IO' | 'DB';
+export type AppErrorCode =
+  | 'VALIDATION'
+  | 'NOT_FOUND'
+  | 'IMMUTABLE'
+  | 'IO'
+  | 'DB'
+  // Database connection (feature 006)
+  | 'KEYCHAIN_UNAVAILABLE'
+  | 'CONNECTION'
+  | 'SCHEMA_NEWER'
+  | 'SCHEMA_FOREIGN'
+  | 'LOCK_LOST'
+  | 'LOCKED';
 
 export interface FieldError {
   /** e.g. `debtor.name` or `items.0.description` */

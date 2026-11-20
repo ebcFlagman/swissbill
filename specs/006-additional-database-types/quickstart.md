@@ -9,13 +9,13 @@
 docker compose up -d
 ```
 
-- Zugangs-URLs für die Matrix-Tests (nur Testdaten):
+- Zugangs-URLs für die Matrix-Tests (nur Testdaten). Der Benutzer muss Datenbanken anlegen dürfen, jeder Test bekommt seine eigene frische Datenbank und räumt sie wieder weg (deshalb `root` bei MySQL/MariaDB):
 
 ```bash
-export SWISSBILL_TEST_PG_URL=postgres://swissbill:test@localhost:55432/swissbill
-export SWISSBILL_TEST_MYSQL_URL=mysql://swissbill:test@localhost:53306/swissbill
-export SWISSBILL_TEST_MARIADB_URL=mysql://swissbill:test@localhost:53307/swissbill
+. tests/integration/helpers/env.sh
 ```
+
+  Der Inhalt von `tests/integration/helpers/env.sh`: `SWISSBILL_TEST_PG_URL=postgres://swissbill:test@localhost:55432/swissbill`, `SWISSBILL_TEST_MYSQL_URL=mysql://root:root@localhost:53306/`, `SWISSBILL_TEST_MARIADB_URL=mysql://root:root@localhost:53307/`.
 
 ## 1. Automatische Prüfung (SC-002, SC-003, SC-004)
 

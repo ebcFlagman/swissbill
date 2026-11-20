@@ -1,15 +1,16 @@
 import type { DataSource } from 'typeorm';
-import { describe, expect, it } from 'vitest';
+import { expect, it } from 'vitest';
+import { describeMatrixDb } from '../helpers/db-targets';
 import { AppException } from '@shared/ipc/errors';
 import { buildCreditorReference, buildQrReference } from '@shared/domain/reference';
-import { createFilledDraft, createService, createTestDb } from '../fixtures/db';
-import { makeDraftInput, NORMAL_IBAN } from '../fixtures/invoice';
+import { createFilledDraft, createService, createTestDb } from '../../fixtures/db';
+import { makeDraftInput, NORMAL_IBAN } from '../../fixtures/invoice';
 
 function counters(db: DataSource): Promise<unknown[]> {
   return db.query('SELECT year, last_seq FROM number_counters ORDER BY year');
 }
 
-describe('Ausstellen', () => {
+describeMatrixDb('Ausstellen', () => {
   it('vergibt Nummer, Referenz und Referenztyp und schreibt die Rechnung fest', async () => {
     const db = await createTestDb();
     const { service } = createService(db);

@@ -1,7 +1,8 @@
-import { describe, expect, it } from 'vitest';
-import { CustomerService } from '../../src/main/services/customer-service';
-import { createFilledDraft, createService, createTestDb } from '../fixtures/db';
-import { makeDraftInput } from '../fixtures/invoice';
+import { expect, it } from 'vitest';
+import { describeMatrixDb } from '../helpers/db-targets';
+import { CustomerService } from '../../../src/main/services/customer-service';
+import { createFilledDraft, createService, createTestDb } from '../../fixtures/db';
+import { makeDraftInput } from '../../fixtures/invoice';
 
 const customer = (name: string, city: string) => ({
   name,
@@ -13,7 +14,7 @@ const customer = (name: string, city: string) => ({
   notes: '',
 });
 
-describe('Suche ohne Beachtung der Gross-/Kleinschreibung, auch mit Umlauten', () => {
+describeMatrixDb('Suche ohne Beachtung der Gross-/Kleinschreibung, auch mit Umlauten', () => {
   it('Kunden werden nach Name und Ort gefunden; Sortierung nach kleingeschriebenem Namen, dann Id', async () => {
     const customers = new CustomerService(await createTestDb());
     await customers.save(customer('Müller AG', 'Zürich'));
