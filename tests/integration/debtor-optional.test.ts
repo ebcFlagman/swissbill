@@ -6,7 +6,14 @@ import { inspectPdf, type InspectedPdf } from '../fixtures/pdf-inspect';
 import { makeDraftInput } from '../fixtures/invoice';
 
 const nameOnly = { name: 'Pia Muster', street: '', houseNo: '', zip: '', city: '', country: '' };
-const noStreet = { name: 'Pia Muster', street: '', houseNo: '', zip: '9400', city: 'Rorschach', country: '' };
+const noStreet = {
+  name: 'Pia Muster',
+  street: '',
+  houseNo: '',
+  zip: '9400',
+  city: 'Rorschach',
+  country: '',
+};
 
 let open: InspectedPdf[] = [];
 afterEach(async () => {

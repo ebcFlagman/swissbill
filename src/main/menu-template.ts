@@ -1,5 +1,5 @@
 import type { MenuItemConstructorOptions } from 'electron';
-import type { MenuAction } from '../shared/ipc/menu';
+import type { MenuAction } from '@shared/ipc/menu';
 
 export interface MenuDeps {
   /** Development mode: reload and show developer tools */
@@ -89,7 +89,11 @@ export function buildMenuTemplate(deps: MenuDeps): MenuItemConstructorOptions[] 
     {
       label: 'Hilfe',
       submenu: [
-        { id: 'help-db-folder', label: 'Datenbank-Ordner anzeigen', click: () => deps.showDatabaseFolder() },
+        {
+          id: 'help-db-folder',
+          label: 'Datenbank-Ordner anzeigen',
+          click: () => deps.showDatabaseFolder(),
+        },
         { type: 'separator' },
         { id: 'help-about', label: 'Über SwissBill', click: () => deps.showAbout() },
       ],

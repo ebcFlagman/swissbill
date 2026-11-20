@@ -1,7 +1,7 @@
 import { app } from 'electron';
 import type { DataSource } from 'typeorm';
 import { z } from 'zod';
-import { CHANNELS, type AppInfo } from '../../shared/ipc/api';
+import { CHANNELS, type AppInfo } from '@shared/ipc/api';
 import { createSecretStore } from '../electron-secret-store';
 import { AddressService } from '../services/address-service';
 import { BackupService } from '../services/backup-service';

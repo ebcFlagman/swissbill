@@ -1,14 +1,21 @@
-import type { Address } from '../../shared/domain/address';
-import { formatIban } from '../../shared/domain/iban';
+import type { Address } from '@shared/domain/address';
+import { formatIban } from '@shared/domain/iban';
 import {
   recalculate,
   validateForIssue,
   type DraftInput,
   type Invoice,
   type Sender,
-} from '../../shared/domain/invoice';
-import { formatChfInput, formatMilli, lineAmount, parseChf, parseMilli, type Rappen } from '../../shared/domain/money';
-import type { FieldError } from '../../shared/ipc/errors';
+} from '@shared/domain/invoice';
+import {
+  formatChfInput,
+  formatMilli,
+  lineAmount,
+  parseChf,
+  parseMilli,
+  type Rappen,
+} from '@shared/domain/money';
+import type { FieldError } from '@shared/ipc/errors';
 
 /** Form state: numbers stay text so that inputs like "1." or "" are not lost. */
 export interface ItemForm {

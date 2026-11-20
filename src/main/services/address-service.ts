@@ -1,7 +1,7 @@
 import type { DataSource } from 'typeorm';
-import { MAX_SUGGESTIONS, toSuggestions } from '../../shared/domain/address-suggestion';
-import { normalizeApiKey } from '../../shared/domain/settings';
-import type { KeyCheckResult, SuggestResult } from '../../shared/ipc/addresses';
+import { MAX_SUGGESTIONS, toSuggestions } from '@shared/domain/address-suggestion';
+import { normalizeApiKey } from '@shared/domain/settings';
+import type { KeyCheckResult, SuggestResult } from '@shared/ipc/addresses';
 import { readApiKey } from '../db/settings-repository';
 import type { SecretStore } from '../secret-store';
 import type { GeoapifyClient } from './geoapify-client';

@@ -6,7 +6,10 @@ const OPTION = 'Bahnhofstrasse 1, 8001 Zürich, Schweiz';
 
 test('Adressvorschlag wählen füllt Strasse, Nr., PLZ, Ort und Land; Name bleibt; alles bleibt änderbar', async () => {
   const fake = await startFakeGeoapify();
-  const launched = await launchApp(undefined, { ...FAKE_ENV, SWISSBILL_GEOAPIFY_BASE_URL: fake.url });
+  const launched = await launchApp(undefined, {
+    ...FAKE_ENV,
+    SWISSBILL_GEOAPIFY_BASE_URL: fake.url,
+  });
   try {
     const { app, page } = launched;
     await setupSettings(app, page, 'test-key-0123456789');
@@ -58,7 +61,10 @@ test('Adressvorschlag wählen füllt Strasse, Nr., PLZ, Ort und Land; Name bleib
 
 test('Vorschläge gibt es auch beim Absender (Einstellungen) und beim Kunden', async () => {
   const fake = await startFakeGeoapify();
-  const launched = await launchApp(undefined, { ...FAKE_ENV, SWISSBILL_GEOAPIFY_BASE_URL: fake.url });
+  const launched = await launchApp(undefined, {
+    ...FAKE_ENV,
+    SWISSBILL_GEOAPIFY_BASE_URL: fake.url,
+  });
   try {
     const { app, page } = launched;
     await setupSettings(app, page, 'test-key-0123456789');

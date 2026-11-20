@@ -69,10 +69,19 @@ describe('Kunden', () => {
 
   it('prüft Pflichtfelder, Längen und Zeichensatz feldgenau', async () => {
     const customers = new CustomerService(await createTestDb());
-    const error = await failure(() => customers.save(customer({ name: '', zip: '', city: 'x'.repeat(36) })));
+    const error = await failure(() =>
+      customers.save(customer({ name: '', zip: '', city: 'x'.repeat(36) })),
+    );
     expect(error.error.code).toBe('VALIDATION');
-    expect(error.error.fields?.map((f) => f.field).sort()).toEqual(['customer.city', 'customer.name', 'customer.zip']);
-    expect((await failure(() => customers.save(customer({ notes: 'x'.repeat(2001) })))).error.fields?.[0]?.field).toBe('customer.notes');
+    expect(error.error.fields?.map((f) => f.field).sort()).toEqual([
+      'customer.city',
+      'customer.name',
+      'customer.zip',
+    ]);
+    expect(
+      (await failure(() => customers.save(customer({ notes: 'x'.repeat(2001) })))).error.fields?.[0]
+        ?.field,
+    ).toBe('customer.notes');
   });
 
   it('meldet NOT_FOUND für unbekannte Kunden', async () => {
@@ -87,7 +96,12 @@ describe('Kunden', () => {
     const saved = await customers.save(customer());
     const { service } = createService(db);
     const issued = await service.issue(
-      (await createFilledDraft(service, { customerId: saved.id, debtor: { ...makeDraftInput().debtor, name: saved.name } })).id,
+      (
+        await createFilledDraft(service, {
+          customerId: saved.id,
+          debtor: { ...makeDraftInput().debtor, name: saved.name },
+        })
+      ).id,
     );
     const draft = await createFilledDraft(service, { customerId: saved.id });
 
@@ -103,8 +117,17 @@ describe('Kunden', () => {
     const customers = new CustomerService(db);
     const saved = await customers.save(customer());
     const { service } = createService(db);
-    const debtor = { name: saved.name, street: saved.street, houseNo: saved.houseNo, zip: saved.zip, city: saved.city, country: saved.country };
-    const issued = await service.issue((await createFilledDraft(service, { customerId: saved.id, debtor })).id);
+    const debtor = {
+      name: saved.name,
+      street: saved.street,
+      houseNo: saved.houseNo,
+      zip: saved.zip,
+      city: saved.city,
+      country: saved.country,
+    };
+    const issued = await service.issue(
+      (await createFilledDraft(service, { customerId: saved.id, debtor })).id,
+    );
 
     await customers.save({ ...saved, street: 'Neue Strasse', zip: '3000', city: 'Bern' });
 
@@ -127,7 +150,11 @@ describe('Einstellungen', () => {
   it('speichert Absender, Präfix, Schlusstext und Zahlungsfrist (IBAN ohne Leerzeichen)', async () => {
     const service = new SettingsService(await createTestDb(), createFakeSecretStore());
     const saved = await service.save(
-      validSettings({ sender: { ...validSettings().sender, iban: 'ch93 0076 2011 6238 5295 7' }, invoicePrefix: 'INV-A', defaultPaymentDays: 14 }),
+      validSettings({
+        sender: { ...validSettings().sender, iban: 'ch93 0076 2011 6238 5295 7' },
+        invoicePrefix: 'INV-A',
+        defaultPaymentDays: 14,
+      }),
     );
     expect(saved.sender.iban).toBe(NORMAL_IBAN);
     expect(saved.invoicePrefix).toBe('INV-A');
@@ -147,13 +174,19 @@ describe('Einstellungen', () => {
       throw new Error('Es wurde keine AppException geworfen.');
     };
 
-    expect(await fieldsFor({ ...base, sender: { ...base.sender, iban: 'CH9300762011623852958' } })).toEqual(['sender.iban']);
-    expect(await fieldsFor({ ...base, sender: { ...base.sender, name: '' } })).toEqual(['sender.name']);
+    expect(
+      await fieldsFor({ ...base, sender: { ...base.sender, iban: 'CH9300762011623852958' } }),
+    ).toEqual(['sender.iban']);
+    expect(await fieldsFor({ ...base, sender: { ...base.sender, name: '' } })).toEqual([
+      'sender.name',
+    ]);
     expect(await fieldsFor({ ...base, invoicePrefix: 're' })).toEqual(['invoicePrefix']);
     expect(await fieldsFor({ ...base, invoicePrefix: 'ABCDEFGHIJK' })).toEqual(['invoicePrefix']);
     expect(await fieldsFor({ ...base, defaultPaymentDays: -1 })).toEqual(['defaultPaymentDays']);
     expect(await fieldsFor({ ...base, defaultPaymentDays: 366 })).toEqual(['defaultPaymentDays']);
-    expect(await fieldsFor({ ...base, defaultClosingText: 'x'.repeat(2001) })).toEqual(['defaultClosingText']);
+    expect(await fieldsFor({ ...base, defaultClosingText: 'x'.repeat(2001) })).toEqual([
+      'defaultClosingText',
+    ]);
     // Nothing was saved
     expect((await service.get()).sender.name).toBe('');
   });
@@ -211,7 +244,11 @@ describe('Einstellungen', () => {
     expect(overridden.sender.name).toBe('Andere Firma GmbH');
     expect(overridden.closingText).toBe('Nur für diese Rechnung');
 
-    expect(await settings.get()).toEqual({ ...validSettings(), geoapifyKeySet: false, geoapifyKeyStatus: 'none' });
+    expect(await settings.get()).toEqual({
+      ...validSettings(),
+      geoapifyKeySet: false,
+      geoapifyKeyStatus: 'none',
+    });
     const issued = await service.issue(draft.id);
     expect(issued.sender.name).toBe('Andere Firma GmbH');
     expect(issued.referenceType).toBe('SCOR'); // overridden normal IBAN

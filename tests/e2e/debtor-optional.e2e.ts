@@ -30,7 +30,10 @@ test('Rechnungsempfänger: nur der Name ist Pflicht, der Rest ist optional', asy
     await page.locator('#debtor-country').fill('');
     await expect(page.getByTestId('debtor-qr-hint')).toContainText('nicht im QR-Zahlteil');
     await page.getByRole('button', { name: 'Ausstellen', exact: true }).click();
-    await page.getByRole('dialog', { name: 'Rechnung ausstellen?' }).getByRole('button', { name: 'Ausstellen' }).click();
+    await page
+      .getByRole('dialog', { name: 'Rechnung ausstellen?' })
+      .getByRole('button', { name: 'Ausstellen' })
+      .click();
     const issued = page.getByRole('dialog', { name: 'Rechnung ausgestellt' });
     await expect(issued.getByTestId('issued-number')).toBeVisible();
     await issued.getByRole('button', { name: 'Schliessen' }).click();

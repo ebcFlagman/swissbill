@@ -10,7 +10,9 @@ test('Electron-Sicherheit: Isolation, CSP, keine Netzwerkzugriffe, keine fremden
     const failed: string[] = [];
     page.on('request', (request) => requests.push(request.url()));
     // The network block must not block anything the application itself needs (e.g. the PDF viewer of the preview)
-    page.on('requestfailed', (request) => failed.push(`${request.url()} ${request.failure()?.errorText ?? ''}`));
+    page.on('requestfailed', (request) =>
+      failed.push(`${request.url()} ${request.failure()?.errorText ?? ''}`),
+    );
 
     // Window settings in the main process
     const prefs = await app.evaluate(({ BrowserWindow }) => {
@@ -25,7 +27,12 @@ test('Electron-Sicherheit: Isolation, CSP, keine Netzwerkzugriffe, keine fremden
         webSecurity: p.webSecurity,
       };
     });
-    expect(prefs).toEqual({ nodeIntegration: false, contextIsolation: true, sandbox: true, webSecurity: true });
+    expect(prefs).toEqual({
+      nodeIntegration: false,
+      contextIsolation: true,
+      sandbox: true,
+      webSecurity: true,
+    });
 
     // No Node and no ipcRenderer in the renderer; the API is narrow
     const exposure = await page.evaluate(() => {
@@ -49,7 +56,9 @@ test('Electron-Sicherheit: Isolation, CSP, keine Netzwerkzugriffe, keine fremden
     });
 
     // Content security policy without external sources and without eval
-    const csp = await page.locator('meta[http-equiv="Content-Security-Policy"]').getAttribute('content');
+    const csp = await page
+      .locator('meta[http-equiv="Content-Security-Policy"]')
+      .getAttribute('content');
     expect(csp).toContain("default-src 'self'");
     expect(csp).not.toMatch(/https?:|\*/);
     expect(csp).not.toContain("'unsafe-eval'");
@@ -58,7 +67,9 @@ test('Electron-Sicherheit: Isolation, CSP, keine Netzwerkzugriffe, keine fremden
       const script = document.createElement('script');
       script.textContent = 'window.__injected = true;';
       document.head.appendChild(script);
-      return (window as unknown as { __injected?: boolean }).__injected === true ? 'executed' : 'blocked';
+      return (window as unknown as { __injected?: boolean }).__injected === true
+        ? 'executed'
+        : 'blocked';
     });
     expect(injected).toBe('blocked');
 

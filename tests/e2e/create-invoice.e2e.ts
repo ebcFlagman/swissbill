@@ -12,7 +12,13 @@ async function fillAddress(page: Page, prefix: 'sender' | 'debtor', a: Record<st
   }
 }
 
-async function fillItem(page: Page, position: number, description: string, quantity: string, price: string) {
+async function fillItem(
+  page: Page,
+  position: number,
+  description: string,
+  quantity: string,
+  price: string,
+) {
   await page.getByLabel(`Beschreibung Position ${position}`).fill(description);
   await page.getByLabel(`Menge Position ${position}`).fill(quantity);
   await page.getByLabel(`Einzelpreis Position ${position}`).fill(price);
@@ -68,7 +74,8 @@ test('Rechnung erfassen, ausstellen und als PDF speichern', async () => {
 
     // Save PDF (the save dialog in main is replaced by a fixed path)
     await app.evaluate(({ dialog }, filePath) => {
-      dialog.showSaveDialog = (() => Promise.resolve({ canceled: false, filePath })) as typeof dialog.showSaveDialog;
+      dialog.showSaveDialog = (() =>
+        Promise.resolve({ canceled: false, filePath })) as typeof dialog.showSaveDialog;
     }, pdfPath);
     const issued = page.getByRole('dialog', { name: 'Rechnung ausgestellt' });
     await issued.getByRole('button', { name: 'PDF speichern' }).click();

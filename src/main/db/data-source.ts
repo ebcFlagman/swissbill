@@ -11,7 +11,9 @@ export const DB_FILENAME = 'swissbill.db';
 
 type MigrationClass = new () => MigrationInterface;
 
-const migrationModules = import.meta.glob<Record<string, unknown>>('./migrations/*.ts', { eager: true });
+const migrationModules = import.meta.glob<Record<string, unknown>>('./migrations/*.ts', {
+  eager: true,
+});
 
 /** The bundled TypeORM migrations, sorted by the timestamp in the class name. */
 export function loadMigrations(): MigrationClass[] {
@@ -39,7 +41,13 @@ export function createDataSource(
 ): DataSource {
   return new DataSource({
     ...sqliteOptions(path),
-    entities: [CustomerEntity, InvoiceEntity, InvoiceItemEntity, SettingsEntity, NumberCounterEntity],
+    entities: [
+      CustomerEntity,
+      InvoiceEntity,
+      InvoiceItemEntity,
+      SettingsEntity,
+      NumberCounterEntity,
+    ],
     migrations: [...migrations],
     synchronize: false,
     migrationsRun: false,

@@ -1,5 +1,5 @@
 import { app, BrowserWindow, dialog, Menu, shell } from 'electron';
-import { MENU_EVENT, type MenuAction } from '../shared/ipc/menu';
+import { MENU_EVENT, type MenuAction } from '@shared/ipc/menu';
 import { buildMenuTemplate } from './menu-template';
 
 /** Sets the application menu (replaces the English default menu of Electron). */

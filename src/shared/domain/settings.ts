@@ -44,9 +44,11 @@ export function normalizeApiKey(key: string): string {
 /** Checks an API key (after trimming): at most 200 characters, no whitespace or control characters inside. */
 export function validateApiKey(key: string): string | null {
   const value = normalizeApiKey(key);
-  if ([...value].length > API_KEY_MAX) return `Der API-Key darf höchstens ${API_KEY_MAX} Zeichen lang sein.`;
+  if ([...value].length > API_KEY_MAX)
+    return `Der API-Key darf höchstens ${API_KEY_MAX} Zeichen lang sein.`;
   // eslint-disable-next-line no-control-regex
-  if (/[\s\u0000-\u001f\u007f]/.test(value)) return 'Der API-Key darf keine Leer- oder Steuerzeichen enthalten.';
+  if (/[\s\u0000-\u001f\u007f]/.test(value))
+    return 'Der API-Key darf keine Leer- oder Steuerzeichen enthalten.';
   return null;
 }
 
@@ -85,7 +87,10 @@ export function validateSettings(settings: SettingsInput): FieldError[] {
         message: `Der Schlusstext darf höchstens ${CLOSING_TEXT_MAX} Zeichen lang sein.`,
       });
     } else if (!isAllowedText(text.replace(/[\n€]/g, ' '))) {
-      errors.push({ field: 'defaultClosingText', message: 'Der Schlusstext enthält unzulässige Zeichen.' });
+      errors.push({
+        field: 'defaultClosingText',
+        message: 'Der Schlusstext enthält unzulässige Zeichen.',
+      });
     }
   }
   return errors;

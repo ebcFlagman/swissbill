@@ -3,7 +3,17 @@ import tseslint from 'typescript-eslint';
 import reactHooks from 'eslint-plugin-react-hooks';
 
 export default tseslint.config(
-  { ignores: ['out/**', 'dist/**', 'release/**', 'node_modules/**', 'coverage/**', '.specify/**', '.claude/**'] },
+  {
+    ignores: [
+      'out/**',
+      'dist/**',
+      'release/**',
+      'node_modules/**',
+      'coverage/**',
+      '.specify/**',
+      '.claude/**',
+    ],
+  },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
@@ -24,10 +34,16 @@ export default tseslint.config(
         'error',
         {
           paths: [
-            { name: 'typeorm', allowTypeImports: true, message: 'TypeORM nur in src/main/db/ verwenden.' },
+            {
+              name: 'typeorm',
+              allowTypeImports: true,
+              message: 'TypeORM nur in src/main/db/ verwenden.',
+            },
             { name: 'reflect-metadata', message: 'Nur im Datenbankmodul und im Main-Einstieg.' },
           ],
-          patterns: [{ group: ['**/db/entities/*'], message: 'Entitäten gehören zum Datenbankmodul.' }],
+          patterns: [
+            { group: ['**/db/entities/*'], message: 'Entitäten gehören zum Datenbankmodul.' },
+          ],
         },
       ],
     },
@@ -40,7 +56,10 @@ export default tseslint.config(
   {
     rules: {
       '@typescript-eslint/consistent-type-imports': 'error',
-      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_', ignoreRestSiblings: true }],
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_', ignoreRestSiblings: true },
+      ],
     },
   },
 );

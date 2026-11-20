@@ -10,7 +10,9 @@ test('API-Key eintragen, prüfen, speichern, nach Neustart behalten und entferne
     const { app, page } = launched;
     await goTo(app, 'Einstellungen');
     await expect(page.getByTestId('key-status')).toHaveText('Kein Key gespeichert.');
-    await expect(page.getByText(/Datenschutz: Mit einem Key werden die getippten Adressangaben/)).toBeVisible();
+    await expect(
+      page.getByText(/Datenschutz: Mit einem Key werden die getippten Adressangaben/),
+    ).toBeVisible();
 
     // Check before saving
     await page.locator('#geoapifyApiKey').fill('  test-key-0123456789  ');
@@ -18,7 +20,9 @@ test('API-Key eintragen, prüfen, speichern, nach Neustart behalten und entferne
     await expect(page.getByTestId('key-check')).toHaveText('Der Key funktioniert.');
     fake.mode = 'invalid_key';
     await page.getByRole('button', { name: 'Key prüfen' }).click();
-    await expect(page.getByTestId('key-check')).toHaveText('Der Key wird von Geoapify nicht akzeptiert.');
+    await expect(page.getByTestId('key-check')).toHaveText(
+      'Der Key wird von Geoapify nicht akzeptiert.',
+    );
     fake.mode = 'ok';
 
     await setupSettings(app, page, 'test-key-0123456789');
@@ -35,7 +39,9 @@ test('API-Key eintragen, prüfen, speichern, nach Neustart behalten und entferne
 
     // Remove
     await launched.page.getByRole('button', { name: 'Key entfernen' }).click();
-    await expect(launched.page.getByTestId('key-status')).toHaveText('Der Key wird beim Speichern entfernt.');
+    await expect(launched.page.getByTestId('key-status')).toHaveText(
+      'Der Key wird beim Speichern entfernt.',
+    );
     await launched.page.getByRole('button', { name: 'Speichern' }).click();
     await expect(launched.page.getByText('Einstellungen gespeichert.')).toBeVisible();
     await expect(launched.page.getByTestId('key-status')).toHaveText('Kein Key gespeichert.');

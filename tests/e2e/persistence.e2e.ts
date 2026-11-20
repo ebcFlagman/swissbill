@@ -55,7 +55,10 @@ test('Rechnungen bleiben nach dem Neustart erhalten, sind schreibgeschützt und 
     await expect(issuedRow.getByRole('button', { name: 'Löschen' })).toHaveCount(0);
     const draftRow = page.getByTestId('invoice-row').filter({ hasText: 'Entwurf' });
     await draftRow.getByRole('button', { name: 'Löschen' }).click();
-    await page.getByRole('dialog', { name: 'Entwurf löschen?' }).getByRole('button', { name: 'Löschen' }).click();
+    await page
+      .getByRole('dialog', { name: 'Entwurf löschen?' })
+      .getByRole('button', { name: 'Löschen' })
+      .click();
     await expect(page.getByTestId('invoice-row')).toHaveCount(1);
 
     // Autosave: inputs in the draft are kept without explicit saving

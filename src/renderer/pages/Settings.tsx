@@ -3,12 +3,12 @@ import { Button } from '@primereact/ui/button';
 import { InputText } from '@primereact/ui/inputtext';
 import { Message } from '@primereact/ui/message';
 import { Textarea } from '@primereact/ui/textarea';
-import { formatIban, isQrIban, validateIban } from '../../shared/domain/iban';
-import type { Sender } from '../../shared/domain/invoice';
-import type { GeoapifyKeyStatus, Settings as SettingsData } from '../../shared/domain/settings';
-import type { KeyCheckResult } from '../../shared/ipc/addresses';
-import type { DbInfo } from '../../shared/ipc/db';
-import type { FieldError } from '../../shared/ipc/errors';
+import { formatIban, isQrIban, validateIban } from '@shared/domain/iban';
+import type { Sender } from '@shared/domain/invoice';
+import type { GeoapifyKeyStatus, Settings as SettingsData } from '@shared/domain/settings';
+import type { KeyCheckResult } from '@shared/ipc/addresses';
+import type { DbInfo } from '@shared/ipc/db';
+import type { FieldError } from '@shared/ipc/errors';
 import { AddressFields } from '../components/AddressFields';
 import { Field } from '../components/Field';
 import { backupDatabase } from '../lib/backup';
@@ -65,7 +65,10 @@ export function Settings() {
   const [saving, setSaving] = useState(false);
   const [dbInfo, setDbInfo] = useState<DbInfo | null>(null);
   const [backingUp, setBackingUp] = useState(false);
-  const [keyStatus, setKeyStatus] = useState<{ set: boolean; status: GeoapifyKeyStatus }>({ set: false, status: 'none' });
+  const [keyStatus, setKeyStatus] = useState<{ set: boolean; status: GeoapifyKeyStatus }>({
+    set: false,
+    status: 'none',
+  });
   const [keyCheck, setKeyCheck] = useState<string | null>(null);
   const [checkingKey, setCheckingKey] = useState(false);
 
@@ -124,10 +127,15 @@ export function Settings() {
         defaultClosingText: form.defaultClosingText.trim() === '' ? null : form.defaultClosingText,
         defaultPaymentDays: form.defaultPaymentDays.trim() === '' || Number.isNaN(days) ? -1 : days,
         // only send if changed: leave empty = key unchanged, '' = remove
-        ...(form.removeApiKey ? { geoapifyApiKey: '' } : form.apiKey.trim() !== '' ? { geoapifyApiKey: form.apiKey } : {}),
+        ...(form.removeApiKey
+          ? { geoapifyApiKey: '' }
+          : form.apiKey.trim() !== ''
+            ? { geoapifyApiKey: form.apiKey }
+            : {}),
       });
       if (!result.ok) {
-        if (result.error.code === 'VALIDATION' && result.error.fields) setErrors(toMap(result.error.fields));
+        if (result.error.code === 'VALIDATION' && result.error.fields)
+          setErrors(toMap(result.error.fields));
         else notifyError(result.error);
         return;
       }
@@ -149,7 +157,8 @@ export function Settings() {
         <Message.Root severity="info">
           <Message.Content>
             <Message.Text>
-              Bitte erfassen Sie zuerst Ihren Absender und Ihre IBAN. Beides wird in neue Rechnungen übernommen.
+              Bitte erfassen Sie zuerst Ihren Absender und Ihre IBAN. Beides wird in neue Rechnungen
+              übernommen.
             </Message.Text>
           </Message.Content>
         </Message.Root>
@@ -176,51 +185,83 @@ export function Settings() {
       <div className="card">
         <h2>Rechnungen</h2>
         <div className="grid">
-          <Field label="Rechnungspräfix" htmlFor="invoicePrefix" error={errors['invoicePrefix']} className="span-3">
+          <Field
+            label="Rechnungspräfix"
+            htmlFor="invoicePrefix"
+            error={errors['invoicePrefix']}
+            className="span-3"
+          >
             <InputText
               id="invoicePrefix"
               fluid
               value={form.invoicePrefix}
-              onChange={(e: ChangeEvent<HTMLInputElement>) => setForm({ ...form, invoicePrefix: e.target.value })}
+              onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                setForm({ ...form, invoicePrefix: e.target.value })
+              }
               invalid={!!errors['invoicePrefix']}
             />
           </Field>
-          <Field label="Zahlungsfrist (Tage)" htmlFor="defaultPaymentDays" error={errors['defaultPaymentDays']} className="span-3">
+          <Field
+            label="Zahlungsfrist (Tage)"
+            htmlFor="defaultPaymentDays"
+            error={errors['defaultPaymentDays']}
+            className="span-3"
+          >
             <InputText
               id="defaultPaymentDays"
               fluid
               inputMode="numeric"
               value={form.defaultPaymentDays}
-              onChange={(e: ChangeEvent<HTMLInputElement>) => setForm({ ...form, defaultPaymentDays: e.target.value })}
+              onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                setForm({ ...form, defaultPaymentDays: e.target.value })
+              }
               invalid={!!errors['defaultPaymentDays']}
             />
           </Field>
         </div>
-        <Field label="Standard-Schlusstext (optional, z. B. Zahlungsbedingungen)" htmlFor="defaultClosingText" error={errors['defaultClosingText']}>
+        <Field
+          label="Standard-Schlusstext (optional, z. B. Zahlungsbedingungen)"
+          htmlFor="defaultClosingText"
+          error={errors['defaultClosingText']}
+        >
           <Textarea
             id="defaultClosingText"
             rows={3}
             value={form.defaultClosingText}
-            onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setForm({ ...form, defaultClosingText: e.target.value })}
+            onChange={(e: ChangeEvent<HTMLTextAreaElement>) =>
+              setForm({ ...form, defaultClosingText: e.target.value })
+            }
           />
         </Field>
-        <p className="hint">Änderungen gelten nur für neue Entwürfe, nie für bereits erstellte Rechnungen.</p>
+        <p className="hint">
+          Änderungen gelten nur für neue Entwürfe, nie für bereits erstellte Rechnungen.
+        </p>
       </div>
 
       <div className="card">
         <h2>Adressvorschläge (optional)</h2>
         <p className="hint">
-          Mit einem eigenen Geoapify-API-Key schlägt die Anwendung beim Tippen der Strasse passende Adressen vor.
-          Ohne Key bleibt die Adresseingabe wie bisher und die Anwendung arbeitet vollständig offline.
+          Mit einem eigenen Geoapify-API-Key schlägt die Anwendung beim Tippen der Strasse passende
+          Adressen vor. Ohne Key bleibt die Adresseingabe wie bisher und die Anwendung arbeitet
+          vollständig offline.
         </p>
-        <Field label="Geoapify-API-Key" htmlFor="geoapifyApiKey" error={errors['geoapifyApiKey']} className="span-6">
+        <Field
+          label="Geoapify-API-Key"
+          htmlFor="geoapifyApiKey"
+          error={errors['geoapifyApiKey']}
+          className="span-6"
+        >
           <InputText
             id="geoapifyApiKey"
             fluid
             type="password"
             autoComplete="off"
             value={form.apiKey}
-            placeholder={keyStatus.set && !form.removeApiKey ? 'Key gespeichert, zum Ersetzen neuen Key eingeben' : ''}
+            placeholder={
+              keyStatus.set && !form.removeApiKey
+                ? 'Key gespeichert, zum Ersetzen neuen Key eingeben'
+                : ''
+            }
             onChange={(e: ChangeEvent<HTMLInputElement>) => {
               setKeyCheck(null);
               setForm({ ...form, apiKey: e.target.value, removeApiKey: false });
@@ -240,7 +281,11 @@ export function Settings() {
                   : 'Kein Key gespeichert.'}
         </p>
         <div className="actions">
-          <Button variant="outlined" onClick={() => void checkKey()} disabled={checkingKey || form.apiKey.trim() === ''}>
+          <Button
+            variant="outlined"
+            onClick={() => void checkKey()}
+            disabled={checkingKey || form.apiKey.trim() === ''}
+          >
             Key prüfen
           </Button>
           {keyStatus.set || keyStatus.status === 'undecryptable' ? (
@@ -258,10 +303,10 @@ export function Settings() {
           </p>
         ) : null}
         <p className="hint">
-          Datenschutz: Mit einem Key werden die getippten Adressangaben (nur der Suchtext) zur Vorschlagssuche an
-          Geoapify gesendet, sonst nichts. Der Key wird verschlüsselt gespeichert und ist an dieses Gerät und diesen
-          Benutzer gebunden; eine Datenbanksicherung enthält ihn nur verschlüsselt, auf einem anderen Gerät muss er neu
-          eingegeben werden.
+          Datenschutz: Mit einem Key werden die getippten Adressangaben (nur der Suchtext) zur
+          Vorschlagssuche an Geoapify gesendet, sonst nichts. Der Key wird verschlüsselt gespeichert
+          und ist an dieses Gerät und diesen Benutzer gebunden; eine Datenbanksicherung enthält ihn
+          nur verschlüsselt, auf einem anderen Gerät muss er neu eingegeben werden.
         </p>
       </div>
 
@@ -284,8 +329,9 @@ export function Settings() {
           </dl>
         ) : null}
         <p className="hint">
-          Alle Rechnungen liegen in dieser einen Datei. Zum Sichern genügt eine Kopie. Zum Wiederherstellen die
-          Anwendung schliessen und die Sicherung unter dem Namen swissbill.db in den Speicherort kopieren.
+          Alle Rechnungen liegen in dieser einen Datei. Zum Sichern genügt eine Kopie. Zum
+          Wiederherstellen die Anwendung schliessen und die Sicherung unter dem Namen swissbill.db
+          in den Speicherort kopieren.
         </p>
         <Button variant="outlined" onClick={() => void backup()} disabled={backingUp}>
           Datenbank sichern

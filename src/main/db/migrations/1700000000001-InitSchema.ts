@@ -1,4 +1,10 @@
-import { Table, TableForeignKey, TableIndex, type MigrationInterface, type QueryRunner } from 'typeorm';
+import {
+  Table,
+  TableForeignKey,
+  TableIndex,
+  type MigrationInterface,
+  type QueryRunner,
+} from 'typeorm';
 
 const nullableText = (name: string, extra: { default?: string } = {}) => ({
   name,
@@ -36,13 +42,21 @@ export class InitSchema1700000000001 implements MigrationInterface {
       }),
     );
     // The one settings row; all other columns take their default values
-    await queryRunner.query(`INSERT INTO "settings" ("id", "updated_at") VALUES (1, '${new Date().toISOString()}')`);
+    await queryRunner.query(
+      `INSERT INTO "settings" ("id", "updated_at") VALUES (1, '${new Date().toISOString()}')`,
+    );
 
     await queryRunner.createTable(
       new Table({
         name: 'customers',
         columns: [
-          { name: 'id', type: 'integer', isPrimary: true, isGenerated: true, generationStrategy: 'increment' },
+          {
+            name: 'id',
+            type: 'integer',
+            isPrimary: true,
+            isGenerated: true,
+            generationStrategy: 'increment',
+          },
           { name: 'name', type: 'text' },
           { name: 'street', type: 'text', default: "''" },
           { name: 'house_no', type: 'text', default: "''" },
@@ -60,7 +74,13 @@ export class InitSchema1700000000001 implements MigrationInterface {
       new Table({
         name: 'invoices',
         columns: [
-          { name: 'id', type: 'integer', isPrimary: true, isGenerated: true, generationStrategy: 'increment' },
+          {
+            name: 'id',
+            type: 'integer',
+            isPrimary: true,
+            isGenerated: true,
+            generationStrategy: 'increment',
+          },
           { name: 'status', type: 'text', default: "'draft'" },
           { name: 'number', type: 'text', isNullable: true, isUnique: true },
           { name: 'number_year', type: 'integer', isNullable: true },
@@ -101,7 +121,10 @@ export class InitSchema1700000000001 implements MigrationInterface {
           }),
         ],
         indices: [
-          new TableIndex({ name: 'idx_invoices_status_date', columnNames: ['status', 'invoice_date'] }),
+          new TableIndex({
+            name: 'idx_invoices_status_date',
+            columnNames: ['status', 'invoice_date'],
+          }),
           new TableIndex({ name: 'idx_invoices_debtor_name', columnNames: ['debtor_name'] }),
         ],
       }),
@@ -111,7 +134,13 @@ export class InitSchema1700000000001 implements MigrationInterface {
       new Table({
         name: 'invoice_items',
         columns: [
-          { name: 'id', type: 'integer', isPrimary: true, isGenerated: true, generationStrategy: 'increment' },
+          {
+            name: 'id',
+            type: 'integer',
+            isPrimary: true,
+            isGenerated: true,
+            generationStrategy: 'increment',
+          },
           { name: 'invoice_id', type: 'integer' },
           { name: 'position', type: 'integer' },
           { name: 'description', type: 'text' },

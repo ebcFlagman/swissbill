@@ -10,8 +10,11 @@ describe('Nummernvergabe und Gleichzeitigkeit', () => {
     const db = await createTestDb();
     const { service } = createService(db);
     const numbers: (string | null)[] = [];
-    for (let i = 0; i < 100; i++) numbers.push((await service.issue((await createFilledDraft(service)).id)).number);
-    expect(numbers).toEqual(Array.from({ length: 100 }, (_, i) => `RE-2026-${String(i + 1).padStart(4, '0')}`));
+    for (let i = 0; i < 100; i++)
+      numbers.push((await service.issue((await createFilledDraft(service)).id)).number);
+    expect(numbers).toEqual(
+      Array.from({ length: 100 }, (_, i) => `RE-2026-${String(i + 1).padStart(4, '0')}`),
+    );
   });
 
   it('100 gleichzeitige Ausstellvorgänge (zwei Jahre gemischt): pro Jahr lückenlos und ohne Duplikate', async () => {
@@ -27,7 +30,10 @@ describe('Nummernvergabe und Gleichzeitigkeit', () => {
     }
     const issued = await Promise.all(jobs);
     const byYear = (year: number) =>
-      issued.filter((i) => i.numberYear === year).map((i) => i.numberSeq).sort((a, b) => (a ?? 0) - (b ?? 0));
+      issued
+        .filter((i) => i.numberYear === year)
+        .map((i) => i.numberSeq)
+        .sort((a, b) => (a ?? 0) - (b ?? 0));
     for (const year of [2026, 2027]) {
       expect(byYear(year)).toEqual(Array.from({ length: 50 }, (_, i) => i + 1));
     }

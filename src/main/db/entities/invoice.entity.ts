@@ -1,6 +1,6 @@
 import { EntitySchema } from 'typeorm';
-import type { InvoiceStatus } from '../../../shared/domain/invoice';
-import type { ReferenceType } from '../../../shared/domain/reference';
+import type { InvoiceStatus } from '@shared/domain/invoice';
+import type { ReferenceType } from '@shared/domain/reference';
 
 /** Row of the `invoices` table (properties are named like the columns). Amounts are whole rappen. */
 export interface InvoiceRow {

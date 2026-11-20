@@ -1,8 +1,8 @@
 import { join } from 'node:path';
 import { app, BrowserWindow, dialog } from 'electron';
 import { z } from 'zod';
-import { CHANNELS } from '../../shared/ipc/api';
-import type { BackupResult, DbInfo } from '../../shared/ipc/db';
+import { CHANNELS } from '@shared/ipc/api';
+import type { BackupResult, DbInfo } from '@shared/ipc/db';
 import type { BackupService } from '../services/backup-service';
 import { handle } from './handle';
 

@@ -3,8 +3,8 @@ import { Button } from '@primereact/ui/button';
 import { Dialog } from '@primereact/ui/dialog';
 import { InputText } from '@primereact/ui/inputtext';
 import { Textarea } from '@primereact/ui/textarea';
-import type { Customer, CustomerInput } from '../../shared/domain/customer';
-import type { FieldError } from '../../shared/ipc/errors';
+import type { Customer, CustomerInput } from '@shared/domain/customer';
+import type { FieldError } from '@shared/ipc/errors';
 import { AddressFields } from '../components/AddressFields';
 import { Field } from '../components/Field';
 import { notifyError, notifySuccess } from '../lib/notify';
@@ -52,7 +52,8 @@ export function Customers() {
     try {
       const result = await window.swissbill.customers.save(editing);
       if (!result.ok) {
-        if (result.error.code === 'VALIDATION' && result.error.fields) setErrors(toMap(result.error.fields));
+        if (result.error.code === 'VALIDATION' && result.error.fields)
+          setErrors(toMap(result.error.fields));
         else notifyError(result.error);
         return;
       }
@@ -102,7 +103,9 @@ export function Customers() {
         <p>Kunden werden geladen …</p>
       ) : customers.length === 0 ? (
         <p className="empty">
-          {search.trim() !== '' ? 'Keine Kunden gefunden.' : 'Noch keine Kunden. Erfassen Sie mit «Neuer Kunde» den ersten Kunden.'}
+          {search.trim() !== ''
+            ? 'Keine Kunden gefunden.'
+            : 'Noch keine Kunden. Erfassen Sie mit «Neuer Kunde» den ersten Kunden.'}
         </p>
       ) : (
         <table className="list-table">
@@ -136,12 +139,19 @@ export function Customers() {
         </table>
       )}
 
-      <Dialog.Root open={editing !== null} onOpenChange={(event: { value?: boolean | undefined }) => !event.value && !saving && setEditing(null)}>
+      <Dialog.Root
+        open={editing !== null}
+        onOpenChange={(event: { value?: boolean | undefined }) =>
+          !event.value && !saving && setEditing(null)
+        }
+      >
         <Dialog.Portal>
           <Dialog.Positioner>
             <Dialog.Popup style={{ width: 'min(760px, 92vw)' }}>
               <Dialog.Header>
-                <Dialog.Title>{editing?.id === undefined ? 'Neuer Kunde' : 'Kunde bearbeiten'}</Dialog.Title>
+                <Dialog.Title>
+                  {editing?.id === undefined ? 'Neuer Kunde' : 'Kunde bearbeiten'}
+                </Dialog.Title>
               </Dialog.Header>
               <Dialog.Content>
                 {editing ? (
@@ -152,18 +162,29 @@ export function Customers() {
                       onChange={(value) => setEditing(value)}
                       errors={errors}
                     />
-                    <Field label="Notizen (optional)" htmlFor="customer-notes" error={errors['customer.notes']}>
+                    <Field
+                      label="Notizen (optional)"
+                      htmlFor="customer-notes"
+                      error={errors['customer.notes']}
+                    >
                       <Textarea
                         id="customer-notes"
                         rows={3}
                         value={editing.notes}
-                        onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setEditing({ ...editing, notes: e.target.value })}
+                        onChange={(e: ChangeEvent<HTMLTextAreaElement>) =>
+                          setEditing({ ...editing, notes: e.target.value })
+                        }
                       />
                     </Field>
                   </>
                 ) : null}
                 <div className="dialog-actions">
-                  <Button severity="secondary" variant="outlined" onClick={() => setEditing(null)} disabled={saving}>
+                  <Button
+                    severity="secondary"
+                    variant="outlined"
+                    onClick={() => setEditing(null)}
+                    disabled={saving}
+                  >
                     Abbrechen
                   </Button>
                   <Button onClick={() => void save()} disabled={saving}>
@@ -176,7 +197,10 @@ export function Customers() {
         </Dialog.Portal>
       </Dialog.Root>
 
-      <Dialog.Root open={toDelete !== null} onOpenChange={(event: { value?: boolean | undefined }) => !event.value && setToDelete(null)}>
+      <Dialog.Root
+        open={toDelete !== null}
+        onOpenChange={(event: { value?: boolean | undefined }) => !event.value && setToDelete(null)}
+      >
         <Dialog.Portal>
           <Dialog.Positioner>
             <Dialog.Popup style={{ width: '28rem' }}>
@@ -185,8 +209,8 @@ export function Customers() {
               </Dialog.Header>
               <Dialog.Content>
                 <p>
-                  «{toDelete?.name}» wird gelöscht. Bestehende Rechnungen bleiben unverändert und behalten die damalige
-                  Adresse.
+                  «{toDelete?.name}» wird gelöscht. Bestehende Rechnungen bleiben unverändert und
+                  behalten die damalige Adresse.
                 </p>
                 <div className="dialog-actions">
                   <Button severity="secondary" variant="outlined" onClick={() => setToDelete(null)}>

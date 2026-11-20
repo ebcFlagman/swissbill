@@ -1,12 +1,12 @@
 import { z } from 'zod';
-import { CHANNELS } from '../../shared/ipc/api';
-import type { DraftInput, Invoice, InvoiceFilter, InvoiceSummary } from '../../shared/domain/invoice';
+import { CHANNELS } from '@shared/ipc/api';
+import type { DraftInput, Invoice, InvoiceFilter, InvoiceSummary } from '@shared/domain/invoice';
 import {
   draftInputSchema,
   invoiceFilterSchema,
   invoiceIdSchema,
   type InvoiceIdInput,
-} from '../../shared/ipc/invoices';
+} from '@shared/ipc/invoices';
 import type { InvoiceService } from '../services/invoice-service';
 import { handle } from './handle';
 
@@ -14,11 +14,15 @@ export function registerInvoiceHandlers(service: InvoiceService): void {
   handle<InvoiceFilter, InvoiceSummary[]>(CHANNELS.invoicesList, invoiceFilterSchema, (filter) =>
     service.list(filter),
   );
-  handle<undefined, Invoice>(CHANNELS.invoicesCreateDraft, z.undefined(), () => service.createDraft());
+  handle<undefined, Invoice>(CHANNELS.invoicesCreateDraft, z.undefined(), () =>
+    service.createDraft(),
+  );
   handle<DraftInput, Invoice>(CHANNELS.invoicesSaveDraft, draftInputSchema, (input) =>
     service.saveDraft(input),
   );
-  handle<InvoiceIdInput, Invoice>(CHANNELS.invoicesGet, invoiceIdSchema, ({ id }) => service.get(id));
+  handle<InvoiceIdInput, Invoice>(CHANNELS.invoicesGet, invoiceIdSchema, ({ id }) =>
+    service.get(id),
+  );
   handle<InvoiceIdInput, Invoice>(CHANNELS.invoicesIssue, invoiceIdSchema, ({ id }) =>
     service.issue(id),
   );

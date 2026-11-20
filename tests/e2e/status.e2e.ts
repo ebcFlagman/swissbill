@@ -10,7 +10,8 @@ async function createAndIssue(page: Page, debtor: string): Promise<string> {
   return number;
 }
 
-const row = (page: Page, number: string) => page.getByTestId('invoice-row').filter({ hasText: number });
+const row = (page: Page, number: string) =>
+  page.getByTestId('invoice-row').filter({ hasText: number });
 
 test('Status nachführen, stornieren ohne Nummernlücken und nach Status filtern', async () => {
   const launched = await launchApp();
@@ -66,7 +67,10 @@ test('Status nachführen, stornieren ohne Nummernlücken und nach Status filtern
     const draft = page.getByTestId('invoice-row').filter({ hasText: 'Entwurf' });
     await expect(draft).toHaveCount(1);
     await draft.getByRole('button', { name: 'Löschen' }).click();
-    await page.getByRole('dialog', { name: 'Entwurf löschen?' }).getByRole('button', { name: 'Löschen' }).click();
+    await page
+      .getByRole('dialog', { name: 'Entwurf löschen?' })
+      .getByRole('button', { name: 'Löschen' })
+      .click();
     await expect(draft).toHaveCount(0);
 
     expect(await createAndIssue(page, 'Kunde Vier AG')).toBe(n(4));

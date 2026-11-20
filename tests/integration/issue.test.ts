@@ -34,7 +34,9 @@ describe('Ausstellen', () => {
     const db = await createTestDb();
     const { service } = createService(db);
     const base = makeDraftInput();
-    const draft = await createFilledDraft(service, { sender: { ...base.sender, iban: NORMAL_IBAN } });
+    const draft = await createFilledDraft(service, {
+      sender: { ...base.sender, iban: NORMAL_IBAN },
+    });
     const issued = await service.issue(draft.id);
     expect(issued.referenceType).toBe('SCOR');
     expect(issued.reference).toBe(buildCreditorReference(2026, 1));
@@ -44,7 +46,8 @@ describe('Ausstellen', () => {
     const db = await createTestDb();
     const { service } = createService(db);
     const numbers: (string | null)[] = [];
-    for (let i = 0; i < 5; i++) numbers.push((await service.issue((await createFilledDraft(service)).id)).number);
+    for (let i = 0; i < 5; i++)
+      numbers.push((await service.issue((await createFilledDraft(service)).id)).number);
     expect(numbers).toEqual([
       'RE-2026-0001',
       'RE-2026-0002',
@@ -69,12 +72,18 @@ describe('Ausstellen', () => {
     const { service, setClock } = createService(db);
 
     setClock(() => new Date(2026, 11, 31, 23, 0));
-    const a = await service.issue((await createFilledDraft(service, { invoiceDate: '2026-12-31', dueDate: '2027-01-30' })).id);
-    const b = await service.issue((await createFilledDraft(service, { invoiceDate: '2026-12-31', dueDate: '2027-01-30' })).id);
+    const a = await service.issue(
+      (await createFilledDraft(service, { invoiceDate: '2026-12-31', dueDate: '2027-01-30' })).id,
+    );
+    const b = await service.issue(
+      (await createFilledDraft(service, { invoiceDate: '2026-12-31', dueDate: '2027-01-30' })).id,
+    );
     expect([a.number, b.number]).toEqual(['RE-2026-0001', 'RE-2026-0002']);
 
     setClock(() => new Date(2027, 0, 1, 8, 0));
-    const c = await service.issue((await createFilledDraft(service, { invoiceDate: '2026-12-31', dueDate: '2027-01-30' })).id);
+    const c = await service.issue(
+      (await createFilledDraft(service, { invoiceDate: '2026-12-31', dueDate: '2027-01-30' })).id,
+    );
     expect(c.number).toBe('RE-2027-0001');
     expect(c.invoiceDate).toBe('2026-12-31');
     expect(c.reference).toBe(buildQrReference(2027, 1));

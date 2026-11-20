@@ -141,7 +141,8 @@ export function validateDraft(input: DraftInput): FieldError[] {
 
   const invoiceDateOk = isValidIsoDate(input.invoiceDate);
   const dueDateOk = isValidIsoDate(input.dueDate);
-  if (!invoiceDateOk) errors.push({ field: 'invoiceDate', message: 'Das Rechnungsdatum ist ungültig.' });
+  if (!invoiceDateOk)
+    errors.push({ field: 'invoiceDate', message: 'Das Rechnungsdatum ist ungültig.' });
   if (!dueDateOk) {
     errors.push({ field: 'dueDate', message: 'Das Fälligkeitsdatum ist ungültig.' });
   } else if (invoiceDateOk && input.dueDate < input.invoiceDate) {
@@ -159,13 +160,19 @@ export function validateDraft(input: DraftInput): FieldError[] {
         message: `Die Beschreibung darf höchstens ${DESCRIPTION_MAX} Zeichen lang sein.`,
       });
     } else if (!isAllowedFreeText(item.description)) {
-      errors.push({ field: `${prefix}.description`, message: 'Die Beschreibung enthält unzulässige Zeichen.' });
+      errors.push({
+        field: `${prefix}.description`,
+        message: 'Die Beschreibung enthält unzulässige Zeichen.',
+      });
     }
     if (!Number.isSafeInteger(item.quantityMilli) || item.quantityMilli <= 0) {
       errors.push({ field: `${prefix}.quantity`, message: 'Die Menge muss grösser als 0 sein.' });
     }
     if (!Number.isSafeInteger(item.unitPriceRappen) || item.unitPriceRappen < 0) {
-      errors.push({ field: `${prefix}.unitPrice`, message: 'Der Einzelpreis darf nicht negativ sein.' });
+      errors.push({
+        field: `${prefix}.unitPrice`,
+        message: 'Der Einzelpreis darf nicht negativ sein.',
+      });
     }
   });
 
@@ -176,7 +183,10 @@ export function validateDraft(input: DraftInput): FieldError[] {
         message: `Der Schlusstext darf höchstens ${CLOSING_TEXT_MAX} Zeichen lang sein.`,
       });
     } else if (!isAllowedFreeText(input.closingText)) {
-      errors.push({ field: 'closingText', message: 'Der Schlusstext enthält unzulässige Zeichen.' });
+      errors.push({
+        field: 'closingText',
+        message: 'Der Schlusstext enthält unzulässige Zeichen.',
+      });
     }
   }
   return errors;
@@ -196,7 +206,8 @@ export function validateForIssue(invoice: Invoice): FieldError[] {
 
   const invoiceDateOk = isValidIsoDate(invoice.invoiceDate);
   const dueDateOk = isValidIsoDate(invoice.dueDate);
-  if (!invoiceDateOk) errors.push({ field: 'invoiceDate', message: 'Das Rechnungsdatum ist ungültig.' });
+  if (!invoiceDateOk)
+    errors.push({ field: 'invoiceDate', message: 'Das Rechnungsdatum ist ungültig.' });
   if (!dueDateOk) {
     errors.push({ field: 'dueDate', message: 'Das Fälligkeitsdatum ist ungültig.' });
   } else if (invoiceDateOk && invoice.dueDate < invoice.invoiceDate) {
@@ -212,20 +223,29 @@ export function validateForIssue(invoice: Invoice): FieldError[] {
   invoice.items.forEach((item, index) => {
     const prefix = `items.${index}`;
     if (item.description.trim() === '') {
-      errors.push({ field: `${prefix}.description`, message: 'Die Beschreibung ist erforderlich.' });
+      errors.push({
+        field: `${prefix}.description`,
+        message: 'Die Beschreibung ist erforderlich.',
+      });
     } else if ([...item.description].length > DESCRIPTION_MAX) {
       errors.push({
         field: `${prefix}.description`,
         message: `Die Beschreibung darf höchstens ${DESCRIPTION_MAX} Zeichen lang sein.`,
       });
     } else if (!isAllowedFreeText(item.description)) {
-      errors.push({ field: `${prefix}.description`, message: 'Die Beschreibung enthält unzulässige Zeichen.' });
+      errors.push({
+        field: `${prefix}.description`,
+        message: 'Die Beschreibung enthält unzulässige Zeichen.',
+      });
     }
     if (!Number.isSafeInteger(item.quantityMilli) || item.quantityMilli <= 0) {
       errors.push({ field: `${prefix}.quantity`, message: 'Die Menge muss grösser als 0 sein.' });
     }
     if (!Number.isSafeInteger(item.unitPriceRappen) || item.unitPriceRappen < 0) {
-      errors.push({ field: `${prefix}.unitPrice`, message: 'Der Einzelpreis darf nicht negativ sein.' });
+      errors.push({
+        field: `${prefix}.unitPrice`,
+        message: 'Der Einzelpreis darf nicht negativ sein.',
+      });
     }
   });
 
@@ -236,7 +256,10 @@ export function validateForIssue(invoice: Invoice): FieldError[] {
         message: `Der Schlusstext darf höchstens ${CLOSING_TEXT_MAX} Zeichen lang sein.`,
       });
     } else if (!isAllowedFreeText(invoice.closingText)) {
-      errors.push({ field: 'closingText', message: 'Der Schlusstext enthält unzulässige Zeichen.' });
+      errors.push({
+        field: 'closingText',
+        message: 'Der Schlusstext enthält unzulässige Zeichen.',
+      });
     }
   }
 
@@ -245,7 +268,10 @@ export function validateForIssue(invoice: Invoice): FieldError[] {
     if (totalRappen <= 0) {
       errors.push({ field: 'total', message: 'Der Gesamtbetrag muss grösser als 0 sein.' });
     } else if (totalRappen > MAX_TOTAL_RAPPEN) {
-      errors.push({ field: 'total', message: `Der Gesamtbetrag darf höchstens ${formatMax()} betragen.` });
+      errors.push({
+        field: 'total',
+        message: `Der Gesamtbetrag darf höchstens ${formatMax()} betragen.`,
+      });
     }
   }
 

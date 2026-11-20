@@ -27,7 +27,10 @@ export async function inspectPdf(buffer: Buffer): Promise<InspectedPdf> {
   for (let n = 1; n <= doc.numPages; n++) {
     const page = await doc.getPage(n);
     const viewport = page.getViewport({ scale: 1 });
-    pageSizes.push({ width: Math.round(viewport.width * 100) / 100, height: Math.round(viewport.height * 100) / 100 });
+    pageSizes.push({
+      width: Math.round(viewport.width * 100) / 100,
+      height: Math.round(viewport.height * 100) / 100,
+    });
     const content = await page.getTextContent();
     texts.push(content.items.map((item) => ('str' in item ? item.str : '')).join(' '));
   }

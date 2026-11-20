@@ -53,7 +53,9 @@ describe('Persistenz', () => {
 
     const second = await openAndMigrate(file);
     // Sender and settings change later: the issued invoice stays as it was
-    await second.query("UPDATE settings SET sender_name = 'Neuer Name AG', invoice_prefix = 'XX' WHERE id = 1");
+    await second.query(
+      "UPDATE settings SET sender_name = 'Neuer Name AG', invoice_prefix = 'XX' WHERE id = 1",
+    );
     const reopened = await new InvoiceService(second).get(issued.id);
     const after = await inspectPdf(await renderInvoicePdf(reopened));
     expect(after.texts).toEqual(textBefore);
@@ -66,9 +68,29 @@ describe('Liste', () => {
   async function seed() {
     const db = await createTestDb();
     const { service } = createService(db);
-    const a = await service.issue((await createFilledDraft(service, { debtor: { ...makeDraftInput().debtor, name: 'Müller AG' }, invoiceDate: '2026-01-10', dueDate: '2026-02-10' })).id);
-    const b = await service.issue((await createFilledDraft(service, { debtor: { ...makeDraftInput().debtor, name: 'Meier & Söhne' }, invoiceDate: '2026-02-10', dueDate: '2026-03-10' })).id);
-    const c = await createFilledDraft(service, { debtor: { ...makeDraftInput().debtor, name: 'Müller Treuhand' }, invoiceDate: '2026-03-10', dueDate: '2026-04-10' });
+    const a = await service.issue(
+      (
+        await createFilledDraft(service, {
+          debtor: { ...makeDraftInput().debtor, name: 'Müller AG' },
+          invoiceDate: '2026-01-10',
+          dueDate: '2026-02-10',
+        })
+      ).id,
+    );
+    const b = await service.issue(
+      (
+        await createFilledDraft(service, {
+          debtor: { ...makeDraftInput().debtor, name: 'Meier & Söhne' },
+          invoiceDate: '2026-02-10',
+          dueDate: '2026-03-10',
+        })
+      ).id,
+    );
+    const c = await createFilledDraft(service, {
+      debtor: { ...makeDraftInput().debtor, name: 'Müller Treuhand' },
+      invoiceDate: '2026-03-10',
+      dueDate: '2026-04-10',
+    });
     return { db, service, a, b, c };
   }
 
@@ -76,13 +98,25 @@ describe('Liste', () => {
     const { service, a, b, c } = await seed();
     const rows = await service.list({});
     expect(rows.map((r) => r.id)).toEqual([c.id, b.id, a.id]);
-    expect(rows[0]).toMatchObject({ number: null, status: 'draft', debtorName: 'Müller Treuhand', invoiceDate: '2026-03-10' });
-    expect(rows[2]).toMatchObject({ number: 'RE-2026-0001', status: 'issued', debtorName: 'Müller AG', totalRappen: 34975 });
+    expect(rows[0]).toMatchObject({
+      number: null,
+      status: 'draft',
+      debtorName: 'Müller Treuhand',
+      invoiceDate: '2026-03-10',
+    });
+    expect(rows[2]).toMatchObject({
+      number: 'RE-2026-0001',
+      status: 'issued',
+      debtorName: 'Müller AG',
+      totalRappen: 34975,
+    });
   });
 
   it('sucht in Nummer und Kundenname (ohne Beachtung der Gross-/Kleinschreibung)', async () => {
     const { service, a, c } = await seed();
-    expect((await service.list({ search: 'müller' })).map((r) => r.id).sort()).toEqual([a.id, c.id].sort());
+    expect((await service.list({ search: 'müller' })).map((r) => r.id).sort()).toEqual(
+      [a.id, c.id].sort(),
+    );
     expect(await service.list({ search: 're-2026-0002' })).toHaveLength(1);
     expect(await service.list({ search: 'gibt-es-nicht' })).toEqual([]);
   });
@@ -109,7 +143,9 @@ describe('Entwürfe löschen', () => {
     const first = await service.issue((await createFilledDraft(service)).id);
     const draft = await createFilledDraft(service);
     await service.deleteDraft(draft.id);
-    expect(await db.query('SELECT COUNT(*) AS n FROM invoice_items WHERE invoice_id = ?', [draft.id])).toEqual([{ n: 0 }]);
+    expect(
+      await db.query('SELECT COUNT(*) AS n FROM invoice_items WHERE invoice_id = ?', [draft.id]),
+    ).toEqual([{ n: 0 }]);
     expect(await codeOf(() => service.get(draft.id))).toBe('NOT_FOUND');
     const second = await service.issue((await createFilledDraft(service)).id);
     expect([first.number, second.number]).toEqual(['RE-2026-0001', 'RE-2026-0002']);

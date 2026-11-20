@@ -77,7 +77,10 @@ describe('Status: stornieren', () => {
     const cancelledA = await service.cancel(a.id);
     const cancelledB = await service.cancel(b.id);
 
-    for (const [cancelled, original] of [[cancelledA, a], [cancelledB, b]] as const) {
+    for (const [cancelled, original] of [
+      [cancelledA, a],
+      [cancelledB, b],
+    ] as const) {
       expect(cancelled.status).toBe('cancelled');
       expect(cancelled.cancelledAt).not.toBeNull();
       expect(cancelled.number).toBe(original.number);
@@ -119,7 +122,9 @@ describe('Status: stornieren', () => {
     const b = await service.issue((await createFilledDraft(service)).id);
     await service.cancel(a.id);
     expect([a.number, b.number]).toEqual(['RE-2026-0001', 'RE-2026-0002']);
-    expect((await service.list({ status: ['cancelled'] })).map((r) => r.number)).toEqual(['RE-2026-0001']);
+    expect((await service.list({ status: ['cancelled'] })).map((r) => r.number)).toEqual([
+      'RE-2026-0001',
+    ]);
   });
 
   it('die Persistenzschicht lehnt ungültige Statuswechsel weiterhin ab', async () => {

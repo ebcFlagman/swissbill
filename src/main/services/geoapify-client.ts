@@ -70,7 +70,8 @@ export function createGeoapifyClient(options: GeoapifyClientOptions = {}): Geoap
           return { ok: false, reason: 'unavailable' };
         }
       } catch (error) {
-        const aborted = error instanceof Error && (error.name === 'AbortError' || error.name === 'TimeoutError');
+        const aborted =
+          error instanceof Error && (error.name === 'AbortError' || error.name === 'TimeoutError');
         return { ok: false, reason: aborted ? 'timeout' : 'offline' };
       } finally {
         clearTimeout(timer);

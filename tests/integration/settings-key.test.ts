@@ -32,7 +32,9 @@ const input = (overrides: Partial<SettingsInput> = {}): SettingsInput => ({
 });
 
 async function rawColumn(db: DataSource): Promise<Buffer | null> {
-  const rows = (await db.query('SELECT geoapify_api_key AS key FROM settings WHERE id = 1')) as { key: Buffer | null }[];
+  const rows = (await db.query('SELECT geoapify_api_key AS key FROM settings WHERE id = 1')) as {
+    key: Buffer | null;
+  }[];
   return rows[0]?.key ?? null;
 }
 

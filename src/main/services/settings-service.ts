@@ -4,8 +4,8 @@ import {
   validateSettings,
   type Settings,
   type SettingsInput,
-} from '../../shared/domain/settings';
-import { AppException } from '../../shared/ipc/errors';
+} from '@shared/domain/settings';
+import { AppException } from '@shared/ipc/errors';
 import { getKeyState, getSettings, saveSettings, writeApiKey } from '../db/settings-repository';
 import type { SecretStore } from '../secret-store';
 
@@ -18,7 +18,10 @@ export class SettingsService {
 
   /** The settings without the API key, only with `geoapifyKeySet` and the state. */
   async get(): Promise<Settings> {
-    return { ...(await getSettings(this.dataSource)), ...(await getKeyState(this.dataSource, this.secrets)) };
+    return {
+      ...(await getSettings(this.dataSource)),
+      ...(await getKeyState(this.dataSource, this.secrets)),
+    };
   }
 
   /** Saves the settings. They only affect new drafts, never existing invoices. */
@@ -30,7 +33,8 @@ export class SettingsService {
     const { geoapifyApiKey, ...fields } = input;
     await saveSettings(this.dataSource, fields, this.now().toISOString());
     // not specified = key unchanged; '' = remove (always possible); otherwise set encrypted
-    if (geoapifyApiKey !== undefined) await writeApiKey(this.dataSource, this.secrets, normalizeApiKey(geoapifyApiKey));
+    if (geoapifyApiKey !== undefined)
+      await writeApiKey(this.dataSource, this.secrets, normalizeApiKey(geoapifyApiKey));
     return this.get();
   }
 }

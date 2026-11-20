@@ -31,7 +31,8 @@ async function snapshot(path: string): Promise<Record<string, unknown[]>> {
 function legacySnapshot(path: string): Record<string, unknown[]> {
   const db = new Database(path, { readonly: true });
   const result: Record<string, unknown[]> = {};
-  for (const table of TABLES) result[table] = db.prepare(`SELECT * FROM "${table}" ORDER BY 1`).all();
+  for (const table of TABLES)
+    result[table] = db.prepare(`SELECT * FROM "${table}" ORDER BY 1`).all();
   db.close();
   return result;
 }
@@ -47,8 +48,14 @@ describe('Übernahme einer Datenbank aus der Zeit vor TypeORM (Version 2)', () =
     expect(legacySnapshot(`${file}.bak-2`)).toEqual(before);
 
     const db = await openAndMigrate(file);
-    expect(await db.query("SELECT COUNT(*) AS n FROM sqlite_master WHERE type = 'trigger'")).toEqual([{ n: 0 }]);
-    expect((await db.query('SELECT name FROM migrations ORDER BY id')).map((r: { name: string }) => r.name)).toEqual([
+    expect(
+      await db.query("SELECT COUNT(*) AS n FROM sqlite_master WHERE type = 'trigger'"),
+    ).toEqual([{ n: 0 }]);
+    expect(
+      (await db.query('SELECT name FROM migrations ORDER BY id')).map(
+        (r: { name: string }) => r.name,
+      ),
+    ).toEqual([
       'InitSchema1700000000001',
       'AddGeoapifyKey1700000000002',
       'DropLegacyTriggers1700000000003',
@@ -59,7 +66,9 @@ describe('Übernahme einer Datenbank aus der Zeit vor TypeORM (Version 2)', () =
   it('der API-Key-Blob und die Einstellungen bleiben erhalten', async () => {
     const { keyBlob } = createLegacyDb(file);
     const db = await openAndMigrate(file);
-    const [row] = (await db.query('SELECT sender_name, invoice_prefix, geoapify_api_key AS key FROM settings WHERE id = 1')) as {
+    const [row] = (await db.query(
+      'SELECT sender_name, invoice_prefix, geoapify_api_key AS key FROM settings WHERE id = 1',
+    )) as {
       sender_name: string;
       invoice_prefix: string;
       key: Buffer;
@@ -92,7 +101,9 @@ describe('Übernahme einer Datenbank aus der Zeit vor TypeORM (Version 2)', () =
     createLegacyDb(file, 1);
     const db = await openAndMigrate(file);
     expect(existsSync(`${file}.bak-1`)).toBe(true);
-    expect(await db.query('SELECT geoapify_api_key AS key FROM settings WHERE id = 1')).toEqual([{ key: null }]);
+    expect(await db.query('SELECT geoapify_api_key AS key FROM settings WHERE id = 1')).toEqual([
+      { key: null },
+    ]);
     expect(await db.query('SELECT COUNT(*) AS n FROM invoices')).toEqual([{ n: 3 }]);
     await db.destroy();
   });

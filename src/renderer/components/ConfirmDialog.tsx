@@ -25,7 +25,10 @@ export function ConfirmDialog({
   onCancel,
 }: ConfirmDialogProps) {
   return (
-    <Dialog.Root open={open} onOpenChange={(event: { value?: boolean | undefined }) => !event.value && !busy && onCancel()}>
+    <Dialog.Root
+      open={open}
+      onOpenChange={(event: { value?: boolean | undefined }) => !event.value && !busy && onCancel()}
+    >
       <Dialog.Portal>
         <Dialog.Positioner>
           <Dialog.Popup style={{ width: '30rem' }}>
@@ -38,7 +41,11 @@ export function ConfirmDialog({
                 <Button severity="secondary" variant="outlined" onClick={onCancel} disabled={busy}>
                   Abbrechen
                 </Button>
-                <Button severity={danger ? 'danger' : undefined} onClick={onConfirm} disabled={busy}>
+                <Button
+                  severity={danger ? 'danger' : undefined}
+                  onClick={onConfirm}
+                  disabled={busy}
+                >
                   {confirmLabel}
                 </Button>
               </div>

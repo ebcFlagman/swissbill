@@ -1,4 +1,9 @@
-import { LAYOUT_VERSION, type Invoice, type DraftInput, type InvoiceItem } from '@shared/domain/invoice';
+import {
+  LAYOUT_VERSION,
+  type Invoice,
+  type DraftInput,
+  type InvoiceItem,
+} from '@shared/domain/invoice';
 import { lineAmount } from '@shared/domain/money';
 import { buildCreditorReference, buildQrReference } from '@shared/domain/reference';
 

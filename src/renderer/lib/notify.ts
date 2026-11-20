@@ -1,5 +1,5 @@
 import { toast } from '@primereact/ui/toaster';
-import type { AppError } from '../../shared/ipc/errors';
+import type { AppError } from '@shared/ipc/errors';
 
 export const TOAST_GROUP = 'app';
 

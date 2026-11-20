@@ -40,7 +40,10 @@ export function PdfPreviewDialog({ invoiceId, open, onClose }: PdfPreviewDialogP
   }, [open, invoiceId, onClose]);
 
   return (
-    <Dialog.Root open={open} onOpenChange={(event: { value?: boolean | undefined }) => !event.value && onClose()}>
+    <Dialog.Root
+      open={open}
+      onOpenChange={(event: { value?: boolean | undefined }) => !event.value && onClose()}
+    >
       <Dialog.Portal>
         <Dialog.Positioner>
           <Dialog.Popup style={{ width: 'min(900px, 92vw)' }}>

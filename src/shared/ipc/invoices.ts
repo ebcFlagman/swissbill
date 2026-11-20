@@ -43,7 +43,10 @@ export const draftInputSchema: z.ZodType<DraftInput> = z.object({
 
 export const invoiceFilterSchema: z.ZodType<InvoiceFilter> = z.object({
   search: text(200).optional(),
-  status: z.array(z.enum(['draft', 'issued', 'paid', 'cancelled'])).max(4).optional(),
+  status: z
+    .array(z.enum(['draft', 'issued', 'paid', 'cancelled']))
+    .max(4)
+    .optional(),
 });
 
 export const invoiceIdSchema = z.object({ id: z.number().int().positive() });

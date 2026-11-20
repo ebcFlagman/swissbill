@@ -44,7 +44,15 @@ const customer = (over: Partial<CustomerInput> = {}): CustomerInput => ({
 });
 
 const settings = (over: Partial<SettingsFields> = {}): SettingsFields => ({
-  sender: { name: 'Muster AG', street: 'Weg', houseNo: '1', zip: '8000', city: 'Zürich', country: 'CH', iban: QR_IBAN },
+  sender: {
+    name: 'Muster AG',
+    street: 'Weg',
+    houseNo: '1',
+    zip: '8000',
+    city: 'Zürich',
+    country: 'CH',
+    iban: QR_IBAN,
+  },
   invoicePrefix: 'RE',
   defaultClosingText: null,
   defaultPaymentDays: 30,
@@ -93,21 +101,40 @@ describe.each([
     const db = await open();
     const base = settings();
     const save = (s: SettingsFields) => saveSettings(db, s, 'x');
-    await rejects(save({ ...base, sender: { ...base.sender, name: 'x'.repeat(71) } }), 'sender.name');
-    await rejects(save({ ...base, sender: { ...base.sender, street: 'x'.repeat(71) } }), 'sender.street');
-    await rejects(save({ ...base, sender: { ...base.sender, houseNo: 'x'.repeat(17) } }), 'sender.houseNo');
+    await rejects(
+      save({ ...base, sender: { ...base.sender, name: 'x'.repeat(71) } }),
+      'sender.name',
+    );
+    await rejects(
+      save({ ...base, sender: { ...base.sender, street: 'x'.repeat(71) } }),
+      'sender.street',
+    );
+    await rejects(
+      save({ ...base, sender: { ...base.sender, houseNo: 'x'.repeat(17) } }),
+      'sender.houseNo',
+    );
     await rejects(save({ ...base, sender: { ...base.sender, zip: '1'.repeat(17) } }), 'sender.zip');
-    await rejects(save({ ...base, sender: { ...base.sender, city: 'x'.repeat(36) } }), 'sender.city');
+    await rejects(
+      save({ ...base, sender: { ...base.sender, city: 'x'.repeat(36) } }),
+      'sender.city',
+    );
     await rejects(save({ ...base, sender: { ...base.sender, country: 'CHE' } }), 'sender.country');
-    await rejects(save({ ...base, sender: { ...base.sender, iban: 'CH93' + '0'.repeat(30) } }), 'sender.iban');
+    await rejects(
+      save({ ...base, sender: { ...base.sender, iban: 'CH93' + '0'.repeat(30) } }),
+      'sender.iban',
+    );
     await rejects(save({ ...base, invoicePrefix: '' }), 'invoicePrefix');
     await rejects(save({ ...base, invoicePrefix: 'A'.repeat(11) }), 'invoicePrefix');
     await rejects(save({ ...base, invoicePrefix: 'ab' }), 'invoicePrefix');
     await rejects(save({ ...base, invoicePrefix: 'A_B' }), 'invoicePrefix');
     await rejects(save({ ...base, defaultPaymentDays: -1 }), 'defaultPaymentDays');
     await rejects(save({ ...base, defaultPaymentDays: 366 }), 'defaultPaymentDays');
-    await expect(save({ ...base, defaultPaymentDays: 0, invoicePrefix: 'A-1' })).resolves.toBeUndefined();
-    await expect(save({ ...base, defaultPaymentDays: 365, invoicePrefix: 'A'.repeat(10) })).resolves.toBeUndefined();
+    await expect(
+      save({ ...base, defaultPaymentDays: 0, invoicePrefix: 'A-1' }),
+    ).resolves.toBeUndefined();
+    await expect(
+      save({ ...base, defaultPaymentDays: 365, invoicePrefix: 'A'.repeat(10) }),
+    ).resolves.toBeUndefined();
   });
 
   it('Rechnung: Absender-Längen und Land beim Anlegen, Datumsreihenfolge, Positionen, Beträge', async () => {
@@ -126,16 +153,32 @@ describe.each([
     await rejects(repo.createDraft(newDraft({ country: 'CHE' })), 'sender.country');
 
     const draft = await createFilledDraft(service);
-    const save = (over: Parameters<typeof makeDraftInput>[0]) => repo.saveDraft(makeDraftInput({ id: draft.id, ...over }), 'x');
+    const save = (over: Parameters<typeof makeDraftInput>[0]) =>
+      repo.saveDraft(makeDraftInput({ id: draft.id, ...over }), 'x');
     const base = makeDraftInput();
     await rejects(save({ dueDate: '2026-02-28' }), 'dueDate'); // due_date >= invoice_date
     await rejects(save({ debtor: { ...base.debtor, name: 'x'.repeat(71) } }), 'debtor.name');
     await rejects(save({ debtor: { ...base.debtor, country: 'CHE' } }), 'debtor.country');
-    await rejects(save({ sender: { ...base.sender, iban: 'CH93' + '0'.repeat(30) } }), 'sender.iban');
-    await rejects(save({ items: [{ description: 'x'.repeat(501), quantityMilli: 1000, unitPriceRappen: 1 }] }), 'items.0.description');
-    await rejects(save({ items: [{ description: 'x', quantityMilli: 0, unitPriceRappen: 1 }] }), 'items.0.quantity');
-    await rejects(save({ items: [{ description: 'x', quantityMilli: -1000, unitPriceRappen: 1 }] }), 'items.0.quantity');
-    await rejects(save({ items: [{ description: 'x', quantityMilli: 1000, unitPriceRappen: -1 }] }), 'items.0.unitPrice');
+    await rejects(
+      save({ sender: { ...base.sender, iban: 'CH93' + '0'.repeat(30) } }),
+      'sender.iban',
+    );
+    await rejects(
+      save({ items: [{ description: 'x'.repeat(501), quantityMilli: 1000, unitPriceRappen: 1 }] }),
+      'items.0.description',
+    );
+    await rejects(
+      save({ items: [{ description: 'x', quantityMilli: 0, unitPriceRappen: 1 }] }),
+      'items.0.quantity',
+    );
+    await rejects(
+      save({ items: [{ description: 'x', quantityMilli: -1000, unitPriceRappen: 1 }] }),
+      'items.0.quantity',
+    );
+    await rejects(
+      save({ items: [{ description: 'x', quantityMilli: 1000, unitPriceRappen: -1 }] }),
+      'items.0.unitPrice',
+    );
     expect(await service.get(draft.id)).toEqual(draft); // nothing was saved
   });
 
@@ -146,11 +189,28 @@ describe.each([
     const base = makeDraftInput();
     const countersBefore = await db.query('SELECT * FROM number_counters ORDER BY year');
     const noItems = await createFilledDraft(service, { items: [] });
-    await rejects(repo.issue(noItems.id, 2026, () => { throw new Error('darf nicht erreicht werden'); }), 'items');
-    const zeroTotal = await createFilledDraft(service, { items: [{ description: 'Gratis', quantityMilli: 1000, unitPriceRappen: 0 }] });
-    await rejects(repo.issue(zeroTotal.id, 2026, () => { throw new Error('darf nicht erreicht werden'); }), 'total');
+    await rejects(
+      repo.issue(noItems.id, 2026, () => {
+        throw new Error('darf nicht erreicht werden');
+      }),
+      'items',
+    );
+    const zeroTotal = await createFilledDraft(service, {
+      items: [{ description: 'Gratis', quantityMilli: 1000, unitPriceRappen: 0 }],
+    });
+    await rejects(
+      repo.issue(zeroTotal.id, 2026, () => {
+        throw new Error('darf nicht erreicht werden');
+      }),
+      'total',
+    );
     const noDebtor = await createFilledDraft(service, { debtor: { ...base.debtor, name: '' } });
-    await rejects(repo.issue(noDebtor.id, 2026, () => { throw new Error('darf nicht erreicht werden'); }), 'debtor.name');
+    await rejects(
+      repo.issue(noDebtor.id, 2026, () => {
+        throw new Error('darf nicht erreicht werden');
+      }),
+      'debtor.name',
+    );
     for (const d of [noItems, zeroTotal, noDebtor]) {
       const unchanged = await service.get(d.id);
       expect(unchanged.status).toBe('draft');

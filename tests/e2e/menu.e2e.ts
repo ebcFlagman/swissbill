@@ -8,7 +8,9 @@ test('Das deutsche Anwendungsmenü steuert die Anwendung', async () => {
     const { app, page } = launched;
 
     // Menu structure instead of the English Electron default menu
-    const labels = await app.evaluate(({ Menu }) => Menu.getApplicationMenu()?.items.map((i) => i.label));
+    const labels = await app.evaluate(({ Menu }) =>
+      Menu.getApplicationMenu()?.items.map((i) => i.label),
+    );
     expect(labels).toEqual(['Datei', 'Bearbeiten', 'Ansicht', 'Hilfe']);
 
     // No navigation in the window: the main views are only reachable via the "Ansicht" menu
@@ -38,12 +40,15 @@ test('Das deutsche Anwendungsmenü steuert die Anwendung', async () => {
     await expect(page.locator('#debtor-name')).toHaveValue('');
     await page.getByRole('button', { name: '← Zurück' }).click();
     await expect(page.getByTestId('invoice-row')).toHaveCount(2);
-    await expect(page.getByTestId('invoice-row').filter({ hasText: 'Menü AG, geändert' })).toHaveCount(1);
+    await expect(
+      page.getByTestId('invoice-row').filter({ hasText: 'Menü AG, geändert' }),
+    ).toHaveCount(1);
 
     // Back up the database via the menu (the save dialog in main is replaced by a fixed path)
     const target = `${launched.userDataDir}\\sicherung.db`;
     await app.evaluate(({ dialog }, filePath) => {
-      dialog.showSaveDialog = (() => Promise.resolve({ canceled: false, filePath })) as typeof dialog.showSaveDialog;
+      dialog.showSaveDialog = (() =>
+        Promise.resolve({ canceled: false, filePath })) as typeof dialog.showSaveDialog;
     }, target);
     await clickMenu(app, 'file-backup');
     await expect(page.getByText('Datenbank gesichert')).toBeVisible();

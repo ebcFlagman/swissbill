@@ -42,7 +42,9 @@ export function toSuggestions(response: unknown): AddressSuggestion[] {
     const city = str(record['city']);
     if (zip === '' && city === '') continue;
     suggestions.push({
-      label: str(record['formatted']) || [str(record['street']), `${zip} ${city}`.trim()].filter(Boolean).join(', '),
+      label:
+        str(record['formatted']) ||
+        [str(record['street']), `${zip} ${city}`.trim()].filter(Boolean).join(', '),
       street: str(record['street']),
       houseNo: str(record['housenumber']),
       zip,

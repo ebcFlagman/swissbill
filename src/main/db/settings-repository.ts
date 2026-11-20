@@ -1,7 +1,11 @@
 import type { DataSource } from 'typeorm';
-import { normalizeIban } from '../../shared/domain/iban';
-import { validateSettings, type GeoapifyKeyStatus, type SettingsFields } from '../../shared/domain/settings';
-import { AppException } from '../../shared/ipc/errors';
+import { normalizeIban } from '@shared/domain/iban';
+import {
+  type GeoapifyKeyStatus,
+  type SettingsFields,
+  validateSettings,
+} from '@shared/domain/settings';
+import { AppException } from '@shared/ipc/errors';
 import type { SecretStore } from '../secret-store';
 import { SettingsEntity } from './entities/settings.entity';
 import { unitOfWorkFor } from './unit-of-work';
@@ -34,24 +38,33 @@ export async function getSettings(dataSource: DataSource): Promise<SettingsField
 }
 
 /** Writes the settings (validation takes place in the service). */
-export async function saveSettings(dataSource: DataSource, settings: SettingsFields, now: string): Promise<void> {
+export async function saveSettings(
+  dataSource: DataSource,
+  settings: SettingsFields,
+  now: string,
+): Promise<void> {
   const errors = validateSettings(settings);
-  if (errors.length > 0) throw new AppException('VALIDATION', 'Bitte die markierten Felder prüfen.', errors);
+  if (errors.length > 0)
+    throw new AppException('VALIDATION', 'Bitte die markierten Felder prüfen.', errors);
   const closing = settings.defaultClosingText;
   await unitOfWorkFor(dataSource).run((manager) =>
-    manager.update(SettingsEntity, { id: SETTINGS_ID }, {
-      sender_name: settings.sender.name,
-      sender_street: settings.sender.street,
-      sender_house_no: settings.sender.houseNo,
-      sender_zip: settings.sender.zip,
-      sender_city: settings.sender.city,
-      sender_country: settings.sender.country,
-      sender_iban: normalizeIban(settings.sender.iban),
-      invoice_prefix: settings.invoicePrefix,
-      default_closing_text: closing === null || closing.trim() === '' ? null : closing,
-      default_payment_days: settings.defaultPaymentDays,
-      updated_at: now,
-    }),
+    manager.update(
+      SettingsEntity,
+      { id: SETTINGS_ID },
+      {
+        sender_name: settings.sender.name,
+        sender_street: settings.sender.street,
+        sender_house_no: settings.sender.houseNo,
+        sender_zip: settings.sender.zip,
+        sender_city: settings.sender.city,
+        sender_country: settings.sender.country,
+        sender_iban: normalizeIban(settings.sender.iban),
+        invoice_prefix: settings.invoicePrefix,
+        default_closing_text: closing === null || closing.trim() === '' ? null : closing,
+        default_payment_days: settings.defaultPaymentDays,
+        updated_at: now,
+      },
+    ),
   );
 }
 
@@ -61,7 +74,10 @@ async function readKeyBlob(dataSource: DataSource): Promise<Buffer | null> {
 }
 
 /** Plain text of the API key, only in main. `null` if none is stored or it cannot be decrypted. */
-export async function readApiKey(dataSource: DataSource, secrets: SecretStore): Promise<string | null> {
+export async function readApiKey(
+  dataSource: DataSource,
+  secrets: SecretStore,
+): Promise<string | null> {
   const blob = await readKeyBlob(dataSource);
   if (blob === null) return null;
   const key = await secrets.decrypt(blob);
@@ -90,7 +106,11 @@ export async function getKeyState(
  * Sets (encrypted) or removes (`''`) the API key. Removing always works; setting requires available
  * encryption. Returns `false` if nothing was stored because no encryption is available.
  */
-export async function writeApiKey(dataSource: DataSource, secrets: SecretStore, key: string): Promise<boolean> {
+export async function writeApiKey(
+  dataSource: DataSource,
+  secrets: SecretStore,
+  key: string,
+): Promise<boolean> {
   if (key === '') {
     await unitOfWorkFor(dataSource).run((manager) =>
       manager.update(SettingsEntity, { id: SETTINGS_ID }, { geoapify_api_key: null }),

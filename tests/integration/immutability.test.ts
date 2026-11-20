@@ -43,7 +43,10 @@ describe('Persistenzschicht: ausgestellte Rechnungen sind unveränderlich', () =
       { customerId: null },
     ];
     for (const attempt of attempts) {
-      expect(await codeOf(() => repo.saveDraft({ ...base, ...attempt }, NOW)), JSON.stringify(attempt)).toBe('IMMUTABLE');
+      expect(
+        await codeOf(() => repo.saveDraft({ ...base, ...attempt }, NOW)),
+        JSON.stringify(attempt),
+      ).toBe('IMMUTABLE');
     }
   });
 
@@ -56,7 +59,19 @@ describe('Persistenzschicht: ausgestellte Rechnungen sind unveränderlich', () =
     const { repo, service, issued } = await issuedInvoice();
     await codeOf(() => repo.saveDraft(makeDraftInput({ id: issued.id, closingText: 'neu' }), NOW));
     await codeOf(() => repo.deleteDraft(issued.id));
-    await codeOf(() => repo.issue(issued.id, 2026, () => ({ ...issued, number: 'X', numberYear: 2026, numberSeq: 9, referenceType: 'QRR', reference: 'y', totalRappen: 1, layoutVersion: 1, issuedAt: NOW })));
+    await codeOf(() =>
+      repo.issue(issued.id, 2026, () => ({
+        ...issued,
+        number: 'X',
+        numberYear: 2026,
+        numberSeq: 9,
+        referenceType: 'QRR',
+        reference: 'y',
+        totalRappen: 1,
+        layoutVersion: 1,
+        issuedAt: NOW,
+      })),
+    );
     expect(await service.get(issued.id)).toEqual(issued);
   });
 
@@ -90,7 +105,9 @@ describe('Persistenzschicht: ausgestellte Rechnungen sind unveränderlich', () =
 
   it('beim Löschen eines Kunden wird nur customer_id der Rechnung NULL', async () => {
     const { db, service, draft } = await setup();
-    await db.query("INSERT INTO customers (name, zip, city, created_at, updated_at) VALUES ('Kunde AG', '8000', 'Zürich', 'x', 'x')");
+    await db.query(
+      "INSERT INTO customers (name, zip, city, created_at, updated_at) VALUES ('Kunde AG', '8000', 'Zürich', 'x', 'x')",
+    );
     const customerId = ((await db.query('SELECT id FROM customers')) as { id: number }[])[0]!.id;
     await service.saveDraft(makeDraftInput({ id: draft.id, customerId }));
     const issued = await service.issue(draft.id);
@@ -101,7 +118,11 @@ describe('Persistenzschicht: ausgestellte Rechnungen sind unveränderlich', () =
   it('lässt Entwürfe frei änderbar und löschbar (Positionen werden mitgelöscht)', async () => {
     const { db, service, draft } = await setup();
     const changed = await service.saveDraft(
-      makeDraftInput({ id: draft.id, closingText: 'Geändert', items: [{ description: 'Neu', quantityMilli: 1000, unitPriceRappen: 500 }] }),
+      makeDraftInput({
+        id: draft.id,
+        closingText: 'Geändert',
+        items: [{ description: 'Neu', quantityMilli: 1000, unitPriceRappen: 500 }],
+      }),
     );
     expect(changed.closingText).toBe('Geändert');
     expect(changed.totalRappen).toBe(500);
@@ -117,7 +138,9 @@ describe('Persistenzschicht: ausgestellte Rechnungen sind unveränderlich', () =
 
   it('der Service liefert IMMUTABLE und lässt die Rechnung unverändert', async () => {
     const { service, issued } = await issuedInvoice();
-    expect(await codeOf(() => service.saveDraft(makeDraftInput({ id: issued.id })))).toBe('IMMUTABLE');
+    expect(await codeOf(() => service.saveDraft(makeDraftInput({ id: issued.id })))).toBe(
+      'IMMUTABLE',
+    );
     expect(await service.get(issued.id)).toEqual(issued);
   });
 });

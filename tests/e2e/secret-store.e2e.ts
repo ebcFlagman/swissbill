@@ -12,7 +12,10 @@ test('API-Key wird mit der echten Betriebssystem-Verschlüsselung gespeichert un
   try {
     await goTo(launched.app, 'Einstellungen');
     const status = (await launched.page.getByTestId('key-status').textContent()) ?? '';
-    test.skip(status.includes('Verschlüsselung auf diesem Gerät nicht verfügbar'), 'keine Verschlüsselung auf diesem Gerät');
+    test.skip(
+      status.includes('Verschlüsselung auf diesem Gerät nicht verfügbar'),
+      'keine Verschlüsselung auf diesem Gerät',
+    );
 
     await setupSettings(launched.app, launched.page, 'test-key-0123456789');
     await expect(launched.page.getByTestId('key-status')).toHaveText('Key gespeichert.');

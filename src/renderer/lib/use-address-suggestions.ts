@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
-import { shouldSearch, type AddressSuggestion } from '../../shared/domain/address-suggestion';
-import type { SuggestResult } from '../../shared/ipc/addresses';
+import { shouldSearch, type AddressSuggestion } from '@shared/domain/address-suggestion';
+import type { SuggestResult } from '@shared/ipc/addresses';
 
 /** A search returns `null` if a newer request has started in the meantime (the response is stale). */
 export type SuggestionSearch = (text: string) => Promise<SuggestResult | null>;
@@ -12,7 +12,9 @@ const EMPTY: SuggestResult = { status: 'ok', suggestions: [] };
  * counts. Inputs that are too short trigger no request and invalidate earlier requests still running.
  * The typing pause of 0.3 s is provided by the AutoComplete component (`delay`).
  */
-export function createSuggestionSearch(suggest: (text: string) => Promise<SuggestResult>): SuggestionSearch {
+export function createSuggestionSearch(
+  suggest: (text: string) => Promise<SuggestResult>,
+): SuggestionSearch {
   let latest = 0;
   return async (text) => {
     const id = ++latest;

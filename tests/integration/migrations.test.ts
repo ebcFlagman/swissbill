@@ -37,7 +37,11 @@ const hasTable = async (ds: Awaited<ReturnType<typeof openAndMigrate>>, name: st
 describe('TypeORM-Migrationen', () => {
   it('die mitgelieferten Migrationen sind nach Zeitstempel sortiert und eindeutig benannt', () => {
     const names = loadMigrations().map((m) => m.name);
-    expect(names).toEqual(['InitSchema1700000000001', 'AddGeoapifyKey1700000000002', 'DropLegacyTriggers1700000000003']);
+    expect(names).toEqual([
+      'InitSchema1700000000001',
+      'AddGeoapifyKey1700000000002',
+      'DropLegacyTriggers1700000000003',
+    ]);
   });
 
   it('Schemaänderungen laufen nie automatisch (synchronize und migrationsRun sind aus)', () => {
@@ -49,8 +53,18 @@ describe('TypeORM-Migrationen', () => {
   it('wendet alle Migrationen auf eine leere Datenbank an und legt die Einstellungszeile an', async () => {
     const db = await openAndMigrate(':memory:');
     expect(await db.query('SELECT COUNT(*) AS n FROM migrations')).toEqual([{ n: 3 }]);
-    expect(await db.query('SELECT id, sender_country, invoice_prefix, default_payment_days, geoapify_api_key FROM settings')).toEqual([
-      { id: 1, sender_country: 'CH', invoice_prefix: 'RE', default_payment_days: 30, geoapify_api_key: null },
+    expect(
+      await db.query(
+        'SELECT id, sender_country, invoice_prefix, default_payment_days, geoapify_api_key FROM settings',
+      ),
+    ).toEqual([
+      {
+        id: 1,
+        sender_country: 'CH',
+        invoice_prefix: 'RE',
+        default_payment_days: 30,
+        geoapify_api_key: null,
+      },
     ]);
     await db.destroy();
   });
@@ -82,7 +96,9 @@ describe('TypeORM-Migrationen', () => {
     const file = join(dir, 'swissbill.db');
     await (await openAndMigrate(file)).destroy();
 
-    await expect(openAndMigrate(file, [...loadMigrations(), Broken1700000000200])).rejects.toMatchObject({
+    await expect(
+      openAndMigrate(file, [...loadMigrations(), Broken1700000000200]),
+    ).rejects.toMatchObject({
       kind: 'migration',
     });
     const db = await openAndMigrate(file);

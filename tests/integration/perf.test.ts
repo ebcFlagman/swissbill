@@ -7,12 +7,18 @@ import { makeIssuedInvoice, makeItem } from '../fixtures/invoice';
 
 /** Performance goals from plan.md: list and filter with 5,000 invoices under 200 ms, PDF with 50 items under 2 s. */
 describe('Leistung', () => {
-  it('Liste und Filter bei 5\'000 Rechnungen bleiben unter 200 ms', async () => {
+  it("Liste und Filter bei 5'000 Rechnungen bleiben unter 200 ms", async () => {
     const db = await createTestDb();
     const sql = `INSERT INTO invoices (status, number, number_year, number_seq, invoice_date, due_date, debtor_name,
                              reference_type, reference, total_rappen, issued_at, created_at, updated_at)
        VALUES (?, ?, ?, ?, ?, ?, ?, 'QRR', ?, ?, ?, ?, ?)`;
-    const names = ['Müller AG', 'Meier & Söhne', 'Schneider GmbH', 'Rutschmann Treuhand', 'Keller & Partner'];
+    const names = [
+      'Müller AG',
+      'Meier & Söhne',
+      'Schneider GmbH',
+      'Rutschmann Treuhand',
+      'Keller & Partner',
+    ];
     await db.transaction(async (manager) => {
       for (let i = 1; i <= 5000; i++) {
         const year = 2020 + Math.floor((i - 1) / 1000);
@@ -45,10 +51,18 @@ describe('Leistung', () => {
     await service.list({}); // warm up (statement cache)
 
     const all = await time(async () => expect(await service.list({})).toHaveLength(5000));
-    const search = await time(async () => expect((await service.list({ search: 'müller' })).length).toBeGreaterThan(900));
-    const number = await time(async () => expect(await service.list({ search: 'RE-2022-0042' })).toHaveLength(1));
-    const status = await time(async () => expect((await service.list({ status: ['paid'] })).length).toBeGreaterThan(1000));
-    const combined = await time(() => service.list({ search: 'meier', status: ['issued', 'paid'] }));
+    const search = await time(async () =>
+      expect((await service.list({ search: 'müller' })).length).toBeGreaterThan(900),
+    );
+    const number = await time(async () =>
+      expect(await service.list({ search: 'RE-2022-0042' })).toHaveLength(1),
+    );
+    const status = await time(async () =>
+      expect((await service.list({ status: ['paid'] })).length).toBeGreaterThan(1000),
+    );
+    const combined = await time(() =>
+      service.list({ search: 'meier', status: ['issued', 'paid'] }),
+    );
 
     for (const [name, ms] of Object.entries({ all, search, number, status, combined })) {
       expect(ms, `${name}: ${ms.toFixed(1)} ms`).toBeLessThan(200);
@@ -56,7 +70,9 @@ describe('Leistung', () => {
   });
 
   it('ein PDF mit 50 Positionen entsteht in unter 2 Sekunden', async () => {
-    const items = Array.from({ length: 50 }, (_, i) => makeItem(`Position ${i + 1} mit Beschreibung`, 1500, 2350));
+    const items = Array.from({ length: 50 }, (_, i) =>
+      makeItem(`Position ${i + 1} mit Beschreibung`, 1500, 2350),
+    );
     const invoice = makeIssuedInvoice({ items, totalRappen: 50 * 3525 });
     const start = performance.now();
     const pdf = await renderInvoicePdf(invoice);

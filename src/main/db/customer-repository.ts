@@ -1,6 +1,6 @@
 import type { DataSource } from 'typeorm';
-import { validateCustomer, type Customer, type CustomerInput } from '../../shared/domain/customer';
-import { AppException } from '../../shared/ipc/errors';
+import { type Customer, type CustomerInput, validateCustomer } from '@shared/domain/customer';
+import { AppException } from '@shared/ipc/errors';
 import { CustomerEntity, type CustomerRow } from './entities/customer.entity';
 import { unitOfWorkFor } from './unit-of-work';
 
@@ -25,7 +25,8 @@ const lower = (value: string): string => value.toLowerCase();
 /** Data rules apply to every write path (formerly CHECK constraints of the database). */
 function assertValid(input: CustomerInput): void {
   const errors = validateCustomer(input);
-  if (errors.length > 0) throw new AppException('VALIDATION', 'Bitte die markierten Felder prüfen.', errors);
+  if (errors.length > 0)
+    throw new AppException('VALIDATION', 'Bitte die markierten Felder prüfen.', errors);
 }
 
 function compare(a: string, b: string): number {
@@ -71,16 +72,20 @@ export class CustomerRepository {
   async update(id: number, input: CustomerInput, now: string): Promise<void> {
     assertValid(input);
     await unitOfWorkFor(this.dataSource).run((manager) =>
-      manager.update(CustomerEntity, { id }, {
-        name: input.name,
-        street: input.street,
-        house_no: input.houseNo,
-        zip: input.zip,
-        city: input.city,
-        country: input.country,
-        notes: input.notes,
-        updated_at: now,
-      }),
+      manager.update(
+        CustomerEntity,
+        { id },
+        {
+          name: input.name,
+          street: input.street,
+          house_no: input.houseNo,
+          zip: input.zip,
+          city: input.city,
+          country: input.country,
+          notes: input.notes,
+          updated_at: now,
+        },
+      ),
     );
   }
 

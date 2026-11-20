@@ -1,6 +1,6 @@
 import type { DataSource } from 'typeorm';
-import { validateCustomer, type Customer, type CustomerInput } from '../../shared/domain/customer';
-import { AppException } from '../../shared/ipc/errors';
+import { validateCustomer, type Customer, type CustomerInput } from '@shared/domain/customer';
+import { AppException } from '@shared/ipc/errors';
 import { CustomerRepository } from '../db/customer-repository';
 
 export class CustomerService {

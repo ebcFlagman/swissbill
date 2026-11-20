@@ -6,15 +6,15 @@ schmale, typisierte IPC-Schnittstelle.
 
 ## Aufbau (`src/main/db/`)
 
-| Datei | Aufgabe |
-|---|---|
+| Datei                  | Aufgabe                                                                                       |
+| ---------------------- | --------------------------------------------------------------------------------------------- |
 | `entities/*.entity.ts` | `EntitySchema` je Tabelle (reine Abbildung; das Schema selbst entsteht durch die Migrationen) |
-| `migrations/*.ts` | TypeORM-Migrationen, nur vorwärts, Klassenname endet auf den Zeitstempel |
-| `data-source.ts` | `createDataSource(pfad)`; `synchronize` und `migrationsRun` sind aus |
-| `startup.ts` | `openAndMigrate(pfad)`: Integritätsprüfung → öffnen → Übernahme alter Dateien → Migrationen |
-| `sqlite-adapter.ts` | **einzige** SQLite-spezifische Stelle: Pragmas, Integritätsprüfung, Vorab-Kopie, Sicherung |
-| `unit-of-work.ts` | führt alle Schreibvorgänge als Transaktionen nacheinander aus |
-| `*-repository.ts` | einziger Schreibpfad; setzt die Regeln durch |
+| `migrations/*.ts`      | TypeORM-Migrationen, nur vorwärts, Klassenname endet auf den Zeitstempel                      |
+| `data-source.ts`       | `createDataSource(pfad)`; `synchronize` und `migrationsRun` sind aus                          |
+| `startup.ts`           | `openAndMigrate(pfad)`: Integritätsprüfung → öffnen → Übernahme alter Dateien → Migrationen   |
+| `sqlite-adapter.ts`    | **einzige** SQLite-spezifische Stelle: Pragmas, Integritätsprüfung, Vorab-Kopie, Sicherung    |
+| `unit-of-work.ts`      | führt alle Schreibvorgänge als Transaktionen nacheinander aus                                 |
+| `*-repository.ts`      | einziger Schreibpfad; setzt die Regeln durch                                                  |
 
 ## Regeln leben im Code, nicht in der Datenbank
 

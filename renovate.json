@@ -1,10 +1,6 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": [
-    "config:recommended",
-    "group:monorepos",
-    "group:recommended"
-  ],
+  "extends": ["config:recommended", "group:monorepos", "group:recommended"],
   "timezone": "Europe/Zurich",
   "schedule": ["before 8am on monday"],
   "prConcurrentLimit": 5,

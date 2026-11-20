@@ -1,5 +1,14 @@
 import { createHash } from 'node:crypto';
-import { copyFileSync, existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, truncateSync, writeFileSync } from 'node:fs';
+import {
+  copyFileSync,
+  existsSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  truncateSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -41,7 +50,9 @@ describe('Start der Datenbank', () => {
   it('legt beim ersten Start (Datei fehlt) eine neue, migrierte Datenbank an', async () => {
     expect(existsSync(path)).toBe(false);
     const db = await openAndMigrate(path);
-    expect(await db.query('SELECT COUNT(*) AS n FROM migrations')).toEqual([{ n: loadMigrations().length }]);
+    expect(await db.query('SELECT COUNT(*) AS n FROM migrations')).toEqual([
+      { n: loadMigrations().length },
+    ]);
     await db.destroy();
     expect(existsSync(path)).toBe(true);
     expect(readdirSync(dir)).toEqual(['swissbill.db']); // no copy for a new database
@@ -83,7 +94,9 @@ describe('Start der Datenbank', () => {
   it('lehnt eine Datenbank einer neueren Programmversion ab, ohne sie zu verändern', async () => {
     await makeHealthyDb();
     const newer = await openAndMigrate(path);
-    await newer.query("INSERT INTO migrations (timestamp, name) VALUES (1800000000000, 'FutureFeature1800000000000')");
+    await newer.query(
+      "INSERT INTO migrations (timestamp, name) VALUES (1800000000000, 'FutureFeature1800000000000')",
+    );
     await newer.destroy();
     const before = sha(path);
 

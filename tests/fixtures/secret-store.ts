@@ -10,7 +10,9 @@ export interface FakeSecretStore extends SecretStore {
 const PREFIX = 'FAKE-ENC:';
 
 /** Test store without Electron: "encrypts" reversibly, but the plain text is not readable in the result. */
-export function createFakeSecretStore(options: { available?: boolean; broken?: boolean } = {}): FakeSecretStore {
+export function createFakeSecretStore(
+  options: { available?: boolean; broken?: boolean } = {},
+): FakeSecretStore {
   const store: FakeSecretStore = {
     available: options.available ?? true,
     broken: options.broken ?? false,
@@ -23,7 +25,9 @@ export function createFakeSecretStore(options: { available?: boolean; broken?: b
       if (store.broken) return null;
       const value = data.toString('utf8');
       if (!value.startsWith(PREFIX)) return null;
-      return Buffer.from(Buffer.from(value.slice(PREFIX.length), 'base64').reverse()).toString('utf8');
+      return Buffer.from(Buffer.from(value.slice(PREFIX.length), 'base64').reverse()).toString(
+        'utf8',
+      );
     },
   };
   return store;

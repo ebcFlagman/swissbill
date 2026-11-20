@@ -64,7 +64,9 @@ describe('BackupService', () => {
     const restored = await openAndMigrate(target);
     const service = new InvoiceService(restored, { now: () => new Date(2026, 2, 1, 10, 0) });
     expect(await service.list({})).toHaveLength(2);
-    expect((await service.issue((await createFilledDraft(service)).id)).number).toBe('RE-2026-0002');
+    expect((await service.issue((await createFilledDraft(service)).id)).number).toBe(
+      'RE-2026-0002',
+    );
     await restored.destroy();
   });
 

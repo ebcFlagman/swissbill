@@ -9,7 +9,10 @@ import sample from '../fixtures/geoapify-autocomplete.json';
 const KEY = 'geheimer-test-key-0123456789';
 
 function jsonResponse(status: number, body: unknown = {}): Response {
-  return new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { 'content-type': 'application/json' },
+  });
 }
 
 describe('Geoapify-Client', () => {
@@ -50,7 +53,9 @@ describe('Geoapify-Client', () => {
     [500, 'unavailable'],
     [404, 'unavailable'],
   ])('bildet HTTP %i auf %s ab', async (status, reason) => {
-    const client = createGeoapifyClient({ fetchImpl: async () => jsonResponse(status, { message: KEY }) });
+    const client = createGeoapifyClient({
+      fetchImpl: async () => jsonResponse(status, { message: KEY }),
+    });
     expect(await client.autocomplete('abc', KEY)).toEqual({ ok: false, reason });
   });
 
@@ -70,28 +75,36 @@ describe('Geoapify-Client', () => {
       timeoutMs: 20,
       fetchImpl: (_input, init) =>
         new Promise((_resolve, reject) => {
-          init?.signal?.addEventListener('abort', () => reject(new DOMException('aborted', 'AbortError')));
+          init?.signal?.addEventListener('abort', () =>
+            reject(new DOMException('aborted', 'AbortError')),
+          );
         }),
     });
     expect(await client.autocomplete('abc', KEY)).toEqual({ ok: false, reason: 'timeout' });
   });
 
   it('meldet eine nicht lesbare Antwort als unavailable', async () => {
-    const client = createGeoapifyClient({ fetchImpl: async () => new Response('kein json', { status: 200 }) });
+    const client = createGeoapifyClient({
+      fetchImpl: async () => new Response('kein json', { status: 200 }),
+    });
     expect(await client.autocomplete('abc', KEY)).toEqual({ ok: false, reason: 'unavailable' });
   });
 });
 
 describe('resolveBaseUrl (nur für Tests mit Fake-Server)', () => {
   it('nutzt immer den echten Host, wenn die App verpackt ist', () => {
-    expect(resolveBaseUrl({ SWISSBILL_GEOAPIFY_BASE_URL: 'http://localhost:1234' }, true)).toBe(GEOAPIFY_BASE_URL);
+    expect(resolveBaseUrl({ SWISSBILL_GEOAPIFY_BASE_URL: 'http://localhost:1234' }, true)).toBe(
+      GEOAPIFY_BASE_URL,
+    );
   });
 
   it('erlaubt die Umgebungsvariable nur bei nicht verpackter App und nur als http(s)-URL', () => {
     expect(resolveBaseUrl({ SWISSBILL_GEOAPIFY_BASE_URL: 'http://localhost:1234' }, false)).toBe(
       'http://localhost:1234',
     );
-    expect(resolveBaseUrl({ SWISSBILL_GEOAPIFY_BASE_URL: 'file:///etc/passwd' }, false)).toBe(GEOAPIFY_BASE_URL);
+    expect(resolveBaseUrl({ SWISSBILL_GEOAPIFY_BASE_URL: 'file:///etc/passwd' }, false)).toBe(
+      GEOAPIFY_BASE_URL,
+    );
     expect(resolveBaseUrl({}, false)).toBe(GEOAPIFY_BASE_URL);
   });
 });

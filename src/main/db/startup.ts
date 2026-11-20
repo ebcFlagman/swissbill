@@ -52,7 +52,9 @@ function checkFile(path: string): void {
 }
 
 async function executedMigrations(dataSource: DataSource): Promise<string[]> {
-  const rows = (await dataSource.query(`SELECT "name" FROM "${MIGRATIONS_TABLE}" ORDER BY "id"`)) as {
+  const rows = (await dataSource.query(
+    `SELECT "name" FROM "${MIGRATIONS_TABLE}" ORDER BY "id"`,
+  )) as {
     name: string;
   }[];
   return rows.map((r) => r.name);
@@ -64,7 +66,8 @@ async function executedMigrations(dataSource: DataSource): Promise<string[]> {
  */
 async function adoptLegacyDatabase(dataSource: DataSource, path: string): Promise<boolean> {
   const queryRunner = dataSource.createQueryRunner();
-  if ((await queryRunner.hasTable(MIGRATIONS_TABLE)) || !(await queryRunner.hasTable('invoices'))) return false;
+  if ((await queryRunner.hasTable(MIGRATIONS_TABLE)) || !(await queryRunner.hasTable('invoices')))
+    return false;
   const version = await readLegacyVersion(dataSource);
   if (version < 1) return false; // no known state: the migrations run normally (and fail in an orderly way)
   if (version > LEGACY_BASELINE.length) {
@@ -80,7 +83,13 @@ async function adoptLegacyDatabase(dataSource: DataSource, path: string): Promis
       new Table({
         name: MIGRATIONS_TABLE,
         columns: [
-          { name: 'id', type: 'integer', isPrimary: true, isGenerated: true, generationStrategy: 'increment' },
+          {
+            name: 'id',
+            type: 'integer',
+            isPrimary: true,
+            isGenerated: true,
+            generationStrategy: 'increment',
+          },
           { name: 'timestamp', type: 'bigint' },
           { name: 'name', type: 'varchar' },
         ],

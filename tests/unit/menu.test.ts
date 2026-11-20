@@ -1,7 +1,7 @@
 import type { MenuItemConstructorOptions } from 'electron';
 import { describe, expect, it, vi } from 'vitest';
 import { buildMenuTemplate, type MenuDeps } from '../../src/main/menu-template';
-import { isMenuAction, type MenuAction } from '../../src/shared/ipc/menu';
+import { isMenuAction, type MenuAction } from '@shared/ipc/menu';
 
 function setup(isDev = false) {
   const sent: MenuAction[] = [];
@@ -15,7 +15,10 @@ function setup(isDev = false) {
 }
 
 function flatten(items: MenuItemConstructorOptions[]): MenuItemConstructorOptions[] {
-  return items.flatMap((item) => [item, ...(Array.isArray(item.submenu) ? flatten(item.submenu) : [])]);
+  return items.flatMap((item) => [
+    item,
+    ...(Array.isArray(item.submenu) ? flatten(item.submenu) : []),
+  ]);
 }
 
 const find = (template: MenuItemConstructorOptions[], id: string) =>
@@ -23,12 +26,27 @@ const find = (template: MenuItemConstructorOptions[], id: string) =>
 
 describe('Anwendungsmenü', () => {
   it('hat die deutschen Hauptmenüs', () => {
-    expect(setup().template.map((m) => m.label)).toEqual(['Datei', 'Bearbeiten', 'Ansicht', 'Hilfe']);
+    expect(setup().template.map((m) => m.label)).toEqual([
+      'Datei',
+      'Bearbeiten',
+      'Ansicht',
+      'Hilfe',
+    ]);
   });
 
   it('alle Einträge sind deutsch beschriftet (keine englischen Standardbezeichnungen)', () => {
     const labels = flatten(setup(true).template).flatMap((i) => (i.label ? [i.label] : []));
-    for (const english of ['File', 'Edit', 'View', 'Window', 'Help', 'Quit', 'Copy', 'Paste', 'Toggle Developer Tools']) {
+    for (const english of [
+      'File',
+      'Edit',
+      'View',
+      'Window',
+      'Help',
+      'Quit',
+      'Copy',
+      'Paste',
+      'Toggle Developer Tools',
+    ]) {
       expect(labels).not.toContain(english);
     }
     const roleItems = flatten(setup(true).template).filter((i) => i.role !== undefined);
@@ -57,8 +75,8 @@ describe('Anwendungsmenü', () => {
   it('die Hauptnavigation steht im Menü «Ansicht» (es gibt keine Navigation im Fenster)', () => {
     const { template } = setup();
     const idsOf = (label: string) =>
-      (template.find((m) => m.label === label)?.submenu as MenuItemConstructorOptions[]).flatMap((i) =>
-        i.id ? [i.id] : [],
+      (template.find((m) => m.label === label)?.submenu as MenuItemConstructorOptions[]).flatMap(
+        (i) => (i.id ? [i.id] : []),
       );
     expect(idsOf('Ansicht')).toEqual(['nav-invoices', 'nav-customers', 'nav-settings']);
     expect(idsOf('Datei')).toEqual(['file-new-invoice', 'file-backup']);
@@ -76,12 +94,15 @@ describe('Anwendungsmenü', () => {
   it('Bearbeiten nutzt Rollen, damit Zwischenablage und Rückgängig überall funktionieren', () => {
     const { template } = setup();
     const edit = template.find((m) => m.label === 'Bearbeiten');
-    const roles = (edit?.submenu as MenuItemConstructorOptions[]).flatMap((i) => (i.role ? [i.role] : []));
+    const roles = (edit?.submenu as MenuItemConstructorOptions[]).flatMap((i) =>
+      i.role ? [i.role] : [],
+    );
     expect(roles).toEqual(['undo', 'redo', 'cut', 'copy', 'paste', 'selectAll']);
   });
 
   it('Entwicklerwerkzeuge und «Neu laden» gibt es nur im Entwicklungsmodus', () => {
-    const rolesOf = (isDev: boolean) => flatten(setup(isDev).template).flatMap((i) => (i.role ? [i.role] : []));
+    const rolesOf = (isDev: boolean) =>
+      flatten(setup(isDev).template).flatMap((i) => (i.role ? [i.role] : []));
     expect(rolesOf(false)).not.toContain('toggleDevTools');
     expect(rolesOf(false)).not.toContain('reload');
     expect(rolesOf(true)).toContain('toggleDevTools');

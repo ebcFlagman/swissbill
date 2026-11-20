@@ -1,6 +1,6 @@
 import { ipcMain } from 'electron';
 import type { z } from 'zod';
-import type { ChannelName } from '../../shared/ipc/api';
+import type { ChannelName } from '@shared/ipc/api';
 import { wrapHandler } from './wrap';
 
 /** Registers a channel. Inputs are validated with zod, errors are returned as `Result`. */

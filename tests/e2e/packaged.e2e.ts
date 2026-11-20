@@ -39,7 +39,9 @@ test('Die verpackte Anwendung startet, öffnet die Datenbank und erzeugt ein PDF
 
     // Preview in the UI: the PDF viewer loads its resources, nothing is blocked
     const failed: string[] = [];
-    page.on('requestfailed', (request) => failed.push(`${request.url()} ${request.failure()?.errorText ?? ''}`));
+    page.on('requestfailed', (request) =>
+      failed.push(`${request.url()} ${request.failure()?.errorText ?? ''}`),
+    );
     await page.evaluate(() => window.swissbill.invoices.createDraft()); // second draft so that the list has rows
     await page.getByRole('button', { name: 'Neue Rechnung' }).click();
     await page.getByRole('button', { name: 'Vorschau' }).click();
@@ -47,11 +49,17 @@ test('Die verpackte Anwendung startet, öffnet die Datenbank und erzeugt ein PDF
     await expect(page.locator('iframe[title="PDF-Vorschau"]')).toBeVisible();
     await page.waitForTimeout(2000);
     expect(failed).toEqual([]);
-    await page.getByRole('dialog', { name: 'Vorschau' }).getByRole('button', { name: 'Schliessen' }).click();
+    await page
+      .getByRole('dialog', { name: 'Vorschau' })
+      .getByRole('button', { name: 'Schliessen' })
+      .click();
 
     // PDF generation (pdfkit and swissqrbill in the package)
     const id = draft.ok ? draft.value.id : 0;
-    const preview = await page.evaluate((invoiceId) => window.swissbill.pdf.preview({ invoiceId }), id);
+    const preview = await page.evaluate(
+      (invoiceId) => window.swissbill.pdf.preview({ invoiceId }),
+      id,
+    );
     expect(preview.ok && preview.value.base64.length > 1000).toBe(true);
   } finally {
     await app.close();

@@ -92,9 +92,13 @@ export function validateDebtor(
 ): FieldError[] {
   const requireName = options.requireName ?? true;
   // An empty country is allowed; validateAddress only checks a given one.
-  const errors = validateAddress({ ...address, country: address.country === '' ? 'CH' : address.country }, prefix, {
-    partial: true,
-  });
+  const errors = validateAddress(
+    { ...address, country: address.country === '' ? 'CH' : address.country },
+    prefix,
+    {
+      partial: true,
+    },
+  );
   if (requireName && address.name.trim() === '') {
     errors.unshift({ field: `${prefix}.name`, message: 'Name ist erforderlich.' });
   }

@@ -1,5 +1,5 @@
 /// <reference types="vite/client" />
-import type { SwissbillApi } from '../shared/ipc/api';
+import type { SwissbillApi } from '@shared/ipc/api';
 
 declare global {
   interface ImportMetaEnv {

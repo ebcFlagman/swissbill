@@ -10,7 +10,9 @@ describe('validateForIssue', () => {
   it('akzeptiert eine vollständige, gültige Rechnung (QR-IBAN und normale IBAN)', () => {
     expect(validateForIssue(makeInvoice())).toEqual([]);
     const invoice = makeInvoice();
-    expect(validateForIssue({ ...invoice, sender: { ...invoice.sender, iban: NORMAL_IBAN } })).toEqual([]);
+    expect(
+      validateForIssue({ ...invoice, sender: { ...invoice.sender, iban: NORMAL_IBAN } }),
+    ).toEqual([]);
   });
 
   it('die Währung ist fest CHF', () => {
@@ -20,13 +22,25 @@ describe('validateForIssue', () => {
   it('verlangt beim Absender Name, PLZ, Ort und IBAN', () => {
     const base = makeInvoice();
     const sender = { ...base.sender, name: '', zip: '', city: '', iban: '' };
-    expect(fields({ sender }).sort()).toEqual(['sender.city', 'sender.iban', 'sender.name', 'sender.zip']);
+    expect(fields({ sender }).sort()).toEqual([
+      'sender.city',
+      'sender.iban',
+      'sender.name',
+      'sender.zip',
+    ]);
   });
 
   it('verlangt beim Rechnungsempfänger nur den Namen', () => {
     const base = makeInvoice();
     expect(fields({ debtor: { ...base.debtor, name: '' } })).toEqual(['debtor.name']);
-    const nameOnly = { name: 'Pia Muster', street: '', houseNo: '', zip: '', city: '', country: '' };
+    const nameOnly = {
+      name: 'Pia Muster',
+      street: '',
+      houseNo: '',
+      zip: '',
+      city: '',
+      country: '',
+    };
     expect(fields({ debtor: nameOnly })).toEqual([]);
   });
 
@@ -38,7 +52,10 @@ describe('validateForIssue', () => {
 
   it('prüft die IBAN des Absenders inklusive Prüfsumme', () => {
     const base = makeInvoice();
-    const errors = validateForIssue({ ...base, sender: { ...base.sender, iban: 'CH9300762011623852958' } });
+    const errors = validateForIssue({
+      ...base,
+      sender: { ...base.sender, iban: 'CH9300762011623852958' },
+    });
     expect(errors).toHaveLength(1);
     expect(errors[0]?.field).toBe('sender.iban');
     expect(errors[0]?.message).toMatch(/Prüfsumme/);
@@ -73,7 +90,7 @@ describe('validateForIssue', () => {
     expect(errors[0]?.message).toMatch(/grösser als 0/);
   });
 
-  it('begrenzt das Total auf 999\'999\'999.99', () => {
+  it("begrenzt das Total auf 999'999'999.99", () => {
     expect(MAX_TOTAL_RAPPEN).toBe(99_999_999_999);
     const ok = [makeItem('Max', 1000, MAX_TOTAL_RAPPEN)];
     expect(validateForIssue(makeInvoice({ items: ok }))).toEqual([]);
@@ -95,7 +112,9 @@ describe('validateForIssue', () => {
   });
 
   it('meldet alle Fehler auf Deutsch und mit nicht leerem Text', () => {
-    const errors = validateForIssue(makeInvoice({ items: [], totalRappen: 0, dueDate: '2000-01-01' }));
+    const errors = validateForIssue(
+      makeInvoice({ items: [], totalRappen: 0, dueDate: '2000-01-01' }),
+    );
     expect(errors.length).toBeGreaterThan(1);
     expect(errors.every((e) => e.message.trim().length > 0)).toBe(true);
   });

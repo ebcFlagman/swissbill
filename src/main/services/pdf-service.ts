@@ -1,11 +1,11 @@
 import PDFDocument from 'pdfkit';
 import { SwissQRBill } from 'swissqrbill/pdf';
-import { formatDateCh } from '../../shared/domain/dates';
-import { LAYOUT_VERSION, CURRENCY, validateForIssue, type Invoice } from '../../shared/domain/invoice';
-import { formatChf, formatMilli } from '../../shared/domain/money';
-import { qrDebtor } from '../../shared/domain/qr-payload';
-import { referenceTypeFor, validateReference } from '../../shared/domain/reference';
-import { AppException, type FieldError } from '../../shared/ipc/errors';
+import { formatDateCh } from '@shared/domain/dates';
+import { LAYOUT_VERSION, CURRENCY, validateForIssue, type Invoice } from '@shared/domain/invoice';
+import { formatChf, formatMilli } from '@shared/domain/money';
+import { qrDebtor } from '@shared/domain/qr-payload';
+import { referenceTypeFor, validateReference } from '@shared/domain/reference';
+import { AppException, type FieldError } from '@shared/ipc/errors';
 
 /** Version of the layout; recorded in `invoices.layout_version` on issuing. */
 export { LAYOUT_VERSION };
@@ -28,10 +28,18 @@ export interface RenderOptions {
   preview?: boolean;
 }
 
-function addressLines(a: { name: string; street: string; houseNo: string; zip: string; city: string; country: string }): string[] {
+function addressLines(a: {
+  name: string;
+  street: string;
+  houseNo: string;
+  zip: string;
+  city: string;
+  country: string;
+}): string[] {
   const street = [a.street, a.houseNo].filter((p) => p !== '').join(' ');
   // Country prefix only for a specified, foreign country (the country is optional for the debtor)
-  const place = `${a.country !== '' && a.country !== 'CH' ? `${a.country}-` : ''}${a.zip} ${a.city}`.trim();
+  const place =
+    `${a.country !== '' && a.country !== 'CH' ? `${a.country}-` : ''}${a.zip} ${a.city}`.trim();
   return [a.name, street, place].filter((line) => line.trim() !== '');
 }
 
@@ -55,12 +63,31 @@ function drawWatermark(doc: PDFKit.PDFDocument, text: string): void {
 
 function drawTableHeader(doc: PDFKit.PDFDocument, y: number): number {
   doc.font('Helvetica-Bold').fontSize(9).fillColor('#000000');
-  doc.text('Beschreibung', COLUMNS.description.x, y, { width: COLUMNS.description.width, lineBreak: false });
-  doc.text('Menge', COLUMNS.quantity.x, y, { width: COLUMNS.quantity.width, align: 'right', lineBreak: false });
-  doc.text('Einzelpreis', COLUMNS.unitPrice.x, y, { width: COLUMNS.unitPrice.width, align: 'right', lineBreak: false });
-  doc.text(`Betrag ${CURRENCY}`, COLUMNS.amount.x, y, { width: COLUMNS.amount.width, align: 'right', lineBreak: false });
+  doc.text('Beschreibung', COLUMNS.description.x, y, {
+    width: COLUMNS.description.width,
+    lineBreak: false,
+  });
+  doc.text('Menge', COLUMNS.quantity.x, y, {
+    width: COLUMNS.quantity.width,
+    align: 'right',
+    lineBreak: false,
+  });
+  doc.text('Einzelpreis', COLUMNS.unitPrice.x, y, {
+    width: COLUMNS.unitPrice.width,
+    align: 'right',
+    lineBreak: false,
+  });
+  doc.text(`Betrag ${CURRENCY}`, COLUMNS.amount.x, y, {
+    width: COLUMNS.amount.width,
+    align: 'right',
+    lineBreak: false,
+  });
   const lineY = y + 14;
-  doc.moveTo(MARGIN, lineY).lineTo(MARGIN + CONTENT_WIDTH, lineY).lineWidth(0.5).stroke('#000000');
+  doc
+    .moveTo(MARGIN, lineY)
+    .lineTo(MARGIN + CONTENT_WIDTH, lineY)
+    .lineWidth(0.5)
+    .stroke('#000000');
   return lineY + 6;
 }
 
@@ -70,7 +97,9 @@ function drawBody(doc: PDFKit.PDFDocument, invoice: Invoice, preview: boolean): 
   doc.font('Helvetica-Bold').fontSize(12).fillColor('#000000');
   doc.text(sender[0] ?? '', MARGIN, MARGIN, { lineBreak: false });
   doc.font('Helvetica').fontSize(9);
-  sender.slice(1).forEach((line, i) => doc.text(line, MARGIN, MARGIN + 18 + i * 12, { lineBreak: false }));
+  sender
+    .slice(1)
+    .forEach((line, i) => doc.text(line, MARGIN, MARGIN + 18 + i * 12, { lineBreak: false }));
 
   // Debtor on the right (window position)
   const debtor = addressLines(invoice.debtor);
@@ -81,7 +110,9 @@ function drawBody(doc: PDFKit.PDFDocument, invoice: Invoice, preview: boolean): 
   const title = invoice.number ? `Rechnung ${invoice.number}` : 'Rechnung (Entwurf)';
   doc.font('Helvetica-Bold').fontSize(16).text(title, MARGIN, 270, { lineBreak: false });
   doc.font('Helvetica').fontSize(10);
-  doc.text(`Rechnungsdatum: ${formatDateCh(invoice.invoiceDate)}`, MARGIN, 298, { lineBreak: false });
+  doc.text(`Rechnungsdatum: ${formatDateCh(invoice.invoiceDate)}`, MARGIN, 298, {
+    lineBreak: false,
+  });
   doc.text(`Zahlbar bis: ${formatDateCh(invoice.dueDate)}`, MARGIN, 312, { lineBreak: false });
   if (preview) {
     // nothing more: drafts have no number yet
@@ -91,7 +122,9 @@ function drawBody(doc: PDFKit.PDFDocument, invoice: Invoice, preview: boolean): 
   let y = drawTableHeader(doc, 350);
   doc.font('Helvetica').fontSize(9);
   for (const item of invoice.items) {
-    const descriptionHeight = doc.heightOfString(item.description, { width: COLUMNS.description.width });
+    const descriptionHeight = doc.heightOfString(item.description, {
+      width: COLUMNS.description.width,
+    });
     const rowHeight = Math.max(descriptionHeight, 11) + 6;
     if (y + rowHeight > BOTTOM_LIMIT) {
       doc.addPage();
@@ -99,9 +132,21 @@ function drawBody(doc: PDFKit.PDFDocument, invoice: Invoice, preview: boolean): 
       doc.font('Helvetica').fontSize(9);
     }
     doc.text(item.description, COLUMNS.description.x, y, { width: COLUMNS.description.width });
-    doc.text(formatMilli(item.quantityMilli), COLUMNS.quantity.x, y, { width: COLUMNS.quantity.width, align: 'right', lineBreak: false });
-    doc.text(formatChf(item.unitPriceRappen), COLUMNS.unitPrice.x, y, { width: COLUMNS.unitPrice.width, align: 'right', lineBreak: false });
-    doc.text(formatChf(item.amountRappen), COLUMNS.amount.x, y, { width: COLUMNS.amount.width, align: 'right', lineBreak: false });
+    doc.text(formatMilli(item.quantityMilli), COLUMNS.quantity.x, y, {
+      width: COLUMNS.quantity.width,
+      align: 'right',
+      lineBreak: false,
+    });
+    doc.text(formatChf(item.unitPriceRappen), COLUMNS.unitPrice.x, y, {
+      width: COLUMNS.unitPrice.width,
+      align: 'right',
+      lineBreak: false,
+    });
+    doc.text(formatChf(item.amountRappen), COLUMNS.amount.x, y, {
+      width: COLUMNS.amount.width,
+      align: 'right',
+      lineBreak: false,
+    });
     y += rowHeight;
   }
 
@@ -110,11 +155,23 @@ function drawBody(doc: PDFKit.PDFDocument, invoice: Invoice, preview: boolean): 
     doc.addPage();
     y = MARGIN;
   }
-  doc.moveTo(MARGIN, y).lineTo(MARGIN + CONTENT_WIDTH, y).lineWidth(0.5).stroke('#000000');
+  doc
+    .moveTo(MARGIN, y)
+    .lineTo(MARGIN + CONTENT_WIDTH, y)
+    .lineWidth(0.5)
+    .stroke('#000000');
   y += 6;
   doc.font('Helvetica-Bold').fontSize(10);
-  doc.text(`Total ${CURRENCY}`, COLUMNS.unitPrice.x - 40, y, { width: 125, align: 'right', lineBreak: false });
-  doc.text(formatChf(invoice.totalRappen), COLUMNS.amount.x, y, { width: COLUMNS.amount.width, align: 'right', lineBreak: false });
+  doc.text(`Total ${CURRENCY}`, COLUMNS.unitPrice.x - 40, y, {
+    width: 125,
+    align: 'right',
+    lineBreak: false,
+  });
+  doc.text(formatChf(invoice.totalRappen), COLUMNS.amount.x, y, {
+    width: COLUMNS.amount.width,
+    align: 'right',
+    lineBreak: false,
+  });
   y += 28;
 
   // Closing text
@@ -133,7 +190,8 @@ function drawBody(doc: PDFKit.PDFDocument, invoice: Invoice, preview: boolean): 
 
 function validateIssued(invoice: Invoice): FieldError[] {
   const errors = validateForIssue(invoice);
-  if (invoice.number === null) errors.push({ field: 'number', message: 'Die Rechnung hat keine Nummer.' });
+  if (invoice.number === null)
+    errors.push({ field: 'number', message: 'Die Rechnung hat keine Nummer.' });
   if (invoice.referenceType === null || invoice.reference === null) {
     errors.push({ field: 'reference', message: 'Die Zahlungsreferenz fehlt.' });
   } else {
@@ -154,7 +212,10 @@ function validateIssued(invoice: Invoice): FieldError[] {
  * Swiss QR payment part at the bottom of the last page. Invalid payment data produces no PDF.
  * Drafts can only be output as a preview (watermark, without payment part).
  */
-export async function renderInvoicePdf(invoice: Invoice, options: RenderOptions = {}): Promise<Buffer> {
+export async function renderInvoicePdf(
+  invoice: Invoice,
+  options: RenderOptions = {},
+): Promise<Buffer> {
   const isDraft = invoice.status === 'draft';
   if (isDraft && !options.preview) {
     throw new AppException(
@@ -165,7 +226,11 @@ export async function renderInvoicePdf(invoice: Invoice, options: RenderOptions 
   if (!isDraft) {
     const errors = validateIssued(invoice);
     if (errors.length > 0) {
-      throw new AppException('VALIDATION', 'Das PDF kann nicht erzeugt werden: Zahlungsdaten ungültig.', errors);
+      throw new AppException(
+        'VALIDATION',
+        'Das PDF kann nicht erzeugt werden: Zahlungsdaten ungültig.',
+        errors,
+      );
     }
   }
 
@@ -239,7 +304,10 @@ function attachPaymentPart(doc: PDFKit.PDFDocument, invoice: Invoice, billTop: n
     qrBill.attachTo(doc, 0, billTop);
   } catch (error) {
     if (error instanceof Error && error.name === 'ValidationError') {
-      throw new AppException('VALIDATION', `Der Zahlteil kann nicht erzeugt werden: ${error.message}`);
+      throw new AppException(
+        'VALIDATION',
+        `Der Zahlteil kann nicht erzeugt werden: ${error.message}`,
+      );
     }
     throw error;
   }

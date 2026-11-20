@@ -21,11 +21,17 @@ export function createLegacyDb(path: string, version: 1 | 2 = 2): { keyBlob: Buf
     db.pragma('user_version = 2');
     db.prepare('UPDATE settings SET geoapify_api_key = ? WHERE id = 1').run(keyBlob);
   }
-  db.prepare("UPDATE settings SET sender_name = 'Muster AG', invoice_prefix = 'XY', sender_iban = 'CH4431999123000889012' WHERE id = 1").run();
+  db.prepare(
+    "UPDATE settings SET sender_name = 'Muster AG', invoice_prefix = 'XY', sender_iban = 'CH4431999123000889012' WHERE id = 1",
+  ).run();
 
   const now = '2026-01-10T10:00:00.000Z';
-  db.prepare("INSERT INTO customers (name, zip, city, created_at, updated_at) VALUES ('Müller AG', '8000', 'Zürich', ?, ?)").run(now, now);
-  db.prepare("INSERT INTO customers (name, zip, city, created_at, updated_at) VALUES ('Åse Meier', '3000', 'Bern', ?, ?)").run(now, now);
+  db.prepare(
+    "INSERT INTO customers (name, zip, city, created_at, updated_at) VALUES ('Müller AG', '8000', 'Zürich', ?, ?)",
+  ).run(now, now);
+  db.prepare(
+    "INSERT INTO customers (name, zip, city, created_at, updated_at) VALUES ('Åse Meier', '3000', 'Bern', ?, ?)",
+  ).run(now, now);
 
   // The schema (triggers!) requires: items exist only for drafts, issuing is an update afterwards.
   const insertDraft = db.prepare(

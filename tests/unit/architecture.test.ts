@@ -20,7 +20,10 @@ describe('Architektur der Persistenz (Verfassung III/V, FR-012, FR-015)', () => 
   it('TypeORM und die Entitäten werden nur innerhalb von src/main/db/ importiert (ausser Typen)', () => {
     const offenders = outsideDb.filter((f) => {
       const text = readFileSync(f, 'utf8');
-      return /from 'typeorm'/.test(text.replace(/import type [^;]*from 'typeorm';/g, '')) || /entities\//.test(text);
+      return (
+        /from 'typeorm'/.test(text.replace(/import type [^;]*from 'typeorm';/g, '')) ||
+        /entities\//.test(text)
+      );
     });
     expect(offenders.map(rel)).toEqual([]);
   });
@@ -37,21 +40,27 @@ describe('Architektur der Persistenz (Verfassung III/V, FR-012, FR-015)', () => 
       'src/main/db/sqlite-adapter.ts',
       'src/main/db/migrations/1700000000003-DropLegacyTriggers.ts',
     ]);
-    const sqliteOnly = /PRAGMA|sqlite_|RETURNING|ON CONFLICT|DROP TRIGGER|better-sqlite3|AUTOINCREMENT|unicode_lower|strftime/;
+    const sqliteOnly =
+      /PRAGMA|sqlite_|RETURNING|ON CONFLICT|DROP TRIGGER|better-sqlite3|AUTOINCREMENT|unicode_lower|strftime/;
     const offenders = all
       .filter((f) => !allowed.has(rel(f)))
       .filter((f) => {
         // ignore comments
-        const code = readFileSync(f, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
+        const code = readFileSync(f, 'utf8')
+          .replace(/\/\*[\s\S]*?\*\//g, '')
+          .replace(/^\s*\/\/.*$/gm, '');
         return sqliteOnly.test(code);
       });
     expect(offenders.map(rel)).toEqual([]);
   });
 
   it('nur Repositories und Startcode des Datenbankmoduls werden ausserhalb benutzt', () => {
-    const allowedImports = /db\/(customer-repository|invoice-repository|settings-repository|startup|data-source|sqlite-adapter)/;
+    const allowedImports =
+      /db\/(customer-repository|invoice-repository|settings-repository|startup|data-source|sqlite-adapter)/;
     const offenders = outsideDb.filter((f) =>
-      [...readFileSync(f, 'utf8').matchAll(/from '(\.\.?\/[^']*db\/[^']*)'/g)].some((m) => !allowedImports.test(m[1] ?? '')),
+      [...readFileSync(f, 'utf8').matchAll(/from '(\.\.?\/[^']*db\/[^']*)'/g)].some(
+        (m) => !allowedImports.test(m[1] ?? ''),
+      ),
     );
     expect(offenders.map(rel)).toEqual([]);
   });

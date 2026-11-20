@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import type { MenuPage } from '../shared/ipc/menu';
+import type { MenuPage } from '@shared/ipc/menu';
 import { AppToaster } from './components/AppToaster';
 import { backupDatabase } from './lib/backup';
 import { Customers } from './pages/Customers';

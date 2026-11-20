@@ -1,7 +1,12 @@
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
-import { _electron as electron, expect, type ElectronApplication, type Page } from '@playwright/test';
+import {
+  _electron as electron,
+  expect,
+  type ElectronApplication,
+  type Page,
+} from '@playwright/test';
 
 export interface LaunchedApp {
   app: ElectronApplication;
@@ -50,13 +55,23 @@ export async function launchApp(
 
 export const QR_IBAN = 'CH44 3199 9123 0008 8901 2';
 
-export async function fillAddress(page: Page, prefix: 'sender' | 'debtor', values: Record<string, string>) {
+export async function fillAddress(
+  page: Page,
+  prefix: 'sender' | 'debtor',
+  values: Record<string, string>,
+) {
   for (const [key, value] of Object.entries(values)) {
     await page.locator(`#${prefix}-${key}`).fill(value);
   }
 }
 
-export async function fillItem(page: Page, position: number, description: string, quantity: string, price: string) {
+export async function fillItem(
+  page: Page,
+  position: number,
+  description: string,
+  quantity: string,
+  price: string,
+) {
   await page.getByLabel(`Beschreibung Position ${position}`).fill(description);
   await page.getByLabel(`Menge Position ${position}`).fill(quantity);
   await page.getByLabel(`Einzelpreis Position ${position}`).fill(price);
@@ -100,7 +115,11 @@ export async function clickMenu(app: ElectronApplication, id: string): Promise<v
   }, id);
 }
 
-const PAGE_IDS = { Rechnungen: 'nav-invoices', Kunden: 'nav-customers', Einstellungen: 'nav-settings' } as const;
+const PAGE_IDS = {
+  Rechnungen: 'nav-invoices',
+  Kunden: 'nav-customers',
+  Einstellungen: 'nav-settings',
+} as const;
 
 /** Switches to a main view via the "Ansicht" menu. */
 export async function goTo(app: ElectronApplication, page: keyof typeof PAGE_IDS): Promise<void> {
@@ -108,7 +127,11 @@ export async function goTo(app: ElectronApplication, page: keyof typeof PAGE_IDS
 }
 
 /** Captures the sender in the settings and optionally stores a Geoapify API key (fake service). */
-export async function setupSettings(app: ElectronApplication, page: Page, apiKey?: string): Promise<void> {
+export async function setupSettings(
+  app: ElectronApplication,
+  page: Page,
+  apiKey?: string,
+): Promise<void> {
   await goTo(app, 'Einstellungen');
   await fillAddress(page, 'sender', {
     name: 'Robert Schneider AG',

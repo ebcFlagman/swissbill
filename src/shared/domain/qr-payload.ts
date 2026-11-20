@@ -21,7 +21,15 @@ export interface QrPayloadData {
 
 function addressLines(address: Address): string[] {
   // Address type S = structured address
-  return ['S', address.name, address.street, address.houseNo, address.zip, address.city, address.country];
+  return [
+    'S',
+    address.name,
+    address.street,
+    address.houseNo,
+    address.zip,
+    address.city,
+    address.country,
+  ];
 }
 
 function formatAmount(rappen: Rappen): string {
@@ -59,7 +67,8 @@ export function buildQrPayload(data: QrPayloadData): string {
  * If name, postal code or city are missing, the debtor is omitted from the QR code (result undefined); a missing country counts as CH.
  */
 export function qrDebtor(debtor: Address): Address | undefined {
-  if (debtor.name.trim() === '' || debtor.zip.trim() === '' || debtor.city.trim() === '') return undefined;
+  if (debtor.name.trim() === '' || debtor.zip.trim() === '' || debtor.city.trim() === '')
+    return undefined;
   return { ...debtor, country: debtor.country === '' ? 'CH' : debtor.country };
 }
 

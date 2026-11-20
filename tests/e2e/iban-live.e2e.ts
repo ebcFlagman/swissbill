@@ -67,7 +67,11 @@ test('IBAN in den Einstellungen: Sofortprüfung, Speichern nur mit gültiger IBA
     await checkLiveValidation(page);
 
     // An invalid IBAN cannot be saved
-    for (const [id, value] of Object.entries({ name: 'Robert Schneider AG', zip: '2501', city: 'Biel' })) {
+    for (const [id, value] of Object.entries({
+      name: 'Robert Schneider AG',
+      zip: '2501',
+      city: 'Biel',
+    })) {
       await page.locator(`#sender-${id}`).fill(value);
     }
     await page.locator('#sender-iban').fill(WRONG_CHECKSUM);

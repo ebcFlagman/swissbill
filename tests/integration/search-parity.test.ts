@@ -29,13 +29,21 @@ describe('Suche ohne Beachtung der Gross-/Kleinschreibung, auch mit Umlauten', (
     expect(await names('genève')).toEqual(['Åse Berg']);
     expect(await names('  söhne ')).toEqual(['meier & Söhne']);
     expect(await names('gibtesnicht')).toEqual([]);
-    expect(await names()).toEqual(['Aaron Test', 'meier & Söhne', 'Müller AG', 'MÜLLER Zwei', 'Åse Berg']);
+    expect(await names()).toEqual([
+      'Aaron Test',
+      'meier & Söhne',
+      'Müller AG',
+      'MÜLLER Zwei',
+      'Åse Berg',
+    ]);
   });
 
   it('Rechnungen werden nach Nummer und Empfängername gefunden; Entwürfe ohne Nummer stören nicht', async () => {
     const { service } = createService(await createTestDb());
     const debtor = (name: string) => ({ ...makeDraftInput().debtor, name });
-    const a = await service.issue((await createFilledDraft(service, { debtor: debtor('Müller AG') })).id);
+    const a = await service.issue(
+      (await createFilledDraft(service, { debtor: debtor('Müller AG') })).id,
+    );
     await createFilledDraft(service, { debtor: debtor('Zürcher Treuhand') });
 
     const ids = async (search: string) => (await service.list({ search })).map((r) => r.id);

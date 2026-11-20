@@ -10,7 +10,10 @@ export function createTestDb(): Promise<DataSource> {
   return openAndMigrate(':memory:');
 }
 
-export function createService(dataSource: DataSource, clock: () => Date = () => new Date(2026, 2, 1, 10, 0)) {
+export function createService(
+  dataSource: DataSource,
+  clock: () => Date = () => new Date(2026, 2, 1, 10, 0),
+) {
   let current = clock;
   const service = new InvoiceService(dataSource, { now: () => current() });
   return {

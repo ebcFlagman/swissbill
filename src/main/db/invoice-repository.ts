@@ -1,6 +1,6 @@
-import { In, type DataSource, type EntityManager } from 'typeorm';
-import { validateAddress, type Address } from '../../shared/domain/address';
-import { normalizeIban } from '../../shared/domain/iban';
+import { type DataSource, type EntityManager, In } from 'typeorm';
+import { type Address, validateAddress } from '@shared/domain/address';
+import { normalizeIban } from '@shared/domain/iban';
 import type {
   DraftInput,
   Invoice,
@@ -9,11 +9,11 @@ import type {
   InvoiceStatus,
   InvoiceSummary,
   Sender,
-} from '../../shared/domain/invoice';
-import { recalculate, validateDraft, validateForIssue } from '../../shared/domain/invoice';
-import { canDelete, canTransition } from '../../shared/domain/invoice-status';
-import type { ReferenceType } from '../../shared/domain/reference';
-import { AppException } from '../../shared/ipc/errors';
+} from '@shared/domain/invoice';
+import { recalculate, validateDraft, validateForIssue } from '@shared/domain/invoice';
+import { canDelete, canTransition } from '@shared/domain/invoice-status';
+import type { ReferenceType } from '@shared/domain/reference';
+import { AppException } from '@shared/ipc/errors';
 import { InvoiceEntity, type InvoiceRow } from './entities/invoice.entity';
 import { InvoiceItemEntity } from './entities/invoice-item.entity';
 import { NumberCounterEntity } from './entities/number-counter.entity';
@@ -65,7 +65,10 @@ function toDebtor(row: InvoiceRow): Address {
 async function load(manager: EntityManager, id: number): Promise<Invoice | undefined> {
   const row = await manager.findOneBy(InvoiceEntity, { id });
   if (!row) return undefined;
-  const itemRows = await manager.find(InvoiceItemEntity, { where: { invoice_id: id }, order: { position: 'ASC' } });
+  const itemRows = await manager.find(InvoiceItemEntity, {
+    where: { invoice_id: id },
+    order: { position: 'ASC' },
+  });
   const items: InvoiceItem[] = itemRows.map((r) => ({
     description: r.description,
     quantityMilli: r.quantity_milli,
@@ -147,7 +150,8 @@ export class InvoiceRepository {
 
   async createDraft(draft: NewDraft): Promise<number> {
     const errors = validateAddress(draft.sender, 'sender', { partial: true });
-    if (errors.length > 0) throw new AppException('VALIDATION', 'Bitte die markierten Felder prüfen.', errors);
+    if (errors.length > 0)
+      throw new AppException('VALIDATION', 'Bitte die markierten Felder prüfen.', errors);
     return unitOfWorkFor(this.dataSource).run(async (manager) => {
       const result = await manager.insert(InvoiceEntity, {
         status: 'draft',
@@ -178,30 +182,35 @@ export class InvoiceRepository {
   /** Saves a draft with its items as a whole or not at all. Only drafts can be changed. */
   async saveDraft(input: DraftInput, updatedAt: string): Promise<void> {
     const errors = validateDraft(input);
-    if (errors.length > 0) throw new AppException('VALIDATION', 'Bitte die markierten Felder prüfen.', errors);
+    if (errors.length > 0)
+      throw new AppException('VALIDATION', 'Bitte die markierten Felder prüfen.', errors);
     const { items, totalRappen } = recalculate(input.items);
     await unitOfWorkFor(this.dataSource).run(async (manager) => {
-      const result = await manager.update(InvoiceEntity, { id: input.id, status: 'draft' }, {
-        invoice_date: input.invoiceDate,
-        due_date: input.dueDate,
-        customer_id: input.customerId,
-        sender_name: input.sender.name,
-        sender_street: input.sender.street,
-        sender_house_no: input.sender.houseNo,
-        sender_zip: input.sender.zip,
-        sender_city: input.sender.city,
-        sender_country: input.sender.country,
-        sender_iban: normalizeIban(input.sender.iban),
-        debtor_name: input.debtor.name,
-        debtor_street: input.debtor.street,
-        debtor_house_no: input.debtor.houseNo,
-        debtor_zip: input.debtor.zip,
-        debtor_city: input.debtor.city,
-        debtor_country: input.debtor.country === '' ? null : input.debtor.country,
-        closing_text: input.closingText,
-        total_rappen: totalRappen,
-        updated_at: updatedAt,
-      });
+      const result = await manager.update(
+        InvoiceEntity,
+        { id: input.id, status: 'draft' },
+        {
+          invoice_date: input.invoiceDate,
+          due_date: input.dueDate,
+          customer_id: input.customerId,
+          sender_name: input.sender.name,
+          sender_street: input.sender.street,
+          sender_house_no: input.sender.houseNo,
+          sender_zip: input.sender.zip,
+          sender_city: input.sender.city,
+          sender_country: input.sender.country,
+          sender_iban: normalizeIban(input.sender.iban),
+          debtor_name: input.debtor.name,
+          debtor_street: input.debtor.street,
+          debtor_house_no: input.debtor.houseNo,
+          debtor_zip: input.debtor.zip,
+          debtor_city: input.debtor.city,
+          debtor_country: input.debtor.country === '' ? null : input.debtor.country,
+          closing_text: input.closingText,
+          total_rappen: totalRappen,
+          updated_at: updatedAt,
+        },
+      );
       // Items are only written if the invoice really was a draft within the same operation
       if (!result.affected) throw new AppException('IMMUTABLE', IMMUTABLE_CHANGE);
       await manager.delete(InvoiceItemEntity, { invoice_id: input.id });
@@ -228,7 +237,10 @@ export class InvoiceRepository {
       if (result.affected) return;
       const existing = await manager.findOneBy(InvoiceEntity, { id });
       if (existing && !canDelete(existing.status)) {
-        throw new AppException('IMMUTABLE', 'Eine ausgestellte Rechnung kann nicht gelöscht werden.');
+        throw new AppException(
+          'IMMUTABLE',
+          'Eine ausgestellte Rechnung kann nicht gelöscht werden.',
+        );
       }
     });
   }
@@ -245,7 +257,11 @@ export class InvoiceRepository {
   ): Promise<void> {
     const allowed = from.filter((status) => canTransition(status, to));
     await unitOfWorkFor(this.dataSource).run(async (manager) => {
-      const result = await manager.update(InvoiceEntity, { id, status: In(allowed) }, { ...set, status: to });
+      const result = await manager.update(
+        InvoiceEntity,
+        { id, status: In(allowed) },
+        { ...set, status: to },
+      );
       if (!result.affected) throw new AppException('IMMUTABLE', 'Ungültiger Statuswechsel.');
     });
   }
@@ -262,7 +278,10 @@ export class InvoiceRepository {
 
   /** Status change `issued/paid → cancelled`; the number stays assigned, `paid_at` is kept. */
   cancel(id: number, now: string): Promise<void> {
-    return this.transition(id, ['issued', 'paid'], 'cancelled', { cancelled_at: now, updated_at: now });
+    return this.transition(id, ['issued', 'paid'], 'cancelled', {
+      cancelled_at: now,
+      updated_at: now,
+    });
   }
 
   /**
@@ -270,7 +289,11 @@ export class InvoiceRepository {
    * without gaps and fixes number, reference, total and layout version. On an error everything stays
    * unchanged, including the counter. `build` receives the assigned sequence number and the invoice and returns the data to fix.
    */
-  async issue(id: number, year: number, build: (seq: number, invoice: Invoice) => IssueData): Promise<void> {
+  async issue(
+    id: number,
+    year: number,
+    build: (seq: number, invoice: Invoice) => IssueData,
+  ): Promise<void> {
     await unitOfWorkFor(this.dataSource).run(async (manager) => {
       const invoice = await load(manager, id);
       if (!invoice) throw new AppException('NOT_FOUND', 'Die Rechnung wurde nicht gefunden.');
@@ -284,19 +307,24 @@ export class InvoiceRepository {
 
       const seq = await nextSequence(manager, year);
       const data = build(seq, invoice);
-      const result = await manager.update(InvoiceEntity, { id, status: 'draft' }, {
-        status: 'issued',
-        number: data.number,
-        number_year: data.numberYear,
-        number_seq: data.numberSeq,
-        reference_type: data.referenceType,
-        reference: data.reference,
-        total_rappen: data.totalRappen,
-        layout_version: data.layoutVersion,
-        issued_at: data.issuedAt,
-        updated_at: data.issuedAt,
-      });
-      if (!result.affected) throw new AppException('IMMUTABLE', 'Die Rechnung ist bereits ausgestellt.');
+      const result = await manager.update(
+        InvoiceEntity,
+        { id, status: 'draft' },
+        {
+          status: 'issued',
+          number: data.number,
+          number_year: data.numberYear,
+          number_seq: data.numberSeq,
+          reference_type: data.referenceType,
+          reference: data.reference,
+          total_rappen: data.totalRappen,
+          layout_version: data.layoutVersion,
+          issued_at: data.issuedAt,
+          updated_at: data.issuedAt,
+        },
+      );
+      if (!result.affected)
+        throw new AppException('IMMUTABLE', 'Die Rechnung ist bereits ausgestellt.');
     });
   }
 }

@@ -1,20 +1,24 @@
 import type { DataSource } from 'typeorm';
-import { addDays, localIsoDate } from '../../shared/domain/dates';
+import { addDays, localIsoDate } from '@shared/domain/dates';
 import {
-  LAYOUT_VERSION,
-  recalculate,
-  validateDraft,
-  validateForIssue,
   type DraftInput,
   type Invoice,
   type InvoiceFilter,
   type InvoiceStatus,
   type InvoiceSummary,
-} from '../../shared/domain/invoice';
-import { canDelete, canTransition } from '../../shared/domain/invoice-status';
-import { formatInvoiceNumber } from '../../shared/domain/invoice-number';
-import { buildCreditorReference, buildQrReference, referenceTypeFor } from '../../shared/domain/reference';
-import { AppException } from '../../shared/ipc/errors';
+  LAYOUT_VERSION,
+  recalculate,
+  validateDraft,
+  validateForIssue,
+} from '@shared/domain/invoice';
+import { canDelete, canTransition } from '@shared/domain/invoice-status';
+import { formatInvoiceNumber } from '@shared/domain/invoice-number';
+import {
+  buildCreditorReference,
+  buildQrReference,
+  referenceTypeFor,
+} from '@shared/domain/reference';
+import { AppException } from '@shared/ipc/errors';
 import { InvoiceRepository } from '../db/invoice-repository';
 import { getSettings } from '../db/settings-repository';
 
@@ -42,7 +46,11 @@ export class InvoiceService {
   }
 
   /** Checks the status change against the state machine and returns the invoice. */
-  private async requireTransition(id: number, to: InvoiceStatus, message: string): Promise<Invoice> {
+  private async requireTransition(
+    id: number,
+    to: InvoiceStatus,
+    message: string,
+  ): Promise<Invoice> {
     const invoice = await this.get(id);
     if (!canTransition(invoice.status, to)) {
       throw new AppException('IMMUTABLE', message);
@@ -52,14 +60,22 @@ export class InvoiceService {
 
   /** `issued → paid`; the content of the invoice stays unchanged. */
   async markPaid(id: number): Promise<Invoice> {
-    await this.requireTransition(id, 'paid', 'Nur ausgestellte Rechnungen können als bezahlt markiert werden.');
+    await this.requireTransition(
+      id,
+      'paid',
+      'Nur ausgestellte Rechnungen können als bezahlt markiert werden.',
+    );
     await this.repo.markPaid(id, this.now().toISOString());
     return this.get(id);
   }
 
   /** `paid → issued` (correction of a wrong booking). */
   async reopen(id: number): Promise<Invoice> {
-    await this.requireTransition(id, 'issued', 'Nur bezahlte Rechnungen können zurückgesetzt werden.');
+    await this.requireTransition(
+      id,
+      'issued',
+      'Nur bezahlte Rechnungen können zurückgesetzt werden.',
+    );
     await this.repo.reopen(id, this.now().toISOString());
     return this.get(id);
   }
@@ -147,7 +163,10 @@ export class InvoiceService {
   async saveDraft(input: DraftInput): Promise<Invoice> {
     const existing = await this.get(input.id);
     if (existing.status !== 'draft') {
-      throw new AppException('IMMUTABLE', 'Eine ausgestellte Rechnung kann nicht mehr geändert werden.');
+      throw new AppException(
+        'IMMUTABLE',
+        'Eine ausgestellte Rechnung kann nicht mehr geändert werden.',
+      );
     }
     const errors = validateDraft(input);
     if (errors.length > 0) {
@@ -182,7 +201,8 @@ export class InvoiceService {
         numberYear: year,
         numberSeq: seq,
         referenceType,
-        reference: referenceType === 'QRR' ? buildQrReference(year, seq) : buildCreditorReference(year, seq),
+        reference:
+          referenceType === 'QRR' ? buildQrReference(year, seq) : buildCreditorReference(year, seq),
         totalRappen: recalculate(current.items).totalRappen,
         layoutVersion: LAYOUT_VERSION,
         issuedAt: now.toISOString(),

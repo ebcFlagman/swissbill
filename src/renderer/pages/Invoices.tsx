@@ -40,8 +40,12 @@ export function Invoices({ pendingNew, onPendingHandled }: InvoicesProps) {
   }, [pendingNew, onPendingHandled, createInvoice]);
 
   if (openId !== null) {
-    return <InvoiceEditor key={openId} invoiceId={openId} onBack={back} onOpenInvoice={setOpenId} />;
+    return (
+      <InvoiceEditor key={openId} invoiceId={openId} onBack={back} onOpenInvoice={setOpenId} />
+    );
   }
 
-  return <InvoiceList onOpen={setOpenId} onCreate={() => void createInvoice()} creating={creating} />;
+  return (
+    <InvoiceList onOpen={setOpenId} onCreate={() => void createInvoice()} creating={creating} />
+  );
 }

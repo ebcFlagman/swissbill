@@ -5,18 +5,25 @@ import { createTestDb } from '../fixtures/db';
 describe('Schema-Parität: Entitäten ↔ migrierte Tabellen', () => {
   it('jede Entität hat genau die Spalten ihrer Tabelle, mit gleicher Nullbarkeit', async () => {
     const db = await createTestDb();
-    expect(db.entityMetadatas.map((m) => m.tableName).sort()).toEqual(
-      ['customers', 'invoice_items', 'invoices', 'number_counters', 'settings'],
-    );
+    expect(db.entityMetadatas.map((m) => m.tableName).sort()).toEqual([
+      'customers',
+      'invoice_items',
+      'invoices',
+      'number_counters',
+      'settings',
+    ]);
     for (const meta of db.entityMetadatas) {
       const table = await db.createQueryRunner().getTable(meta.tableName);
       expect(table, meta.tableName).toBeDefined();
       const tableColumns = new Map(table!.columns.map((c) => [c.name, c]));
-      expect([...tableColumns.keys()].sort(), meta.tableName).toEqual(meta.columns.map((c) => c.databaseName).sort());
+      expect([...tableColumns.keys()].sort(), meta.tableName).toEqual(
+        meta.columns.map((c) => c.databaseName).sort(),
+      );
       for (const column of meta.columns) {
-        expect(tableColumns.get(column.databaseName)?.isNullable, `${meta.tableName}.${column.databaseName}`).toBe(
-          column.isNullable,
-        );
+        expect(
+          tableColumns.get(column.databaseName)?.isNullable,
+          `${meta.tableName}.${column.databaseName}`,
+        ).toBe(column.isNullable);
       }
     }
   });
@@ -32,7 +39,10 @@ describe('Schema-Parität: Entitäten ↔ migrierte Tabellen', () => {
     for (const [tableName, columns] of Object.entries(integerColumns)) {
       const table = await db.createQueryRunner().getTable(tableName);
       for (const name of columns) {
-        expect(table?.columns.find((c) => c.name === name)?.type.toLowerCase(), `${tableName}.${name}`).toBe('integer');
+        expect(
+          table?.columns.find((c) => c.name === name)?.type.toLowerCase(),
+          `${tableName}.${name}`,
+        ).toBe('integer');
       }
     }
   });

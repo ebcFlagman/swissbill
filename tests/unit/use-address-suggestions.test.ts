@@ -76,10 +76,20 @@ describe('hintFor (dezenter Hinweis, feste deutsche Texte)', () => {
   it('liefert nur bei Fehlern einen Hinweis', () => {
     expect(hintFor({ status: 'disabled' })).toBeNull();
     expect(hintFor(ok('x'))).toBeNull();
-    expect(hintFor({ status: 'error', reason: 'offline' })).toBe('Vorschläge momentan nicht verfügbar.');
-    expect(hintFor({ status: 'error', reason: 'invalid_key' })).toBe('Der Geoapify-API-Key wird nicht akzeptiert.');
-    expect(hintFor({ status: 'error', reason: 'quota' })).toBe('Das Geoapify-Kontingent ist erschöpft.');
-    expect(hintFor({ status: 'error', reason: 'timeout' })).toBe('Vorschläge momentan nicht verfügbar.');
-    expect(hintFor({ status: 'error', reason: 'unavailable' })).toBe('Vorschläge momentan nicht verfügbar.');
+    expect(hintFor({ status: 'error', reason: 'offline' })).toBe(
+      'Vorschläge momentan nicht verfügbar.',
+    );
+    expect(hintFor({ status: 'error', reason: 'invalid_key' })).toBe(
+      'Der Geoapify-API-Key wird nicht akzeptiert.',
+    );
+    expect(hintFor({ status: 'error', reason: 'quota' })).toBe(
+      'Das Geoapify-Kontingent ist erschöpft.',
+    );
+    expect(hintFor({ status: 'error', reason: 'timeout' })).toBe(
+      'Vorschläge momentan nicht verfügbar.',
+    );
+    expect(hintFor({ status: 'error', reason: 'unavailable' })).toBe(
+      'Vorschläge momentan nicht verfügbar.',
+    );
   });
 });

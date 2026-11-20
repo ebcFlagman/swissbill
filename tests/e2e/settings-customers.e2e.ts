@@ -4,7 +4,10 @@ import { fillAddress, fillItem, goTo, launchApp, QR_IBAN } from './helpers';
 
 async function issue(page: Page): Promise<string> {
   await page.getByRole('button', { name: 'Ausstellen', exact: true }).click();
-  await page.getByRole('dialog', { name: 'Rechnung ausstellen?' }).getByRole('button', { name: 'Ausstellen' }).click();
+  await page
+    .getByRole('dialog', { name: 'Rechnung ausstellen?' })
+    .getByRole('button', { name: 'Ausstellen' })
+    .click();
   const issued = page.getByRole('dialog', { name: 'Rechnung ausgestellt' });
   const number = (await issued.getByTestId('issued-number').textContent()) ?? '';
   await issued.getByRole('button', { name: 'Schliessen' }).click();

@@ -26,7 +26,10 @@ const cspPlugin = {
   name: 'swissbill-csp',
   apply: 'build' as const,
   transformIndexHtml: (html: string) =>
-    html.replace('</title>', `</title>\n    <meta http-equiv="Content-Security-Policy" content="${CSP}" />`),
+    html.replace(
+      '</title>',
+      `</title>\n    <meta http-equiv="Content-Security-Policy" content="${CSP}" />`,
+    ),
 };
 
 export default defineConfig({

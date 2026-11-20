@@ -4,7 +4,10 @@ import { fillValidInvoice, goTo, issueOpenInvoice, launchApp, setupSettings } fr
 
 test('ohne Key: keine Netzwerkanfragen, Formular funktioniert wie bisher', async () => {
   const fake = await startFakeGeoapify();
-  const launched = await launchApp(undefined, { ...FAKE_ENV, SWISSBILL_GEOAPIFY_BASE_URL: fake.url });
+  const launched = await launchApp(undefined, {
+    ...FAKE_ENV,
+    SWISSBILL_GEOAPIFY_BASE_URL: fake.url,
+  });
   try {
     const { app, page } = launched;
     await setupSettings(app, page);
@@ -31,7 +34,10 @@ for (const [mode, hint] of [
 ] as const) {
   test(`Dienstfehler (${mode}): dezenter Hinweis, Eingabe von Hand bleibt möglich`, async () => {
     const fake = await startFakeGeoapify();
-    const launched = await launchApp(undefined, { ...FAKE_ENV, SWISSBILL_GEOAPIFY_BASE_URL: fake.url });
+    const launched = await launchApp(undefined, {
+      ...FAKE_ENV,
+      SWISSBILL_GEOAPIFY_BASE_URL: fake.url,
+    });
     try {
       const { app, page } = launched;
       await setupSettings(app, page, 'test-key-0123456789');
@@ -64,7 +70,9 @@ test('Offline (Dienst nicht erreichbar): Eingabe bleibt möglich', async () => {
     await goTo(app, 'Rechnungen');
     await page.getByRole('button', { name: 'Neue Rechnung' }).click();
     await page.locator('#debtor-street').pressSequentially('Bahnhofstrasse');
-    await expect(page.getByTestId('debtor-suggest-hint')).toHaveText('Vorschläge momentan nicht verfügbar.');
+    await expect(page.getByTestId('debtor-suggest-hint')).toHaveText(
+      'Vorschläge momentan nicht verfügbar.',
+    );
     await page.locator('#debtor-city').fill('Zürich');
     await expect(page.locator('#debtor-city')).toHaveValue('Zürich');
   } finally {
@@ -74,7 +82,10 @@ test('Offline (Dienst nicht erreichbar): Eingabe bleibt möglich', async () => {
 
 test('gesperrtes Formular (ausgestellte Rechnung) sendet keine Anfrage', async () => {
   const fake = await startFakeGeoapify();
-  const launched = await launchApp(undefined, { ...FAKE_ENV, SWISSBILL_GEOAPIFY_BASE_URL: fake.url });
+  const launched = await launchApp(undefined, {
+    ...FAKE_ENV,
+    SWISSBILL_GEOAPIFY_BASE_URL: fake.url,
+  });
   try {
     const { app, page } = launched;
     await setupSettings(app, page, 'test-key-0123456789');
