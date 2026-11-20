@@ -41,7 +41,7 @@ Erwartung: keine Datei enthält das Passwort; Einstellungen zeigen das Passwortf
 ## 3. Fehlerfälle (Story 3)
 
 - Falsches Passwort → Stufe «Anmeldung» schlägt fehl, Meldung ohne Passwort.
-- Falscher Host / Server gestoppt (`docker compose stop`) → «nicht erreichbar»; beim Start erscheint das Wiederherstellungsfenster mit «Erneut versuchen», «Einstellungen», «Lokal verwenden».
+- Falscher Host / Server gestoppt (`docker compose stop`) → «nicht erreichbar»; beim Start erscheint das Wiederherstellungsmodus mit «Erneut versuchen», «Einstellungen», «Lokal verwenden».
 - Nicht existierende Datenbank → Stufe «Datenbank».
 - Nicht leere Fremd-Datenbank → Abbruch «fremde Datenbank», nichts verändert.
 

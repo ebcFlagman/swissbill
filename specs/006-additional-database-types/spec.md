@@ -115,13 +115,13 @@ Als Anwender wechsle ich in den Einstellungen zwischen der lokalen Datenbank und
 - **FR-008**: Gespeicherte Zugangsdaten MÜSSEN änderbar und entfernbar sein; beim Entfernen wird auch der Schlüsselbund-Eintrag gelöscht. Das Passwort wird nach dem Speichern nie wieder angezeigt.
 - **FR-009**: Auf jeder unterstützten Datenbank MÜSSEN dieselben fachlichen Garantien gelten: Unveränderlichkeit ausgestellter Rechnungen, gültige Statuswechsel, Prüfregeln, lückenlose und duplikatfreie Nummernvergabe (auch bei gleichzeitigem Zugriff mehrerer Geräte), Beträge ohne Rundungsfehler und Suche unabhängig von Gross-/Kleinschreibung und Umlauten.
 - **FR-009a**: Bei einer Serverdatenbank MUSS ein Kunde oder Rechnungsentwurf für die Dauer der Bearbeitung durch ein Gerät gesperrt sein; andere Geräte sehen ihn schreibgeschützt mit verständlichem Hinweis. Die Sperre wird beim Schliessen/Speichern freigegeben und läuft nach Ausfall des Geräts (Absturz, Verbindungsverlust) nach 5 Minuten ohne Lebenszeichen automatisch ab. Ein Gerät mit abgelaufener Sperre darf nicht mehr unbemerkt speichern.
-- **FR-010**: Das Datenbankschema MUSS beim ersten Verbinden mit einer leeren Serverdatenbank automatisch angelegt und bei App-Updates versioniert und vorwärts fortgeschrieben werden; eine fehlgeschlagene Schemaänderung darf keinen halben Zustand hinterlassen.
+- **FR-010**: Das Datenbankschema MUSS beim ersten Verbinden mit einer leeren Serverdatenbank automatisch angelegt und bei App-Updates versioniert und vorwärts fortgeschrieben werden; eine fehlgeschlagene Schemaänderung MUSS auf lokalem SQLite und PostgreSQL vollständig zurückgerollt werden. Auf MySQL und MariaDB, deren Schemaänderungen nicht zurückgerollt werden können, MUSS ein abgebrochener Schritt beim nächsten Start sicher fortgesetzt werden können und der Anwender erhält eine verständliche Meldung.
 - **FR-010a**: Beim Start einer neueren App-Version MUSS ein älteres Serverschema automatisch (mit Schutz gegen gleichzeitiges Migrieren durch mehrere Geräte) fortgeschrieben werden; eine App mit älterem Stand als das Schema MUSS die Datenbank unverändert lassen und zum App-Update auffordern.
 - **FR-011**: Die App MUSS ein Schema einer neueren App-Version oder eine fremde, nicht leere Datenbank erkennen und unverändert lassen, mit verständlicher Meldung.
 - **FR-012**: Bei Verbindungsfehlern (beim Start oder im Betrieb) MUSS die App eine verständliche Meldung zeigen, nichts teilweise speichern und anbieten, Einstellungen zu öffnen, erneut zu versuchen oder auf die lokale Datenbank auszuweichen.
 - **FR-013**: Der Wechsel zwischen lokaler und Serverdatenbank MUSS ausdrücklich bestätigt werden, weist darauf hin, dass Daten nicht automatisch übernommen werden, und verändert oder löscht keine bestehenden Daten.
 - **FR-014**: Die Änderung der Datenbankverbindung MUSS erst nach Neustart der App oder einem klar angezeigten Neuverbinden wirksam werden; bis dahin arbeitet die App konsistent mit der bisherigen Datenbank.
-- **FR-015**: Die Bedienoberfläche und Fehlermeldungen MÜSSEN auf Deutsch (und in den übrigen vorhandenen Sprachen der App) verfügbar sein und DÜRFEN keine Zugangsdaten enthalten.
+- **FR-015**: Die Bedienoberfläche und Fehlermeldungen MÜSSEN auf Deutsch sein (weitere Sprachen sind gemäss Verfassung ausser Umfang) und DÜRFEN keine Zugangsdaten enthalten.
 
 ### Key Entities
 
@@ -146,6 +146,7 @@ Als Anwender wechsle ich in den Einstellungen zwischen der lokalen Datenbank und
 
 - Unterstützt werden PostgreSQL, MySQL und MariaDB in aktuell gepflegten Versionen; weitere Typen (z. B. SQL Server, Oracle) sind nicht Teil dieser Änderung.
 - Der Datenbankserver wird vom Anwender selbst bereitgestellt und betrieben; die App legt weder Server noch Datenbank an, nur die Tabellen in einer vorhandenen Datenbank.
+- MySQL und MariaDB können Schemaänderungen nicht zurückrollen; die Migrationen sind dort deshalb so gebaut, dass sie nach einem Abbruch erneut laufen können (FR-010). Das ist eine bewusste Abweichung von «vollständig zurückgerollt» für diese zwei Datenbanken.
 - Verbindungsangaben werden pro Gerät manuell eingegeben; eine zentrale Verteilung (z. B. per Konfigurationsdatei) ist nicht enthalten.
 - Ein automatischer Datenumzug zwischen lokaler Datenbank und Server (Export/Import) ist nicht enthalten; er kann später separat spezifiziert werden.
 - Sicherung und Wiederherstellung von Serverdatenbanken liegen in der Verantwortung des Server-Betreibers; die bestehende Ein-Datei-Sicherung gilt weiter für die lokale Datenbank.

@@ -12,13 +12,12 @@ macht die `DataSource` austauschbar: SQLite (Standard), PostgreSQL, MySQL und Ma
 
 1. **Adapter pro Datenbanktyp** (`src/main/db/adapters/`): Treiberoptionen, Fehlerabbildung, Migrationssperre,
    Serverzeit und Integritäts-/Sicherungsfunktionen sind die einzigen datenbankspezifischen Stellen.
-2. **Portables Schema**: Die Migrationen verwenden `varchar(n)` statt `text` für begrenzte und indizierte Felder,
-   damit dieselben Migrationen auf allen vier Datenbanken laufen (für SQLite ist das Verhalten gleich).
+2. **Portables Schema**: `InitSchema` wählt die Spaltentypen nach Treiber: SQLite behält `text`/`integer` (unverändertes Schema), Server erhalten `varchar(n)`/`bigint`, damit dieselbe Migrationsreihe auf allen vier Datenbanken läuft.
 3. **Zugangsdaten**: Verbindungsangaben ohne Passwort in `db-connection.json` im `userData`-Ordner, das
    Passwort ausschliesslich im OS-Schlüsselbund (`@napi-rs/keyring`), nie in Datei, DB, Log oder Renderer.
 4. **Start ohne Datenbank**: Die Verbindungs-IPC-Kanäle sind vor der Datenbank registriert; schlägt das Verbinden
-   fehl, öffnet die App ein Wiederherstellungsfenster (Wiederholen / Einstellungen / lokal).
-5. **Mehrgeräte-Betrieb**: Nummernvergabe über Zeilensperre der Datenbank, Bearbeitungssperren in der Tabelle
+   fehl, öffnet die App den Wiederherstellungsmodus (Wiederholen / Einstellungen / lokal).
+5. **Mehrgeräte-Betrieb**: Nummernvergabe über Zeilensperre der Datenbank (Zählerzeile vorab angelegt, Wiederholung bei Deadlock), Bearbeitungssperren in der Tabelle
    `edit_locks` (Ablauf nach 5 Minuten, Serverzeit), automatische Migration mit Datenbank-Sperre.
 6. **Einstellungen auf dem Server**: alle Einstellungen in der aktiven Datenbank; der Geoapify-Schlüssel liegt
    auf dem Server als Klartext-Bytes, lokal weiterhin OS-verschlüsselt (Codec je Datenbanktyp).
@@ -33,7 +32,7 @@ macht die `DataSource` austauschbar: SQLite (Standard), PostgreSQL, MySQL und Ma
 | FR-009 Garantien | Bestehende Persistenzschicht; Zählerzeile wird per `UPDATE` gesperrt, Erstanlage mit Wiederholung bei Schlüsselkonflikt |
 | FR-009a Sperren | `edit_locks` + `LockService`; Schreibpfade für Kunden/Entwurf prüfen die eigene gültige Sperre |
 | FR-010/010a/011 Schema | TypeORM-Migrationen, Migrationssperre (Advisory Lock / `GET_LOCK`), nur leere oder eigene DB |
-| FR-012/013/014 Fehler, Wechsel, Neustart | Wiederherstellungsfenster; Wechsel mit Bestätigung; Konfiguration wirkt nach Neustart (`app.relaunch`) |
+| FR-012/013/014 Fehler, Wechsel, Neustart | Wiederherstellungsmodus; Wechsel mit Bestätigung; Konfiguration wirkt nach Neustart (`app.relaunch`) |
 | FR-015 Texte | Deutsche Meldungen, keine Zugangsdaten in Texten |
 
 ## Technical Context
@@ -52,9 +51,9 @@ macht die `DataSource` austauschbar: SQLite (Standard), PostgreSQL, MySQL und Ma
 
 **Performance Goals**: Liste 10 000 Rechnungen < 1 s und Ausstellen < 1 s auf lokalem SQLite (unverändert); Server im LAN: Ausstellen < 2 s
 
-**Constraints**: ohne Konfiguration keine Netzwerkverbindung; Datenbankzugriff nur im Main-Prozess; Passwort nie im Renderer; datenbankspezifischer Code nur in `db/adapters/`; kein `synchronize`; Beträge < 2^31 Rappen (32-Bit-Integer auf MySQL/MariaDB)
+**Constraints**: ohne Konfiguration keine Netzwerkverbindung; Datenbankzugriff nur im Main-Prozess; Passwort nie im Renderer; datenbankspezifischer Code nur in `db/adapters/`; kein `synchronize`; Betragsspalten `bigint` mit Zahlen-Transformer (bestehende Obergrenze `MAX_TOTAL_RAPPEN` ≈ 10^11 Rappen passt nicht in 32 Bit)
 
-**Scale/Scope**: Kleinteam (≤ 10 Geräte), 7 Tabellen (5 bestehend + `edit_locks`), 1 neue Migration + Anpassung der Basis-Migration, ~12 neue Dateien, 1 neuer Einstellungsbereich und 1 Wiederherstellungsfenster
+**Scale/Scope**: Kleinteam (≤ 10 Geräte), 6 Tabellen (5 bestehend + `edit_locks`) plus `migrations`, 1 neue Migration + Anpassung der Basis-Migration, ~12 neue Dateien, 1 neuer Einstellungsbereich und 1 Wiederherstellungsmodus
 
 ## Constitution Check
 
@@ -112,16 +111,17 @@ src/
 │   ├── services/{lock-service,connection-service}.ts   # neu
 │   ├── services/backup-service.ts       # nur lokal; Server → Hinweis (geändert)
 │   ├── ipc/db-connection.ts, ipc/locks.ts              # neu
-│   └── index.ts                         # Start mit Wiederherstellungsfenster (geändert)
+│   └── index.ts                         # Start mit Wiederherstellungsmodus (geändert)
 └── renderer/
     ├── pages/Settings.tsx               # Bereich «Datenbank» (geändert)
     ├── components/{DbConnectionForm,RecoveryDialog,LockBanner}.tsx   # neu
     └── lib/                             # Hook für Sperren/Heartbeat (neu)
 
 tests/
-├── unit/{db-connection,lock-expiry,error-mapping,credential-leak}.test.ts
+├── unit/{db-connection,connection-config,credential-store,connection-service,lock-expiry,error-mapping,recovery}.test.ts
 ├── integration/                         # parametrisiert über alle DB-Ziele
-│   ├── matrix/{numbering,immutability,search,migration,foreign-db,locks,settings-key}.test.ts
+│   ├── matrix/{numbering,immutability,search,money,migration,locks,settings-key,connection-test,connection-loss}.test.ts
+│   ├── {switch,credential-leak}.test.ts
 │   └── helpers/db-targets.ts
 └── e2e/                                 # Verbindungs-Einrichtung gegen SQLite-Ersatz-Server nicht nötig
 docker-compose.yml                       # Test-Server lokal (neu)

@@ -42,6 +42,7 @@ interface DbConnectionTestResult {
 | `dbConnection:save` | `DbConnectionInput` | `{ restartRequired: true }` | validiert, speichert Datei und Passwort (`set`/`remove`), lehnt `set` ohne Schlüsselbund ab (`KEYCHAIN_UNAVAILABLE`); wirkt erst nach Neustart |
 | `dbConnection:useLocalOnce` | – | – | nur im Wiederherstellungsmodus: startet diese Sitzung mit lokalem SQLite, ohne die Konfiguration zu ändern |
 | `dbConnection:retry` | – | – | nur im Wiederherstellungsmodus: erneuter Verbindungsversuch |
+| `dbConnection:pickCaFile` | – | `{ path: string } \| { cancelled: true } \| { error: string }` | öffnet im Main einen Dateidialog (`.pem`, `.crt`), prüft Lesbarkeit und PEM-Inhalt; der Renderer liest nie selbst Dateien |
 | `app:relaunch` | – | – | startet die App neu (nach Speichern) |
 
 ## Fehlercodes (`AppException`)
@@ -61,4 +62,4 @@ Bei lokalem SQLite antworten die Kanäle immer `{ ok: true }` ohne Datenbankzugr
 ## Garantien
 
 - Kein Kanal gibt Passwort, Verbindungsfehlertexte mit Zugangsdaten oder Treiber-Rohnachrichten zurück; Meldungen werden im Main zusammengestellt.
-- `dbConnection:*` und `app:relaunch` sind die einzigen Kanäle im Wiederherstellungsmodus.
+- `dbConnection:*` und `app:relaunch` sind die einzigen Kanäle im Wiederherstellungsmodus. Nach erfolgreichem `retry`/`useLocalOnce` werden die übrigen Kanäle registriert und das Fenster neu geladen.

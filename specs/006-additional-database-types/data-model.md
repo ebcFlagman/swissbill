@@ -44,15 +44,16 @@ Es gibt keinen Fremdschlüssel auf die Fachtabellen (Sperren überleben das Lös
 
 `settings`, `customers`, `invoices`, `invoice_items`, `number_counters`, `migrations`.
 
-Änderungen in der Basis-Migration `InitSchema1700000000001` (nur Spaltentypen, siehe research R2):
+Änderungen in der Basis-Migration `InitSchema1700000000001` (nur Spaltentypen, siehe research R2). **Gilt nur für Server-Treiber**; bei SQLite bleiben die bisherigen Typen unverändert:
 
 | Bisher | Neu | Betroffene Spalten |
 |---|---|---|
 | `text` | `varchar(n)` | alle begrenzten Felder (Namen, Strassen, Orte, IBAN, Referenz, Präfix, Status, Nummer, Datumsfelder als ISO-Text 32) |
 | `text` | `text` (ohne Default) | `closing_text`, `default_closing_text`, `notes` |
+| `integer` | `bigint` (+ Transformer) | `total_rappen`, `unit_price_rappen`, `amount_rappen`, `quantity_milli` |
 | `blob` | `blob` | `settings.geoapify_api_key` (Server: UTF-8-Bytes des Klartextschlüssels; lokal: OS-verschlüsselt) |
 
-Bestehende SQLite-Dateien bleiben unverändert (die Migration gilt dort als ausgeführt). Für SQLite sind die Typen verhaltensgleich.
+SQLite-Dateien (alt und neu) behalten dasselbe Schema wie bisher.
 
 ## 5. Einstellungen (Entität «App-Einstellungen»)
 
@@ -71,5 +72,5 @@ Unverändert die Zeile `settings(id = 1)`; bei Serverdatenbank von allen Geräte
 
 - Port ausserhalb 1–65535, leerer Host/Datenbank/Benutzer → Formularfehler.
 - Sonderzeichen in Passwort, Benutzer und Datenbank werden unverändert übergeben (kein URL-Aufbau).
-- Rechnungsbetrag ≥ 2^31 Rappen wird abgelehnt (32-Bit-Spalten auf MySQL/MariaDB).
+- Betragsspalten (`total_rappen`, `unit_price_rappen`, `amount_rappen`, `quantity_milli`) sind `bigint` mit Transformer nach `number`; die bestehende Obergrenze `MAX_TOTAL_RAPPEN` bleibt und wird auf allen Datenbanken getestet.
 - Sperre abgelaufen oder fremd → Speichern wird mit `LOCK_LOST` abgelehnt, nichts wird geschrieben.
