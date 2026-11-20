@@ -19,7 +19,7 @@ import {
 } from '../db/connection-config';
 import { checkCaFile } from '../db/ca-file';
 import { testConnection } from '../db/connect';
-import { redactFromLogs } from '../log';
+import { redactFromLogs } from '../logging';
 
 export const PASSWORD_MAX = 256;
 

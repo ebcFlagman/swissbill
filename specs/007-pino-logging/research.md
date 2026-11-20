@@ -46,3 +46,9 @@
 ## R9: pino-Version und Bündelung
 
 - **Decision**: pino 10.x (aktuell veröffentlichte Version bei der Umsetzung, exakt gepinnt). `externalizeDepsPlugin` lässt pino extern; electron-builder packt es als Produktionsabhängigkeit. Gate in Task 1: `npm run build` und Paket-E2E starten die App mit pino.
+
+## Umsetzungsergebnisse
+
+- **R9 (Gate, T001/T002)**: `npm run build` bündelt den Main-Prozess mit `pino` als externe Abhängigkeit (`require("pino")` in `out/main/index.js`); der Start der gebauten App schreibt JSON-Zeilen (E2E `tests/e2e/logging.e2e.ts`). `electron-builder.yml` braucht keine Änderung: `pino` ist eine Produktionsabhängigkeit ohne native Teile und ohne Worker-Transport, `asarUnpack` ist nicht nötig.
+- **Performance (T040, SC-005)**: Ein `info`-Eintrag kostet im Mittel 0,011 ms (5000 Einträge, lokale Datei), ein verworfener `debug`-Eintrag 0,00007 ms. Das Laden von pino dauert etwa 16 ms (5 Messungen: 13,9–16,7 ms) gegenüber rund 0,8 s bis zum sichtbaren Fenster in den E2E-Läufen, also etwa 2 % und unter der Grenze von 5 %.
+- **Abweichung vom Plan**: Start- und Datenbank-Eintrag sind zwei Zeilen (`app`: Version und Plattform; `db`: `dbKind` und Anzahl Migrationen), beide beim Start und ohne Zugangsdaten.

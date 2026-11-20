@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync } f
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { initLogger, log } from '../../src/main/log';
+import { getLogger, initLogging } from '../../src/main/logging';
 import { ConnectionService } from '../../src/main/services/connection-service';
 import type { DbConnectionSettings } from '@shared/domain/db-connection';
 import { createFakeCredentialStore } from '../fixtures/credential-store';
@@ -29,7 +29,7 @@ let dir: string;
 beforeEach(() => {
   dir = mkdtempSync(join(tmpdir(), 'swissbill-leak-'));
   mkdirSync(join(dir, 'logs'));
-  initLogger(join(dir, 'logs'));
+  initLogging(dir);
 });
 afterEach(() => {
   rmSync(dir, { recursive: true, force: true });
@@ -43,8 +43,10 @@ describe('Kein Passwort ausserhalb des Schlüsselbunds (SC-004)', () => {
     expect(credentials.value).toBe(PASSWORD);
 
     // a log line that accidentally contains the password is masked
+    const log = getLogger('db');
     log.error(`Verbindung fehlgeschlagen mit ${PASSWORD}`);
     log.info(`Zugang ${PASSWORD}`);
+    log.error({ err: new Error(`Login mit ${PASSWORD} abgelehnt`) }, 'Anmeldung');
 
     const files = allFiles(dir);
     expect(files.length).toBeGreaterThan(0);

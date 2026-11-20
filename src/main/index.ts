@@ -1,19 +1,28 @@
 import 'reflect-metadata';
-import { join } from 'node:path';
 import { app, BrowserWindow } from 'electron';
 import type { DataSource } from 'typeorm';
 import { openActiveDatabase, openLocal, type ActiveDatabase } from './db/connect';
 import type { LockRepository } from './db/lock-repository';
 import { createCredentialStore } from './keyring-credential-store';
 import { registerIpc, registerPreDatabaseIpc } from './ipc/register';
-import { initLogger, log } from './log';
+import { getLogger, initLogging } from './logging';
 import { installMenu } from './menu';
 import { createRecovery } from './recovery';
 import { ConnectionService } from './services/connection-service';
 import { createMainWindow, hardenSession } from './window';
 
+const log = getLogger('app');
+const dbLog = getLogger('db');
+
 let dataSource: DataSource | null = null;
 let locks: LockRepository | null = null;
+
+process.on('uncaughtException', (error) => {
+  log.error({ err: error }, 'Unbehandelter Fehler');
+});
+process.on('unhandledRejection', (reason) => {
+  log.error({ err: reason }, 'Unbehandelte abgelehnte Zusage');
+});
 
 if (!app.requestSingleInstanceLock()) {
   app.quit();
@@ -28,14 +37,16 @@ if (!app.requestSingleInstanceLock()) {
 
   void app.whenReady().then(async () => {
     const userData = app.getPath('userData');
-    initLogger(join(userData, 'logs'));
+    initLogging(userData);
+    log.info(`SwissBill ${app.getVersion()} gestartet (${process.platform})`);
     hardenSession();
 
     // A database is open: register the data channels, install the menu
     const onReady = (database: ActiveDatabase) => {
       dataSource = database.dataSource;
-      log.info(
-        `Datenbank geöffnet (${database.kind}, ${database.dataSource.migrations.length} Migrationen)`,
+      dbLog.info(
+        { dbKind: database.kind, migrations: database.dataSource.migrations.length },
+        'Datenbank geöffnet',
       );
       locks = registerIpc(database.dataSource, database.adapter);
       installMenu(database.place, database.kind === 'server');
@@ -59,7 +70,10 @@ if (!app.requestSingleInstanceLock()) {
     registerPreDatabaseIpc(connection, recovery);
     await recovery.start();
     if (recovery.state().active === 'recovery') {
-      log.error(`Datenbank konnte nicht geöffnet werden: ${recovery.state().startupError ?? ''}`);
+      dbLog.error(
+        { reason: recovery.state().startupError ?? '' },
+        'Datenbank konnte nicht geöffnet werden',
+      );
     }
     createMainWindow();
   });
@@ -72,6 +86,7 @@ if (!app.requestSingleInstanceLock()) {
   });
 
   app.on('quit', () => {
+    log.info('SwissBill beendet');
     void dataSource?.destroy();
   });
 }

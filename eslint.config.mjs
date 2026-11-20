@@ -56,6 +56,11 @@ export default tseslint.config(
     },
   },
   {
+    // One logging facility (feature 007): no console output (pino is confined by the architecture test)
+    files: ['src/**/*.{ts,tsx}'],
+    rules: { 'no-console': 'error' },
+  },
+  {
     // Database drivers and the keychain binding are confined to the adapters and the keychain store,
     // also inside the database module (feature 006).
     files: ['src/main/db/**/*.ts'],

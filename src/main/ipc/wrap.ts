@@ -1,7 +1,7 @@
 import type { ZodType } from 'zod';
 import { AppException, err, ok, type Result } from '@shared/ipc/errors';
 import { CONNECTION_LOST_MESSAGE, isConnectionLost } from '../db/adapters';
-import { log } from '../log';
+import { getLogger } from '../logging';
 
 type Handler<I, O> = (input: I) => O | Promise<O>;
 
@@ -48,7 +48,7 @@ export function wrapHandler<I, O>(
           message.slice(message.indexOf('IMMUTABLE:') + 'IMMUTABLE:'.length).trim(),
         );
       }
-      log.error('Unerwarteter Fehler im IPC-Handler', error);
+      getLogger('ipc').error({ err: error }, 'Unerwarteter Fehler im IPC-Handler');
       return err('DB', 'Es ist ein unerwarteter Fehler aufgetreten. Details stehen im Protokoll.');
     }
   };

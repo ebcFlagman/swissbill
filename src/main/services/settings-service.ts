@@ -7,6 +7,7 @@ import {
 } from '@shared/domain/settings';
 import { AppException } from '@shared/ipc/errors';
 import { getKeyState, getSettings, saveSettings, writeApiKey } from '../db/settings-repository';
+import { redactFromLogs } from '../logging';
 import type { SecretStore } from '../secret-store';
 
 export class SettingsService {
@@ -33,8 +34,11 @@ export class SettingsService {
     const { geoapifyApiKey, ...fields } = input;
     await saveSettings(this.dataSource, fields, this.now().toISOString());
     // not specified = key unchanged; '' = remove (always possible); otherwise set encrypted
-    if (geoapifyApiKey !== undefined)
-      await writeApiKey(this.dataSource, this.secrets, normalizeApiKey(geoapifyApiKey));
+    if (geoapifyApiKey !== undefined) {
+      const key = normalizeApiKey(geoapifyApiKey);
+      redactFromLogs(key);
+      await writeApiKey(this.dataSource, this.secrets, key);
+    }
     return this.get();
   }
 }

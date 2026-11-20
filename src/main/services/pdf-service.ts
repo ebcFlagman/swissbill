@@ -6,6 +6,7 @@ import { formatChf, formatMilli } from '@shared/domain/money';
 import { qrDebtor } from '@shared/domain/qr-payload';
 import { referenceTypeFor, validateReference } from '@shared/domain/reference';
 import { AppException, type FieldError } from '@shared/ipc/errors';
+import { getLogger } from '../logging';
 
 /** Version of the layout; recorded in `invoices.layout_version` on issuing. */
 export { LAYOUT_VERSION };
@@ -216,6 +217,18 @@ export async function renderInvoicePdf(
   invoice: Invoice,
   options: RenderOptions = {},
 ): Promise<Buffer> {
+  try {
+    return await renderPdf(invoice, options);
+  } catch (error) {
+    // Expected problems (validation) are reported to the user; only unexpected ones are logged
+    if (!(error instanceof AppException)) {
+      getLogger('pdf').error({ err: error }, 'PDF-Erzeugung fehlgeschlagen');
+    }
+    throw error;
+  }
+}
+
+async function renderPdf(invoice: Invoice, options: RenderOptions): Promise<Buffer> {
   const isDraft = invoice.status === 'draft';
   if (isDraft && !options.preview) {
     throw new AppException(

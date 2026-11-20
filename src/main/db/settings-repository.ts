@@ -6,6 +6,7 @@ import {
   validateSettings,
 } from '@shared/domain/settings';
 import { AppException } from '@shared/ipc/errors';
+import { redactFromLogs } from '../logging';
 import type { SecretStore } from '../secret-store';
 import { SettingsEntity } from './entities/settings.entity';
 import { unitOfWorkFor } from './unit-of-work';
@@ -81,7 +82,9 @@ export async function readApiKey(
   const blob = await readKeyBlob(dataSource);
   if (blob === null) return null;
   const key = await secrets.decrypt(blob);
-  return key !== null && key !== '' ? key : null;
+  if (key === null || key === '') return null;
+  redactFromLogs(key);
+  return key;
 }
 
 /** Whether and in which state a key is stored (without revealing the key). */
