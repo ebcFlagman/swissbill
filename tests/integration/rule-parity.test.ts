@@ -60,20 +60,28 @@ const settings = (over: Partial<SettingsFields> = {}): SettingsFields => ({
 });
 
 let dir: string;
+let opened: DataSource[] = [];
 beforeEach(() => {
   dir = mkdtempSync(join(tmpdir(), 'swissbill-rules-'));
 });
-afterEach(() => {
+afterEach(async () => {
+  // Windows cannot delete a database file that is still open
+  await Promise.all(opened.map((db) => db.destroy()));
+  opened = [];
   rmSync(dir, { recursive: true, force: true });
 });
 
 async function fresh(): Promise<DataSource> {
-  return openAndMigrate(':memory:');
+  const db = await openAndMigrate(':memory:');
+  opened.push(db);
+  return db;
 }
 async function migrated(): Promise<DataSource> {
   const file = join(dir, 'swissbill.db');
   createLegacyDb(file);
-  return openAndMigrate(file);
+  const db = await openAndMigrate(file);
+  opened.push(db);
+  return db;
 }
 
 describe.each([
