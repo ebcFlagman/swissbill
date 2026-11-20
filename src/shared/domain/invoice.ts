@@ -6,13 +6,13 @@ import type { ReferenceType } from './reference';
 
 export type InvoiceStatus = 'draft' | 'issued' | 'paid' | 'cancelled';
 
-/** Die Währung ist fest CHF (Constitution). */
+/** The currency is fixed CHF (constitution). */
 export const CURRENCY = 'CHF';
 
-/** Höchstbetrag laut Swiss-QR-Standard: 999'999'999.99 */
+/** Maximum amount according to the Swiss QR standard: 999'999'999.99 */
 export const MAX_TOTAL_RAPPEN: Rappen = 99_999_999_999;
 
-/** Version des PDF-Layouts; wird beim Ausstellen festgehalten. */
+/** Version of the PDF layout; recorded on issuing. */
 export const LAYOUT_VERSION = 1;
 
 export const DESCRIPTION_MAX = 500;
@@ -35,7 +35,7 @@ export interface InvoiceItem extends InvoiceItemInput {
 export interface Invoice {
   id: number;
   status: InvoiceStatus;
-  /** `null` solange Entwurf */
+  /** `null` while draft */
   number: string | null;
   numberYear: number | null;
   numberSeq: number | null;
@@ -43,9 +43,9 @@ export interface Invoice {
   invoiceDate: string;
   dueDate: string;
   customerId: number | null;
-  /** Momentaufnahme; bei Entwürfen vorausgefüllt aus den Einstellungen und überschreibbar */
+  /** Snapshot; for drafts prefilled from the settings and overridable */
   sender: Sender;
-  /** Momentaufnahme; kopiert aus dem Kunden */
+  /** Snapshot; copied from the customer */
   debtor: Address;
   closingText: string | null;
   referenceType: ReferenceType | null;
@@ -60,10 +60,10 @@ export interface Invoice {
   items: InvoiceItem[];
 }
 
-/** Zeile der Rechnungsliste. */
+/** Row of the invoice list. */
 export interface InvoiceSummary {
   id: number;
-  /** `null` solange Entwurf */
+  /** `null` while draft */
   number: string | null;
   status: InvoiceStatus;
   invoiceDate: string;
@@ -73,13 +73,13 @@ export interface InvoiceSummary {
 }
 
 export interface InvoiceFilter {
-  /** Sucht ohne Beachtung der Gross-/Kleinschreibung in Rechnungsnummer und Kundenname */
+  /** Searches case-insensitively in invoice number and customer name */
   search?: string | undefined;
-  /** Leer oder fehlend: alle Status */
+  /** Empty or missing: all statuses */
   status?: InvoiceStatus[] | undefined;
 }
 
-/** Eingabe zum Speichern eines Entwurfs; Beträge werden serverseitig berechnet. */
+/** Input for saving a draft; amounts are calculated server-side. */
 export interface DraftInput {
   id: number;
   invoiceDate: string;
@@ -106,7 +106,7 @@ function isValidItem(item: InvoiceItemInput): boolean {
   );
 }
 
-/** Berechnet Positionsbeträge und Gesamtbetrag. Ungültige Positionen zählen als 0 (werden separat gemeldet). */
+/** Calculates item amounts and the total. Invalid items count as 0 (they are reported separately). */
 export function recalculate(inputs: readonly InvoiceItemInput[]): {
   items: InvoiceItem[];
   totalRappen: Rappen;
@@ -118,7 +118,7 @@ export function recalculate(inputs: readonly InvoiceItemInput[]): {
   return { items, totalRappen: sumAmounts(items.map((i) => i.amountRappen)) };
 }
 
-/** Freitext: lateinischer Zeichensatz, Zeilenumbruch und Euro-Zeichen sind erlaubt. */
+/** Free text: Latin character set, line break and euro sign are allowed. */
 function isAllowedFreeText(value: string): boolean {
   return isAllowedText(value.replace(/[\n€]/g, ''));
 }
@@ -128,8 +128,8 @@ function formatMax(): string {
 }
 
 /**
- * Prüft einen Entwurf beim Speichern: Längen, Zeichensatz, Datumsformat und Mengen müssen stimmen,
- * unvollständige Pflichtfelder sind aber noch erlaubt (die verbindliche Prüfung folgt beim Ausstellen).
+ * Checks a draft on saving: lengths, character set, date format and quantities must be correct,
+ * but incomplete required fields are still allowed (the binding check follows on issuing).
  */
 export function validateDraft(input: DraftInput): FieldError[] {
   const errors: FieldError[] = [];
@@ -183,8 +183,8 @@ export function validateDraft(input: DraftInput): FieldError[] {
 }
 
 /**
- * Prüft, ob eine Rechnung ausgestellt werden darf (alle Pflichtfelder, Zahlungsdaten, Beträge).
- * Liefert feldgenaue deutsche Fehlermeldungen; eine leere Liste bedeutet «gültig».
+ * Checks whether an invoice may be issued (all required fields, payment data, amounts).
+ * Returns field-specific German error messages; an empty list means "valid".
  */
 export function validateForIssue(invoice: Invoice): FieldError[] {
   const errors: FieldError[] = [];

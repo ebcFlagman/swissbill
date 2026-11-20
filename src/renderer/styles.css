@@ -1,6 +1,6 @@
 /*
- * Das Erscheinungsbild folgt dem System (hell/dunkel). PrimeReact liefert die Farben als light-dark()-Tokens;
- * eigene Farben müssen deshalb ebenfalls über Tokens oder light-dark() laufen, nie als feste Hellwerte.
+ * The appearance follows the system (light/dark). PrimeReact delivers the colors as light-dark() tokens;
+ * custom colors must therefore also use tokens or light-dark(), never fixed light values.
  */
 :root {
   color-scheme: light dark;
@@ -65,7 +65,7 @@ body {
   white-space: nowrap;
 }
 
-/* Viele Aktionen (z. B. bei ausgestellten Rechnungen) rutschen in eine zweite Zeile, statt den Titel umzubrechen */
+/* Many actions (e.g. on issued invoices) wrap into a second row instead of breaking the title */
 .toolbar-actions {
   display: flex;
   flex-wrap: wrap;
@@ -192,7 +192,7 @@ body {
   border: 0;
 }
 
-/* ---- Liste ---- */
+/* ---- List ---- */
 .list-header {
   display: flex;
   align-items: center;

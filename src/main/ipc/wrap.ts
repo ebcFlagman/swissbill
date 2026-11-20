@@ -9,8 +9,8 @@ function isResult(value: unknown): value is Result<unknown> {
 }
 
 /**
- * Macht aus einer Funktion einen IPC-tauglichen Handler:
- * Eingabe mit zod validieren, Ausnahmen in `Result` umwandeln. Es werden nie Ausnahmen an den Renderer gereicht.
+ * Turns a function into an IPC-capable handler:
+ * validate the input with zod, convert exceptions into `Result`. Exceptions are never passed to the renderer.
  */
 export function wrapHandler<I, O>(
   schema: ZodType<I>,

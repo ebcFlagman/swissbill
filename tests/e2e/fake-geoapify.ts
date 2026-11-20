@@ -2,16 +2,16 @@ import { createServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 
 export interface FakeGeoapify {
-  /** Basis-URL für `SWISSBILL_GEOAPIFY_BASE_URL` */
+  /** Base URL for `SWISSBILL_GEOAPIFY_BASE_URL` */
   url: string;
-  /** Alle bisher empfangenen Anfragen (Pfad mit Query) */
+  /** All requests received so far (path with query) */
   requests: string[];
-  /** Antwortverhalten für die nächsten Anfragen */
+  /** Response behavior for the next requests */
   mode: 'ok' | 'invalid_key' | 'quota' | 'down' | 'slow';
   close(): Promise<void>;
 }
 
-/** Fiktive Antwort wie bei `format=json`; nur erfundene Adressen. */
+/** Fictitious response like `format=json`; invented addresses only. */
 const RESULTS = {
   results: [
     {
@@ -32,7 +32,7 @@ const RESULTS = {
   ],
 };
 
-/** Lokaler Ersatz für Geoapify: kein Test spricht mit dem echten Dienst. */
+/** Local replacement for Geoapify: no test talks to the real service. */
 export async function startFakeGeoapify(): Promise<FakeGeoapify> {
   const fake: FakeGeoapify = {
     url: '',

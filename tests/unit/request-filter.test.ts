@@ -35,7 +35,7 @@ describe('isAllowedRequest (nur lokale Quellen)', () => {
       'ftp://example.com/',
       'chrome://settings/',
       'chrome://gpu/',
-      'http://localhost:5173/', // ohne Entwicklungsserver auch lokal nicht
+      'http://localhost:5173/', // not even local without a development server
     ]) {
       expect(isAllowedRequest(url, undefined), url).toBe(false);
     }

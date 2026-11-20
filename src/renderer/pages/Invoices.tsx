@@ -4,12 +4,12 @@ import { InvoiceEditor } from './InvoiceEditor';
 import { InvoiceList } from './InvoiceList';
 
 interface InvoicesProps {
-  /** Das Menü hat «Neue Rechnung» gewählt */
+  /** The menu chose "New invoice" */
   pendingNew: boolean;
   onPendingHandled: () => void;
 }
 
-/** Rechnungen: Liste und Editor. */
+/** Invoices: list and editor. */
 export function Invoices({ pendingNew, onPendingHandled }: InvoicesProps) {
   const [openId, setOpenId] = useState<number | null>(null);
   const [creating, setCreating] = useState(false);
@@ -27,7 +27,7 @@ export function Invoices({ pendingNew, onPendingHandled }: InvoicesProps) {
     }
   }, []);
 
-  // «Neue Rechnung» aus dem Menü: genau einmal einen Entwurf anlegen (auch im Strict Mode)
+  // "New invoice" from the menu: create exactly one draft (also in Strict Mode)
   useEffect(() => {
     if (!pendingNew) {
       started.current = false;

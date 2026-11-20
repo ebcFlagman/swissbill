@@ -5,11 +5,11 @@ import { CLOSING_TEXT_MAX, type Sender } from './invoice';
 import { validatePrefix } from './invoice-number';
 
 /**
- * Zustand des Geoapify-API-Keys (der Key selbst verlässt den Main nie):
- * - `none`: kein Key gespeichert
- * - `ok`: Key gespeichert und lesbar
- * - `undecryptable`: gespeichert, aber auf diesem Gerät/Benutzer nicht entschlüsselbar (z. B. Sicherung eingespielt)
- * - `encryption-unavailable`: auf diesem Gerät keine Verschlüsselung, ein Key wird nicht gespeichert
+ * State of the Geoapify API key (the key itself never leaves main):
+ * - `none`: no key stored
+ * - `ok`: key stored and readable
+ * - `undecryptable`: stored, but not decryptable on this device/user (e.g. a backup was restored)
+ * - `encryption-unavailable`: no encryption on this device, a key is not stored
  */
 export type GeoapifyKeyStatus = 'none' | 'ok' | 'undecryptable' | 'encryption-unavailable';
 
@@ -20,15 +20,15 @@ export interface SettingsFields {
   defaultPaymentDays: number;
 }
 
-/** Ausgabe von `settings:get`: enthält den API-Key nie, nur ob und in welchem Zustand er gespeichert ist. */
+/** Output of `settings:get`: never contains the API key, only whether and in which state it is stored. */
 export interface Settings extends SettingsFields {
   geoapifyKeySet: boolean;
   geoapifyKeyStatus: GeoapifyKeyStatus;
 }
 
 /**
- * Eingabe von `settings:save`. `geoapifyApiKey`: nicht angegeben = Key unverändert, `''` = Key entfernen,
- * sonst Key setzen.
+ * Input of `settings:save`. `geoapifyApiKey`: not specified = key unchanged, `''` = remove key,
+ * otherwise set the key.
  */
 export interface SettingsInput extends SettingsFields {
   geoapifyApiKey?: string;
@@ -41,7 +41,7 @@ export function normalizeApiKey(key: string): string {
   return key.trim();
 }
 
-/** Prüft einen API-Key (nach dem Trimmen): höchstens 200 Zeichen, innen keine Leer- oder Steuerzeichen. */
+/** Checks an API key (after trimming): at most 200 characters, no whitespace or control characters inside. */
 export function validateApiKey(key: string): string | null {
   const value = normalizeApiKey(key);
   if ([...value].length > API_KEY_MAX) return `Der API-Key darf höchstens ${API_KEY_MAX} Zeichen lang sein.`;
@@ -51,8 +51,8 @@ export function validateApiKey(key: string): string | null {
 }
 
 /**
- * Prüft die globalen Einstellungen beim Speichern: vollständiger Absender mit gültiger IBAN,
- * Rechnungspräfix, Schlusstext und Zahlungsfrist.
+ * Checks the global settings on saving: complete sender with valid IBAN,
+ * invoice prefix, closing text and payment term.
  */
 export function validateSettings(settings: SettingsInput): FieldError[] {
   const errors = validateAddress(settings.sender, 'sender');

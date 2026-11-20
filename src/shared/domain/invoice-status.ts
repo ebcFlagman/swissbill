@@ -1,12 +1,12 @@
 import type { InvoiceStatus } from './invoice';
 
 /**
- * Erlaubte Statusübergänge. Dieselben Regeln setzt die Datenbank durch (Trigger `invoices_status_transition`).
+ * Allowed status transitions. The persistence layer enforces the same rules (`src/main/db/invoice-repository.ts`).
  *
- *   draft ──ausstellen──▶ issued ──bezahlt──▶ paid
+ *   draft ──issue─────▶ issued ──paid───▶ paid
  *                           │  ▲                │
- *                           │  └──zurücksetzen──┘
- *                           └──stornieren──▶ cancelled ◀──stornieren── paid
+ *                           │  └──reopen──────┘
+ *                           └──cancel───▶ cancelled ◀──cancel─── paid
  */
 export const TRANSITIONS: Record<InvoiceStatus, readonly InvoiceStatus[]> = {
   draft: ['issued'],
@@ -19,7 +19,7 @@ export function canTransition(from: InvoiceStatus, to: InvoiceStatus): boolean {
   return TRANSITIONS[from].includes(to);
 }
 
-/** Nur Entwürfe dürfen gelöscht werden (FR-021). */
+/** Only drafts may be deleted (FR-021). */
 export function canDelete(status: InvoiceStatus): boolean {
   return status === 'draft';
 }

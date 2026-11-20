@@ -7,11 +7,11 @@ test('Das deutsche Anwendungsmenü steuert die Anwendung', async () => {
   try {
     const { app, page } = launched;
 
-    // Menüstruktur statt englischem Electron-Standardmenü
+    // Menu structure instead of the English Electron default menu
     const labels = await app.evaluate(({ Menu }) => Menu.getApplicationMenu()?.items.map((i) => i.label));
     expect(labels).toEqual(['Datei', 'Bearbeiten', 'Ansicht', 'Hilfe']);
 
-    // Keine Navigation im Fenster: die Hauptansichten erreicht man nur über das Menü «Ansicht»
+    // No navigation in the window: the main views are only reachable via the "Ansicht" menu
     await expect(page.getByRole('navigation')).toHaveCount(0);
     await expect(page.getByRole('banner')).toHaveCount(0);
 
@@ -23,7 +23,7 @@ test('Das deutsche Anwendungsmenü steuert die Anwendung', async () => {
     await clickMenu(app, 'nav-invoices');
     await expect(page.getByRole('heading', { name: 'Rechnungen' })).toBeVisible();
 
-    // Neue Rechnung aus beliebiger Ansicht: genau ein Entwurf wird angelegt
+    // New invoice from any view: exactly one draft is created
     await clickMenu(app, 'nav-settings');
     await clickMenu(app, 'file-new-invoice');
     await expect(page.getByRole('heading', { name: /Neue Rechnung/ })).toBeVisible();
@@ -31,7 +31,7 @@ test('Das deutsche Anwendungsmenü steuert die Anwendung', async () => {
     await page.getByRole('button', { name: '← Zurück' }).click();
     await expect(page.getByTestId('invoice-row')).toHaveCount(1);
 
-    // «Neue Rechnung» im Editor öffnet einen weiteren Entwurf; nicht gespeicherte Eingaben bleiben erhalten
+    // "New invoice" in the editor opens another draft; unsaved inputs are kept
     await page.getByRole('button', { name: 'Entwurf' }).click();
     await page.locator('#debtor-name').fill('Menü AG, geändert');
     await clickMenu(app, 'file-new-invoice');
@@ -40,7 +40,7 @@ test('Das deutsche Anwendungsmenü steuert die Anwendung', async () => {
     await expect(page.getByTestId('invoice-row')).toHaveCount(2);
     await expect(page.getByTestId('invoice-row').filter({ hasText: 'Menü AG, geändert' })).toHaveCount(1);
 
-    // Datenbank sichern über das Menü (Speichern-Dialog im Main wird durch einen festen Pfad ersetzt)
+    // Back up the database via the menu (the save dialog in main is replaced by a fixed path)
     const target = `${launched.userDataDir}\\sicherung.db`;
     await app.evaluate(({ dialog }, filePath) => {
       dialog.showSaveDialog = (() => Promise.resolve({ canceled: false, filePath })) as typeof dialog.showSaveDialog;

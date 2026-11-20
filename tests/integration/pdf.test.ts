@@ -41,7 +41,7 @@ describe('PDF mit Zahlteil', () => {
     ]) {
       expect(text, expected).toContain(expected);
     }
-    // Total 349.75 (2 x 150.00 + 49.75) steht auf der Rechnung und im Zahlteil
+    // Total 349.75 (2 x 150.00 + 49.75) appears on the invoice and in the payment part
     expect(text).toContain("349.75");
   });
 
@@ -124,7 +124,7 @@ describe('PDF mit Zahlteil', () => {
     const invoice = makeIssuedInvoice({ status: 'cancelled', cancelledAt: '2026-03-10T08:00:00.000Z' });
     const pdf = await inspect(await renderInvoicePdf(invoice));
     const text = pdf.texts.join(' ');
-    // pdf.js trennt das gedrehte Wasserzeichen teils durch Leerzeichen («STORNIER T»)
+    // pdf.js sometimes separates the rotated watermark with spaces ("STORNIER T")
     expect(text.replace(/\s+/g, '')).toContain('STORNIERT');
     expect(text).toContain('RE-2026-0001');
     expect(text).not.toContain('Zahlteil');

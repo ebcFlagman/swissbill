@@ -3,8 +3,8 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { buildQrPayload, qrDebtor, type QrPayloadData } from '@shared/domain/qr-payload';
 
-// Beispiel nach den Swiss Implementation Guidelines for the QR-bill (SIX). Die Fixture wurde nach dem
-// SIX-Beispiel nachgebaut und ist beim Abnahmetest (SIX-Validator) gegen das Original zu prüfen.
+// Example according to the Swiss Implementation Guidelines for the QR-bill (SIX). The fixture was rebuilt from the
+// SIX example and must be checked against the original in the acceptance test (SIX validator).
 const fixture = readFileSync(resolve(__dirname, '../fixtures/six-example-payload.txt'), 'utf8').replace(
   /\r?\n$/,
   '',
@@ -76,7 +76,7 @@ describe('buildQrPayload', () => {
     expect(lines[28]).toBe('RF3120260001');
     expect(lines[29]).toBe('');
     expect(lines[30]).toBe('EPD');
-    // Ohne Rechnungsinformationen endet der Payload mit dem Trailer EPD.
+    // Without billing information the payload ends with the trailer EPD.
     expect(lines).toHaveLength(31);
   });
 

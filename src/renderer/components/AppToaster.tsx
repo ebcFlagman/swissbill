@@ -6,7 +6,7 @@ import { Toast } from '@primereact/ui/toast';
 import { Toaster, type ToasterRegionInstance, type ToastType } from '@primereact/ui/toaster';
 import { TOAST_GROUP } from '../lib/notify';
 
-/** Globale Meldungen (Fehler und Erfolg), gesteuert über `notifyError` / `notifySuccess`. */
+/** Global messages (errors and success), controlled via `notifyError` / `notifySuccess`. */
 export function AppToaster() {
   return (
     <Toaster.Root group={TOAST_GROUP}>

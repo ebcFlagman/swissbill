@@ -10,7 +10,7 @@ interface ConfirmIssueDialogProps {
   onCancel: () => void;
 }
 
-/** Bestätigung vor dem Ausstellen: danach ist die Rechnung unveränderlich. */
+/** Confirmation before issuing: afterwards the invoice is immutable. */
 export function ConfirmIssueDialog({ open, totalRappen, busy, onConfirm, onCancel }: ConfirmIssueDialogProps) {
   return (
     <Dialog.Root open={open} onOpenChange={(event: { value?: boolean | undefined }) => !event.value && !busy && onCancel()}>
@@ -50,7 +50,7 @@ interface IssuedDialogProps {
   onClose: () => void;
 }
 
-/** Nach dem Ausstellen: Nummer anzeigen und PDF speichern oder öffnen. */
+/** After issuing: show the number and save or open the PDF. */
 export function IssuedDialog({ open, number, onSave, onOpen, onClose }: IssuedDialogProps) {
   return (
     <Dialog.Root open={open} onOpenChange={(event: { value?: boolean | undefined }) => !event.value && onClose()}>

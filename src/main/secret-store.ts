@@ -1,13 +1,13 @@
 /**
- * Ablage kleiner Geheimnisse (hier: der Geoapify-API-Key) in verschlüsselter Form.
- * Die Schnittstelle importiert bewusst nichts aus `electron`, damit sie in Tests ersetzbar bleibt;
- * die Umsetzung über das Betriebssystem steht in `electron-secret-store.ts`.
- * Alle Operationen sind asynchron, weil die nicht veralteten Electron-Funktionen es sind.
+ * Storage of small secrets (here: the Geoapify API key) in encrypted form.
+ * The interface deliberately imports nothing from `electron` so that it stays replaceable in tests;
+ * the implementation via the operating system is in `electron-secret-store.ts`.
+ * All operations are asynchronous because the non-deprecated Electron functions are.
  */
 export interface SecretStore {
-  /** Ist auf diesem Gerät eine Verschlüsselung verfügbar? */
+  /** Is encryption available on this device? */
   isAvailable(): Promise<boolean>;
   encrypt(text: string): Promise<Buffer>;
-  /** Klartext oder `null`, wenn sich der Wert nicht entschlüsseln lässt (anderes Gerät/Benutzer, beschädigt). */
+  /** Plain text or `null` if the value cannot be decrypted (other device/user, corrupt). */
   decrypt(data: Buffer): Promise<string | null>;
 }

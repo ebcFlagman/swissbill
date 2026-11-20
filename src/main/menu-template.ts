@@ -2,23 +2,23 @@ import type { MenuItemConstructorOptions } from 'electron';
 import type { MenuAction } from '../shared/ipc/menu';
 
 export interface MenuDeps {
-  /** Entwicklungsmodus: Neu laden und Entwicklerwerkzeuge anzeigen */
+  /** Development mode: reload and show developer tools */
   isDev: boolean;
-  /** Sendet eine Aktion an das Fenster im Vordergrund */
+  /** Sends an action to the foreground window */
   send: (action: MenuAction) => void;
   showAbout: () => void;
   showDatabaseFolder: () => void;
 }
 
 /**
- * Deutsches Anwendungsmenü. Die Vorlage ist frei von Electron-Laufzeitcode und damit ohne Fenster testbar.
- * Die Standard-Bearbeitungsbefehle laufen über Rollen, damit Tastenkürzel und Zwischenablage überall funktionieren.
+ * German application menu. The template is free of Electron runtime code and thus testable without a window.
+ * The standard edit commands use roles so that shortcuts and clipboard work everywhere.
  */
 export function buildMenuTemplate(deps: MenuDeps): MenuItemConstructorOptions[] {
   const { isDev, send } = deps;
 
   const view: MenuItemConstructorOptions[] = [
-    // Die Hauptnavigation der Anwendung (kein Menü im Fenster)
+    // The main navigation of the application (no menu in the window)
     {
       id: 'nav-invoices',
       label: 'Rechnungen',

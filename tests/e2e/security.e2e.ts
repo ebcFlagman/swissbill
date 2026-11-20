@@ -9,10 +9,10 @@ test('Electron-Sicherheit: Isolation, CSP, keine Netzwerkzugriffe, keine fremden
     const requests: string[] = [];
     const failed: string[] = [];
     page.on('request', (request) => requests.push(request.url()));
-    // Die Netzwerksperre darf nichts blockieren, was die Anwendung selbst braucht (z. B. den PDF-Betrachter der Vorschau)
+    // The network block must not block anything the application itself needs (e.g. the PDF viewer of the preview)
     page.on('requestfailed', (request) => failed.push(`${request.url()} ${request.failure()?.errorText ?? ''}`));
 
-    // Fenster-Einstellungen im Main-Prozess
+    // Window settings in the main process
     const prefs = await app.evaluate(({ BrowserWindow }) => {
       const contents = BrowserWindow.getAllWindows()[0]!.webContents as unknown as {
         getLastWebPreferences(): Record<string, unknown>;
@@ -27,7 +27,7 @@ test('Electron-Sicherheit: Isolation, CSP, keine Netzwerkzugriffe, keine fremden
     });
     expect(prefs).toEqual({ nodeIntegration: false, contextIsolation: true, sandbox: true, webSecurity: true });
 
-    // Kein Node und kein ipcRenderer im Renderer; die API ist schmal
+    // No Node and no ipcRenderer in the renderer; the API is narrow
     const exposure = await page.evaluate(() => {
       const w = window as unknown as Record<string, unknown>;
       return {
@@ -48,12 +48,12 @@ test('Electron-Sicherheit: Isolation, CSP, keine Netzwerkzugriffe, keine fremden
       api: ['addresses', 'app', 'customers', 'db', 'invoices', 'menu', 'pdf', 'settings'],
     });
 
-    // Content-Security-Policy ohne externe Quellen und ohne eval
+    // Content security policy without external sources and without eval
     const csp = await page.locator('meta[http-equiv="Content-Security-Policy"]').getAttribute('content');
     expect(csp).toContain("default-src 'self'");
     expect(csp).not.toMatch(/https?:|\*/);
     expect(csp).not.toContain("'unsafe-eval'");
-    // Eingeschleuste Inline-Skripte werden von der CSP blockiert (CDP-Auswertungen umgehen die CSP, daher über ein Script-Element)
+    // Injected inline scripts are blocked by the CSP (CDP evaluations bypass the CSP, hence via a script element)
     const injected = await page.evaluate(() => {
       const script = document.createElement('script');
       script.textContent = 'window.__injected = true;';
@@ -62,7 +62,7 @@ test('Electron-Sicherheit: Isolation, CSP, keine Netzwerkzugriffe, keine fremden
     });
     expect(injected).toBe('blocked');
 
-    // Externe Netzwerkzugriffe sind blockiert
+    // External network access is blocked
     const fetched = await page.evaluate(async () => {
       try {
         await fetch('https://example.com/');
@@ -72,7 +72,7 @@ test('Electron-Sicherheit: Isolation, CSP, keine Netzwerkzugriffe, keine fremden
       }
     });
     expect(fetched).toBe('blocked');
-    // Auch Geoapify ist aus dem Renderer nicht erreichbar: Der einzige Zugriff läuft im Main-Prozess (nur mit Key)
+    // Geoapify is also unreachable from the renderer: the only access runs in the main process (only with a key)
     const geoapify = await page.evaluate(async () => {
       try {
         await fetch('https://api.geoapify.com/v1/geocode/autocomplete?text=abc&apiKey=x');
@@ -83,19 +83,19 @@ test('Electron-Sicherheit: Isolation, CSP, keine Netzwerkzugriffe, keine fremden
     });
     expect(geoapify).toBe('blocked');
 
-    // Ein typischer Ablauf löst keine Anfragen ausserhalb der App aus
+    // A typical flow triggers no requests outside the app
     await page.getByRole('button', { name: 'Neue Rechnung' }).click();
     await fillValidInvoice(page);
     await page.getByRole('button', { name: 'Vorschau' }).click();
     await expect(page.getByRole('dialog', { name: 'Vorschau' })).toBeVisible();
-    await page.waitForTimeout(1500); // der PDF-Betrachter lädt seine Ressourcen nach dem Öffnen
+    await page.waitForTimeout(1500); // the PDF viewer loads its resources after opening
     expect(failed).toEqual([]);
-    // Erlaubt sind nur lokale Quellen (dieselbe Regel wie in der Anwendung)
+    // Only local sources are allowed (the same rule as in the application)
     const external = requests.filter((url) => !isAllowedRequest(url, undefined));
     expect(external).toEqual([]);
     expect(requests.some((url) => /^https?:/i.test(url))).toBe(false);
 
-    // Navigation weg von der App und neue Fenster sind blockiert (zuletzt: Playwright wartet sonst auf die abgebrochene Navigation)
+    // Navigation away from the app and new windows are blocked (last: otherwise Playwright waits for the aborted navigation)
     const startUrl = page.url();
     await page.evaluate(() => {
       window.open('https://example.com/');

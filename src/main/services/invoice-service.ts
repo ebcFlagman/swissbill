@@ -1,4 +1,4 @@
-import type Database from 'better-sqlite3';
+import type { DataSource } from 'typeorm';
 import { addDays, localIsoDate } from '../../shared/domain/dates';
 import {
   LAYOUT_VERSION,
@@ -19,7 +19,7 @@ import { InvoiceRepository } from '../db/invoice-repository';
 import { getSettings } from '../db/settings-repository';
 
 export interface InvoiceServiceOptions {
-  /** Uhr, für Tests austauschbar (Jahreswechsel) */
+  /** Clock, replaceable for tests (year change) */
   now?: () => Date;
 }
 
@@ -28,85 +28,86 @@ export class InvoiceService {
   private readonly now: () => Date;
 
   constructor(
-    private readonly db: Database.Database,
+    private readonly dataSource: DataSource,
     options: InvoiceServiceOptions = {},
   ) {
-    this.repo = new InvoiceRepository(db);
+    this.repo = new InvoiceRepository(dataSource);
     this.now = options.now ?? (() => new Date());
   }
 
-  get(id: number): Invoice {
-    const invoice = this.repo.get(id);
+  async get(id: number): Promise<Invoice> {
+    const invoice = await this.repo.get(id);
     if (!invoice) throw new AppException('NOT_FOUND', 'Die Rechnung wurde nicht gefunden.');
     return invoice;
   }
 
-  /** Prüft den Statuswechsel gegen die Zustandsmaschine und liefert die Rechnung. */
-  private requireTransition(id: number, to: InvoiceStatus, message: string): Invoice {
-    const invoice = this.get(id);
+  /** Checks the status change against the state machine and returns the invoice. */
+  private async requireTransition(id: number, to: InvoiceStatus, message: string): Promise<Invoice> {
+    const invoice = await this.get(id);
     if (!canTransition(invoice.status, to)) {
       throw new AppException('IMMUTABLE', message);
     }
     return invoice;
   }
 
-  /** `issued → paid`; der Inhalt der Rechnung bleibt unverändert. */
-  markPaid(id: number): Invoice {
-    this.requireTransition(id, 'paid', 'Nur ausgestellte Rechnungen können als bezahlt markiert werden.');
-    this.repo.markPaid(id, this.now().toISOString());
+  /** `issued → paid`; the content of the invoice stays unchanged. */
+  async markPaid(id: number): Promise<Invoice> {
+    await this.requireTransition(id, 'paid', 'Nur ausgestellte Rechnungen können als bezahlt markiert werden.');
+    await this.repo.markPaid(id, this.now().toISOString());
     return this.get(id);
   }
 
-  /** `paid → issued` (Korrektur einer Fehlbuchung). */
-  reopen(id: number): Invoice {
-    this.requireTransition(id, 'issued', 'Nur bezahlte Rechnungen können zurückgesetzt werden.');
-    this.repo.reopen(id, this.now().toISOString());
+  /** `paid → issued` (correction of a wrong booking). */
+  async reopen(id: number): Promise<Invoice> {
+    await this.requireTransition(id, 'issued', 'Nur bezahlte Rechnungen können zurückgesetzt werden.');
+    await this.repo.reopen(id, this.now().toISOString());
     return this.get(id);
   }
 
-  /** `issued/paid → cancelled`; endgültig. Die Nummer bleibt vergeben und wird nie wiederverwendet. */
-  cancel(id: number): Invoice {
-    this.requireTransition(
+  /** `issued/paid → cancelled`; final. The number stays assigned and is never reused. */
+  async cancel(id: number): Promise<Invoice> {
+    await this.requireTransition(
       id,
       'cancelled',
       'Nur ausgestellte oder bezahlte Rechnungen können storniert werden.',
     );
-    this.repo.cancel(id, this.now().toISOString());
+    await this.repo.cancel(id, this.now().toISOString());
     return this.get(id);
   }
 
-  list(filter: InvoiceFilter): InvoiceSummary[] {
+  list(filter: InvoiceFilter): Promise<InvoiceSummary[]> {
     return this.repo.list(filter);
   }
 
-  /** Löscht einen Entwurf. Nummern werden erst beim Ausstellen vergeben, daher entsteht keine Lücke. */
-  deleteDraft(id: number): void {
-    const invoice = this.get(id);
+  /** Deletes a draft. Numbers are only assigned on issuing, so no gap arises. */
+  async deleteDraft(id: number): Promise<void> {
+    const invoice = await this.get(id);
     if (!canDelete(invoice.status)) {
       throw new AppException('IMMUTABLE', 'Nur Entwürfe können gelöscht werden.');
     }
-    this.repo.deleteDraft(id);
+    await this.repo.deleteDraft(id);
   }
 
-  /** Neuer Entwurf mit dem Inhalt einer bestehenden Rechnung (Datum heute, ohne Nummer und Referenz). */
-  duplicate(id: number): Invoice {
-    const source = this.get(id);
-    const settings = getSettings(this.db);
+  /** New draft with the content of an existing invoice (date today, without number and reference). */
+  async duplicate(id: number): Promise<Invoice> {
+    const source = await this.get(id);
+    const settings = await getSettings(this.dataSource);
     const now = this.now();
     const invoiceDate = localIsoDate(now);
-    const newId = this.repo.runInTransaction(() => {
-      const created = this.repo.createDraft({
-        invoiceDate,
-        dueDate: addDays(invoiceDate, settings.defaultPaymentDays),
-        sender: source.sender,
-        closingText: source.closingText,
-        createdAt: now.toISOString(),
-      });
-      this.repo.saveDraft(
+    const dueDate = addDays(invoiceDate, settings.defaultPaymentDays);
+    const newId = await this.repo.createDraft({
+      invoiceDate,
+      dueDate,
+      sender: source.sender,
+      closingText: source.closingText,
+      createdAt: now.toISOString(),
+    });
+    try {
+      await this.repo.saveDraft(
         {
-          id: created,
+          id: newId,
           invoiceDate,
-          dueDate: addDays(invoiceDate, settings.defaultPaymentDays),
+          dueDate,
           customerId: source.customerId,
           sender: source.sender,
           debtor: source.debtor,
@@ -119,17 +120,20 @@ export class InvoiceService {
         },
         now.toISOString(),
       );
-      return created;
-    });
+    } catch (error) {
+      // A half-created draft is not left behind
+      await this.repo.deleteDraft(newId);
+      throw error;
+    }
     return this.get(newId);
   }
 
-  /** Neuer Entwurf: Absender, Schlusstext und Fälligkeit aus den Einstellungen vorausgefüllt. */
-  createDraft(): Invoice {
-    const settings = getSettings(this.db);
+  /** New draft: sender, closing text and due date prefilled from the settings. */
+  async createDraft(): Promise<Invoice> {
+    const settings = await getSettings(this.dataSource);
     const now = this.now();
     const invoiceDate = localIsoDate(now);
-    const id = this.repo.createDraft({
+    const id = await this.repo.createDraft({
       invoiceDate,
       dueDate: addDays(invoiceDate, settings.defaultPaymentDays),
       sender: settings.sender,
@@ -139,9 +143,9 @@ export class InvoiceService {
     return this.get(id);
   }
 
-  /** Speichert einen Entwurf; ausgestellte Rechnungen sind unveränderlich. */
-  saveDraft(input: DraftInput): Invoice {
-    const existing = this.get(input.id);
+  /** Saves a draft; issued invoices are immutable. */
+  async saveDraft(input: DraftInput): Promise<Invoice> {
+    const existing = await this.get(input.id);
     if (existing.status !== 'draft') {
       throw new AppException('IMMUTABLE', 'Eine ausgestellte Rechnung kann nicht mehr geändert werden.');
     }
@@ -149,16 +153,16 @@ export class InvoiceService {
     if (errors.length > 0) {
       throw new AppException('VALIDATION', 'Bitte die markierten Felder prüfen.', errors);
     }
-    this.repo.saveDraft(input, this.now().toISOString());
+    await this.repo.saveDraft(input, this.now().toISOString());
     return this.get(input.id);
   }
 
   /**
-   * Stellt einen Entwurf aus: validiert vollständig und schreibt Nummer, Referenz, Total und Layoutversion
-   * in einer Transaktion fest. Ein Fehler hinterlässt weder eine vergebene Nummer noch einen geänderten Status.
+   * Issues a draft: validates completely and fixes number, reference, total and layout version
+   * in one transaction. An error leaves neither an assigned number nor a changed status.
    */
-  issue(id: number): Invoice {
-    const invoice = this.get(id);
+  async issue(id: number): Promise<Invoice> {
+    const invoice = await this.get(id);
     if (invoice.status !== 'draft') {
       throw new AppException('IMMUTABLE', 'Die Rechnung ist bereits ausgestellt.');
     }
@@ -167,24 +171,23 @@ export class InvoiceService {
       throw new AppException('VALIDATION', 'Die Rechnung kann nicht ausgestellt werden.', errors);
     }
 
-    const prefix = getSettings(this.db).invoicePrefix;
+    const prefix = (await getSettings(this.dataSource)).invoicePrefix;
     const now = this.now();
+    const year = now.getFullYear();
 
-    this.db.transaction(() => {
-      const year = now.getFullYear();
-      const seq = this.repo.nextSequence(year);
-      const referenceType = referenceTypeFor(invoice.sender.iban);
-      this.repo.markIssued(id, {
+    await this.repo.issue(id, year, (seq, current) => {
+      const referenceType = referenceTypeFor(current.sender.iban);
+      return {
         number: formatInvoiceNumber(prefix, year, seq),
         numberYear: year,
         numberSeq: seq,
         referenceType,
         reference: referenceType === 'QRR' ? buildQrReference(year, seq) : buildCreditorReference(year, seq),
-        totalRappen: recalculate(invoice.items).totalRappen,
+        totalRappen: recalculate(current.items).totalRappen,
         layoutVersion: LAYOUT_VERSION,
         issuedAt: now.toISOString(),
-      });
-    })();
+      };
+    });
 
     return this.get(id);
   }

@@ -1,4 +1,4 @@
-/** Lokales Datum als `YYYY-MM-DD` (Schweizer Kalendertag des Benutzers). */
+/** Local date as `YYYY-MM-DD` (Swiss calendar day of the user). */
 export function localIsoDate(date: Date): string {
   const y = String(date.getFullYear()).padStart(4, '0');
   const m = String(date.getMonth() + 1).padStart(2, '0');
@@ -6,7 +6,7 @@ export function localIsoDate(date: Date): string {
   return `${y}-${m}-${d}`;
 }
 
-/** Addiert Tage zu einem `YYYY-MM-DD`-Datum (kalenderecht, ohne Zeitzonenfehler). */
+/** Adds days to a `YYYY-MM-DD` date (calendar-correct, without time zone errors). */
 export function addDays(isoDate: string, days: number): string {
   const [y, m, d] = isoDate.split('-').map(Number) as [number, number, number];
   const date = new Date(Date.UTC(y, m - 1, d + days));

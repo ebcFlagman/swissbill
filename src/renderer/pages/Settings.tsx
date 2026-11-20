@@ -19,9 +19,9 @@ interface SettingsForm {
   invoicePrefix: string;
   defaultClosingText: string;
   defaultPaymentDays: string;
-  /** Neu eingegebener API-Key; leer = unverändert (der gespeicherte Key wird nie angezeigt) */
+  /** Newly entered API key; empty = unchanged (the stored key is never shown) */
   apiKey: string;
-  /** Gespeicherten API-Key beim Speichern entfernen */
+  /** Remove the stored API key on saving */
   removeApiKey: boolean;
 }
 
@@ -123,7 +123,7 @@ export function Settings() {
         invoicePrefix: form.invoicePrefix,
         defaultClosingText: form.defaultClosingText.trim() === '' ? null : form.defaultClosingText,
         defaultPaymentDays: form.defaultPaymentDays.trim() === '' || Number.isNaN(days) ? -1 : days,
-        // nur senden, wenn geändert: leer lassen = Key unverändert, '' = entfernen
+        // only send if changed: leave empty = key unchanged, '' = remove
         ...(form.removeApiKey ? { geoapifyApiKey: '' } : form.apiKey.trim() !== '' ? { geoapifyApiKey: form.apiKey } : {}),
       });
       if (!result.ok) {

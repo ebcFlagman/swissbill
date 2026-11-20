@@ -27,7 +27,7 @@ async function write(path: string, data: Buffer): Promise<void> {
 
 export function registerPdfHandlers(service: InvoiceService): void {
   handle<PdfRequest, PdfSaveResult>(CHANNELS.pdfSave, pdfRequestSchema, async ({ invoiceId }) => {
-    const invoice = service.get(invoiceId);
+    const invoice = await service.get(invoiceId);
     const pdf = await renderInvoicePdf(invoice);
     const parent = BrowserWindow.getFocusedWindow() ?? undefined;
     const options = {
@@ -44,13 +44,13 @@ export function registerPdfHandlers(service: InvoiceService): void {
   });
 
   handle<PdfRequest, { base64: string }>(CHANNELS.pdfPreview, pdfRequestSchema, async ({ invoiceId }) => {
-    const invoice = service.get(invoiceId);
+    const invoice = await service.get(invoiceId);
     const pdf = await renderInvoicePdf(invoice, { preview: invoice.status === 'draft' });
     return { base64: pdf.toString('base64') };
   });
 
   handle<PdfRequest, void>(CHANNELS.pdfOpen, pdfRequestSchema, async ({ invoiceId }) => {
-    const invoice = service.get(invoiceId);
+    const invoice = await service.get(invoiceId);
     const pdf = await renderInvoicePdf(invoice);
     const path = join(app.getPath('temp'), `swissbill-${fileName(invoice)}`);
     await write(path, pdf);

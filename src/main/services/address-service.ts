@@ -1,4 +1,4 @@
-import type Database from 'better-sqlite3';
+import type { DataSource } from 'typeorm';
 import { MAX_SUGGESTIONS, toSuggestions } from '../../shared/domain/address-suggestion';
 import { normalizeApiKey } from '../../shared/domain/settings';
 import type { KeyCheckResult, SuggestResult } from '../../shared/ipc/addresses';
@@ -7,18 +7,18 @@ import type { SecretStore } from '../secret-store';
 import type { GeoapifyClient } from './geoapify-client';
 
 /**
- * Adressvorschläge über Geoapify. Der Key wird nur hier im Main gelesen und nie an den Renderer gegeben.
- * Ohne (lesbaren) Key wird keine Netzwerkanfrage gesendet.
+ * Address suggestions via Geoapify. The key is only read here in main and never given to the renderer.
+ * Without a (readable) key no network request is sent.
  */
 export class AddressService {
   constructor(
-    private readonly db: Database.Database,
+    private readonly dataSource: DataSource,
     private readonly secrets: SecretStore,
     private readonly client: GeoapifyClient,
   ) {}
 
   async suggest(text: string): Promise<SuggestResult> {
-    const apiKey = await readApiKey(this.db, this.secrets);
+    const apiKey = await readApiKey(this.dataSource, this.secrets);
     if (apiKey === null) return { status: 'disabled' };
 
     const result = await this.client.autocomplete(text, apiKey);
@@ -26,7 +26,7 @@ export class AddressService {
     return { status: 'ok', suggestions: toSuggestions(result.body).slice(0, MAX_SUGGESTIONS) };
   }
 
-  /** Prüft einen (noch nicht gespeicherten) Key mit einer Probeanfrage. Der Key wird weder gespeichert noch geloggt. */
+  /** Checks a (not yet stored) key with a test request. The key is neither stored nor logged. */
   async testKey(apiKey: string): Promise<KeyCheckResult> {
     const result = await this.client.autocomplete('Bahnhofstrasse', normalizeApiKey(apiKey));
     return result.ok ? 'valid' : result.reason;

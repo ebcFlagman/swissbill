@@ -3,7 +3,7 @@ import type { SwissbillApi } from '../shared/ipc/api';
 
 declare global {
   interface ImportMetaEnv {
-    /** PrimeUI-Lizenzschlüssel (Community License), aus `.env.local` – wird nie committet. */
+    /** PrimeUI license key (Community License), from `.env.local` – never committed. */
     readonly VITE_PRIMEUI_LICENSE?: string;
   }
 

@@ -30,11 +30,11 @@ import { notifyError, notifySuccess } from '../lib/notify';
 interface InvoiceEditorProps {
   invoiceId: number;
   onBack: () => void;
-  /** Öffnet eine andere Rechnung (z. B. das Duplikat) */
+  /** Opens another invoice (e.g. the duplicate) */
   onOpenInvoice: (id: number) => void;
 }
 
-/** Autosave von Entwürfen nach dieser Zeit ohne Eingabe */
+/** Autosave of drafts after this time without input */
 const AUTOSAVE_MS = 1500;
 
 function toMap(errors: FieldError[]): Record<string, string> {
@@ -61,7 +61,7 @@ export function InvoiceEditor({ invoiceId, onBack, onOpenInvoice }: InvoiceEdito
   const dirty = useRef(false);
   const latest = useRef<{ form: InvoiceForm | null; invoice: Invoice | null }>({ form: null, invoice: null });
 
-  // Beim Verlassen des Editors (Menü, Navigation) werden noch nicht gespeicherte Eingaben im Entwurf gesichert.
+  // When leaving the editor (menu, navigation), inputs not yet saved are stored in the draft.
   useEffect(() => {
     latest.current = { form, invoice };
   });
@@ -75,7 +75,7 @@ export function InvoiceEditor({ invoiceId, onBack, onOpenInvoice }: InvoiceEdito
     [invoiceId],
   );
 
-  // Kunden zur Auswahl und die Standardwerte zum Zurücksetzen
+  // Customers for the selection and the default values for resetting
   useEffect(() => {
     let cancelled = false;
     void Promise.all([window.swissbill.customers.list({}), window.swissbill.settings.get()]).then(
@@ -119,8 +119,8 @@ export function InvoiceEditor({ invoiceId, onBack, onOpenInvoice }: InvoiceEdito
     setForm((current) => (current ? { ...current, ...changes } : current));
   }, []);
 
-  // Entwürfe werden nach kurzer Pause automatisch gespeichert. Fehler (z. B. unvollständige Eingaben)
-  // bleiben still; die Meldungen erscheinen beim ausdrücklichen Speichern oder Ausstellen.
+  // Drafts are saved automatically after a short pause. Errors (e.g. incomplete inputs)
+  // stay silent; the messages appear on explicit saving or issuing.
   const autosave = useEffectEvent(async () => {
     if (!form || !invoice || invoice.status !== 'draft' || busy || !dirty.current) return;
     dirty.current = false;
@@ -155,7 +155,7 @@ export function InvoiceEditor({ invoiceId, onBack, onOpenInvoice }: InvoiceEdito
   const readOnly = invoice.status !== 'draft';
   const total = formTotal(form);
 
-  /** Speichert den Entwurf; liefert `true`, wenn er gespeichert ist. */
+  /** Saves the draft; returns `true` if it is saved. */
   async function save(): Promise<boolean> {
     if (!form) return false;
     const result = await window.swissbill.invoices.saveDraft(toDraftInput(invoiceId, form));

@@ -13,7 +13,7 @@ interface ConfirmDialogProps {
   onCancel: () => void;
 }
 
-/** Allgemeine Rückfrage vor einer nicht umkehrbaren Aktion. */
+/** General confirmation before an irreversible action. */
 export function ConfirmDialog({
   open,
   title,

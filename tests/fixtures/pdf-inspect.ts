@@ -4,16 +4,16 @@ import { getDocument } from 'pdfjs-dist/legacy/build/pdf.mjs';
 
 export interface InspectedPdf {
   numPages: number;
-  /** Seitengrösse in Punkten (A4 = 595.28 x 841.89) */
+  /** Page size in points (A4 = 595.28 x 841.89) */
   pageSizes: { width: number; height: number }[];
-  /** Text je Seite, durch Leerzeichen verbunden */
+  /** Text per page, joined by spaces */
   texts: string[];
-  /** Rastert die Seite und dekodiert den ersten QR-Code. `null`, wenn keiner gefunden wird. */
+  /** Rasterizes the page and decodes the first QR code. `null` if none is found. */
   decodeQr(pageNumber: number): Promise<string | null>;
   destroy(): Promise<void>;
 }
 
-/** Liest ein PDF (Text, Seitengrösse) und dekodiert dessen QR-Code durch Rastern mit pdf.js und jsQR. */
+/** Reads a PDF (text, page size) and decodes its QR code by rasterizing with pdf.js and jsQR. */
 export async function inspectPdf(buffer: Buffer): Promise<InspectedPdf> {
   const loadingTask = getDocument({
     data: new Uint8Array(buffer),

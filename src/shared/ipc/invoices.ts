@@ -2,7 +2,7 @@ import { z } from 'zod';
 import type { Address } from '../domain/address';
 import type { DraftInput, InvoiceFilter, InvoiceItemInput, Sender } from '../domain/invoice';
 
-/** Grosszügige Obergrenzen gegen Missbrauch; die fachlichen Grenzen prüft die Domäne. */
+/** Generous upper limits against abuse; the business limits are checked by the domain. */
 const text = (max: number) => z.string().max(max);
 
 const addressSchema: z.ZodType<Address> = z.object({

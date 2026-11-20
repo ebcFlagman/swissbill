@@ -1,7 +1,7 @@
 import { app, safeStorage } from 'electron';
 import type { SecretStore } from './secret-store';
 
-/** Verschlüsselung über das Betriebssystem (Windows DPAPI, macOS Keychain, Linux Schlüsselbund). */
+/** Encryption through the operating system (Windows DPAPI, macOS Keychain, Linux keyring). */
 export const electronSecretStore: SecretStore = {
   isAvailable: () => safeStorage.isAsyncEncryptionAvailable(),
   encrypt: (text) => safeStorage.encryptStringAsync(text),
@@ -14,7 +14,7 @@ export const electronSecretStore: SecretStore = {
   },
 };
 
-/** Nur für Testläufe: Speicher-Store ohne Betriebssystem. Nie in der verpackten App. */
+/** For test runs only: memory store without the operating system. Never in the packaged app. */
 const memoryStore: SecretStore = {
   isAvailable: async () => true,
   encrypt: async (text) => Buffer.from(`mem:${Buffer.from(text, 'utf8').toString('base64')}`, 'utf8'),

@@ -4,7 +4,7 @@ import { API_KEY_MAX } from '../domain/settings';
 
 export type SuggestFailure = 'offline' | 'invalid_key' | 'quota' | 'timeout' | 'unavailable';
 
-/** `disabled`: kein (lesbarer) Key gespeichert, es wurde keine Anfrage gesendet. */
+/** `disabled`: no (readable) key stored, no request was sent. */
 export type SuggestResult =
   | { status: 'disabled' }
   | { status: 'ok'; suggestions: AddressSuggestion[] }

@@ -1,4 +1,4 @@
-/** Der einzige externe Dienst der Anwendung (Constitution Prinzip II, Ausnahme «Adressvorschläge»). */
+/** The only external service of the application (constitution principle II, exception "address suggestions"). */
 export const GEOAPIFY_BASE_URL = 'https://api.geoapify.com';
 
 export type GeoapifyFailure = 'offline' | 'invalid_key' | 'quota' | 'timeout' | 'unavailable';
@@ -19,8 +19,8 @@ const DEFAULT_TIMEOUT_MS = 5_000;
 const LIMIT = 5;
 
 /**
- * Basis-URL des Dienstes. Nur in einer nicht verpackten App und nur als http(s)-URL darf die Umgebungsvariable
- * `SWISSBILL_GEOAPIFY_BASE_URL` sie ersetzen (lokaler Fake-Server für Tests); sonst gilt immer der echte Host.
+ * Base URL of the service. Only in a non-packaged app and only as an http(s) URL may the environment variable
+ * `SWISSBILL_GEOAPIFY_BASE_URL` replace it (local fake server for tests); otherwise the real host always applies.
  */
 export function resolveBaseUrl(env: NodeJS.ProcessEnv, packaged: boolean): string {
   const override = env['SWISSBILL_GEOAPIFY_BASE_URL'];
@@ -46,8 +46,8 @@ function failureFor(status: number): GeoapifyFailure {
 }
 
 /**
- * HTTP-Client für Geoapify. Gesendet werden nur der Suchtext, feste Parameter und der Key.
- * Fehler werden ausschliesslich als Grund zurückgegeben, nie mit URL, Key oder Antwortkörper.
+ * HTTP client for Geoapify. Only the search text, fixed parameters and the key are sent.
+ * Errors are returned exclusively as a reason, never with URL, key or response body.
  */
 export function createGeoapifyClient(options: GeoapifyClientOptions = {}): GeoapifyClient {
   const fetchImpl = options.fetchImpl ?? fetch;

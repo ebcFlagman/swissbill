@@ -24,11 +24,11 @@ test('Status nachführen, stornieren ohne Nummernlücken und nach Status filtern
     expect(await createAndIssue(page, 'Kunde Drei AG')).toBe(n(3));
     await expect(page.getByTestId('invoice-row')).toHaveCount(3);
 
-    // Eine Rechnung als bezahlt markieren (Schnellaktion in der Liste)
+    // Mark an invoice as paid (quick action in the list)
     await row(page, n(1)).getByRole('button', { name: 'Als bezahlt markieren' }).click();
     await expect(row(page, n(1))).toContainText('Bezahlt');
 
-    // Eine Rechnung stornieren: Nummer bleibt vergeben und sichtbar
+    // Cancel an invoice: the number stays assigned and visible
     await page.getByRole('button', { name: n(2) }).click();
     await page.getByRole('button', { name: 'Stornieren' }).click();
     const confirm = page.getByRole('dialog', { name: 'Rechnung stornieren?' });
@@ -40,7 +40,7 @@ test('Status nachführen, stornieren ohne Nummernlücken und nach Status filtern
     await page.getByRole('button', { name: '← Zurück' }).click();
     await expect(row(page, n(2))).toContainText('Storniert');
 
-    // Statusfilter
+    // Status filter
     await page.getByLabel('Status').selectOption('cancelled');
     await expect(page.getByTestId('invoice-row')).toHaveCount(1);
     await expect(row(page, n(2))).toBeVisible();
@@ -52,7 +52,7 @@ test('Status nachführen, stornieren ohne Nummernlücken und nach Status filtern
     await expect(row(page, n(3))).toBeVisible();
     await page.getByLabel('Status').selectOption('all');
 
-    // Bezahlt lässt sich zurücksetzen (Fehlbuchung), der Inhalt bleibt unverändert
+    // Paid can be reset (wrong booking), the content stays unchanged
     await page.getByRole('button', { name: n(1) }).click();
     await page.getByRole('button', { name: 'Zurücksetzen' }).click();
     await expect(page.getByRole('button', { name: 'Als bezahlt markieren' })).toBeVisible();
@@ -60,7 +60,7 @@ test('Status nachführen, stornieren ohne Nummernlücken und nach Status filtern
     await page.getByRole('button', { name: '← Zurück' }).click();
     await expect(row(page, n(1))).toContainText('Ausgestellt');
 
-    // Ein gelöschter Entwurf erzeugt keine Lücke; die stornierte Nummer wird nicht wiederverwendet
+    // A deleted draft creates no gap; the cancelled number is not reused
     await page.getByRole('button', { name: 'Neue Rechnung' }).click();
     await page.getByRole('button', { name: '← Zurück' }).click();
     const draft = page.getByTestId('invoice-row').filter({ hasText: 'Entwurf' });

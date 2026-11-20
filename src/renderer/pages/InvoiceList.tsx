@@ -31,7 +31,7 @@ export function InvoiceList({ onOpen, onCreate, creating }: InvoiceListProps) {
     else notifyError(result.error);
   }, []);
 
-  // Suche leicht verzögern, damit nicht jeder Tastendruck eine Abfrage auslöst.
+  // Delay the search slightly so that not every keystroke triggers a query.
   useEffect(() => {
     const timer = setTimeout(() => void load(search, status), 200);
     return () => clearTimeout(timer);

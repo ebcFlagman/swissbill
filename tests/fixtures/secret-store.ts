@@ -1,15 +1,15 @@
 import type { SecretStore } from '../../src/main/secret-store';
 
 export interface FakeSecretStore extends SecretStore {
-  /** Schaltet die Verfügbarkeit der Verschlüsselung um. */
+  /** Toggles the availability of the encryption. */
   available: boolean;
-  /** Simuliert ein anderes Gerät/einen anderen Benutzer: gespeicherte Werte sind nicht mehr entschlüsselbar. */
+  /** Simulates another device/user: stored values can no longer be decrypted. */
   broken: boolean;
 }
 
 const PREFIX = 'FAKE-ENC:';
 
-/** Test-Store ohne Electron: «verschlüsselt» reversibel, der Klartext steht aber nicht lesbar im Ergebnis. */
+/** Test store without Electron: "encrypts" reversibly, but the plain text is not readable in the result. */
 export function createFakeSecretStore(options: { available?: boolean; broken?: boolean } = {}): FakeSecretStore {
   const store: FakeSecretStore = {
     available: options.available ?? true,

@@ -49,7 +49,7 @@ describe('createSuggestionSearch', () => {
     first.resolve(ok('Bahnhofplatz'));
 
     expect(await b).toEqual(ok('Bahnhofstrasse'));
-    expect(await a).toBeNull(); // veraltet
+    expect(await a).toBeNull(); // stale
   });
 
   it('verwirft auch, wenn eine spätere Eingabe zu kurz ist (Liste leeren, alte Antwort ignorieren)', async () => {

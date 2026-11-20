@@ -30,7 +30,7 @@ async function setup(
   options: { key?: string; secrets?: ReturnType<typeof createFakeSecretStore> } = {},
   client?: GeoapifyClient,
 ) {
-  const db = createTestDb();
+  const db = await createTestDb();
   const secrets = options.secrets ?? createFakeSecretStore();
   const settings = new SettingsService(db, secrets);
   await settings.save({
@@ -114,8 +114,8 @@ describe('AddressService.testKey', () => {
     const { service, calls, db, secrets } = await setup();
     await service.testKey(`  ${KEY} `);
     expect(calls).toEqual([{ text: 'Bahnhofstrasse', apiKey: KEY }]);
-    const row = db.prepare('SELECT geoapify_api_key AS key FROM settings WHERE id = 1').get() as { key: Buffer | null };
-    expect(row.key).toBeNull();
+    const rows = (await db.query('SELECT geoapify_api_key AS key FROM settings WHERE id = 1')) as { key: Buffer | null }[];
+    expect(rows[0]?.key).toBeNull();
     expect(await secrets.isAvailable()).toBe(true);
   });
 });

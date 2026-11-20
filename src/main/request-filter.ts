@@ -1,16 +1,16 @@
 /**
- * Erlaubte Anfragen des Renderers (Constitution Prinzip II: keine Netzwerkzugriffe).
+ * Allowed requests of the renderer (constitution principle II: no network access).
  *
- * Der Renderer bleibt auch mit Geoapify-Key vollständig vom Netz getrennt: Der einzige Netzwerkzugriff der
- * Anwendung sind die optionalen Adressvorschläge, und die laufen im Main-Prozess (`geoapify-client.ts`), nie hier.
+ * Even with a Geoapify key the renderer stays completely cut off from the network: the only network access of the
+ * application is the optional address suggestions, and they run in the main process (`geoapify-client.ts`), never here.
  *
- * Erlaubt sind nur lokale Quellen:
- * - eigene Dateien und Blobs (`file:`, `blob:`, `data:`)
- * - die eingebauten Chromium-Ressourcen des PDF-Betrachters in der Vorschau
- *   (`chrome://resources/…`, `chrome-untrusted://…`, `chrome-extension://…`), sie kommen aus dem Programm, nicht aus dem Netz
- * - im Entwicklungsmodus der lokale Vite-Server (HTTP und WebSocket)
+ * Only local sources are allowed:
+ * - own files and blobs (`file:`, `blob:`, `data:`)
+ * - the built-in Chromium resources of the PDF viewer in the preview
+ *   (`chrome://resources/…`, `chrome-untrusted://…`, `chrome-extension://…`), they come from the program, not from the network
+ * - in development mode the local Vite server (HTTP and WebSocket)
  *
- * Alles andere (http, https, ws, ftp, andere chrome://-Seiten) wird abgebrochen.
+ * Everything else (http, https, ws, ftp, other chrome:// pages) is aborted.
  */
 export function isAllowedRequest(url: string, devOrigin: string | undefined): boolean {
   if (/^(file|blob|data|devtools|chrome-extension|chrome-untrusted):/i.test(url)) return true;
@@ -19,7 +19,7 @@ export function isAllowedRequest(url: string, devOrigin: string | undefined): bo
   return url.startsWith(devOrigin) || url.startsWith(devOrigin.replace(/^http/, 'ws'));
 }
 
-/** Eine leere Umgebungsvariable bedeutet «kein Entwicklungsserver» (nicht «alles erlaubt»). */
+/** An empty environment variable means "no development server" (not "everything allowed"). */
 export function readDevOrigin(env: NodeJS.ProcessEnv = process.env): string | undefined {
   const value = env['ELECTRON_RENDERER_URL'];
   return value ? value : undefined;

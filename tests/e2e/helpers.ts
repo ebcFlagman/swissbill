@@ -8,13 +8,13 @@ export interface LaunchedApp {
   page: Page;
   userDataDir: string;
   close(): Promise<void>;
-  /** Startet die App mit demselben Datenordner neu (für Persistenztests). */
+  /** Restarts the app with the same data folder (for persistence tests). */
   relaunch(): Promise<LaunchedApp>;
 }
 
 /**
- * Startet die gebaute App (`npm run build` muss vorher gelaufen sein) mit einem eigenen,
- * temporären Datenordner, damit Tests nie echte Daten berühren.
+ * Starts the built app (`npm run build` must have run before) with its own,
+ * temporary data folder so that tests never touch real data.
  */
 export async function launchApp(
   userDataDir?: string,
@@ -23,7 +23,7 @@ export async function launchApp(
   const dir = userDataDir ?? mkdtempSync(join(tmpdir(), 'swissbill-e2e-'));
   const app = await electron.launch({
     args: [resolve(__dirname, '../..'), `--user-data-dir=${dir}`],
-    // Wie in der Produktion: kein Entwicklungsserver (eine leere Variable würde die Netzwerksperre aushebeln)
+    // As in production: no development server (an empty variable would undermine the network block)
     env: {
       ...(Object.fromEntries(
         Object.entries(process.env).filter(([key]) => key !== 'ELECTRON_RENDERER_URL'),
@@ -62,7 +62,7 @@ export async function fillItem(page: Page, position: number, description: string
   await page.getByLabel(`Einzelpreis Position ${position}`).fill(price);
 }
 
-/** Füllt eine vollständige, gültige Rechnung mit fiktiven Daten (Editor muss offen sein). */
+/** Fills a complete, valid invoice with fictitious data (the editor must be open). */
 export async function fillValidInvoice(page: Page, debtorName = 'Pia-Maria Rutschmann-Schnyder') {
   await fillAddress(page, 'sender', {
     name: 'Robert Schneider AG',
@@ -82,7 +82,7 @@ export async function fillValidInvoice(page: Page, debtorName = 'Pia-Maria Rutsc
   await fillItem(page, 1, 'Beratung', '2', '150.00');
 }
 
-/** Stellt die geöffnete Rechnung aus, schliesst den Dialog und liefert die Rechnungsnummer. */
+/** Issues the open invoice, closes the dialog and returns the invoice number. */
 export async function issueOpenInvoice(page: Page): Promise<string> {
   await page.getByRole('button', { name: 'Ausstellen', exact: true }).click();
   const confirm = page.getByRole('dialog', { name: 'Rechnung ausstellen?' });
@@ -93,7 +93,7 @@ export async function issueOpenInvoice(page: Page): Promise<string> {
   return number;
 }
 
-/** Löst einen Menüpunkt wie ein Klick des Benutzers aus (Hauptnavigation läuft nur über das native Menü). */
+/** Triggers a menu item like a user click (main navigation only runs through the native menu). */
 export async function clickMenu(app: ElectronApplication, id: string): Promise<void> {
   await app.evaluate(({ Menu }, menuId) => {
     Menu.getApplicationMenu()?.getMenuItemById(menuId)?.click();
@@ -102,12 +102,12 @@ export async function clickMenu(app: ElectronApplication, id: string): Promise<v
 
 const PAGE_IDS = { Rechnungen: 'nav-invoices', Kunden: 'nav-customers', Einstellungen: 'nav-settings' } as const;
 
-/** Wechselt über das Menü «Ansicht» zu einer Hauptansicht. */
+/** Switches to a main view via the "Ansicht" menu. */
 export async function goTo(app: ElectronApplication, page: keyof typeof PAGE_IDS): Promise<void> {
   await clickMenu(app, PAGE_IDS[page]);
 }
 
-/** Erfasst den Absender in den Einstellungen und speichert optional einen Geoapify-API-Key (Fake-Dienst). */
+/** Captures the sender in the settings and optionally stores a Geoapify API key (fake service). */
 export async function setupSettings(app: ElectronApplication, page: Page, apiKey?: string): Promise<void> {
   await goTo(app, 'Einstellungen');
   await fillAddress(page, 'sender', {
@@ -121,6 +121,6 @@ export async function setupSettings(app: ElectronApplication, page: Page, apiKey
   if (apiKey !== undefined) await page.locator('#geoapifyApiKey').fill(apiKey);
   await page.getByRole('button', { name: 'Speichern' }).click();
   await expect(page.getByText('Einstellungen gespeichert.')).toBeVisible();
-  // die Meldung verdeckt sonst später Schaltflächen oben rechts
+  // the message would otherwise cover buttons at the top right later
   await expect(page.getByText('Einstellungen gespeichert.')).toBeHidden({ timeout: 20_000 });
 }

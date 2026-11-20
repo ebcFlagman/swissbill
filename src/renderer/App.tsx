@@ -19,8 +19,8 @@ function renderPage(page: MenuPage, pendingNew: boolean, onPendingHandled: () =>
 }
 
 /**
- * Die Hauptnavigation läuft ausschliesslich über das native Anwendungsmenü
- * (Ansicht → Rechnungen / Kunden / Einstellungen, siehe src/main/menu-template.ts).
+ * The main navigation runs exclusively through the native application menu
+ * (View → Invoices / Customers / Settings, see src/main/menu-template.ts).
  */
 export function App() {
   const [page, setPage] = useState<MenuPage>('invoices');

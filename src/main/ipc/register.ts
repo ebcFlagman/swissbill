@@ -1,5 +1,5 @@
 import { app } from 'electron';
-import type Database from 'better-sqlite3';
+import type { DataSource } from 'typeorm';
 import { z } from 'zod';
 import { CHANNELS, type AppInfo } from '../../shared/ipc/api';
 import { createSecretStore } from '../electron-secret-store';
@@ -17,8 +17,8 @@ import { registerInvoiceHandlers } from './invoices';
 import { registerPdfHandlers } from './pdf';
 import { registerSettingsHandlers } from './settings';
 
-export function registerIpc(db: Database.Database): void {
-  const invoices = new InvoiceService(db);
+export function registerIpc(dataSource: DataSource): void {
+  const invoices = new InvoiceService(dataSource);
   const secrets = createSecretStore();
   const geoapify = createGeoapifyClient({ baseUrl: resolveBaseUrl(process.env, app.isPackaged) });
 
@@ -27,9 +27,9 @@ export function registerIpc(db: Database.Database): void {
     platform: process.platform,
   }));
   registerInvoiceHandlers(invoices);
-  registerCustomerHandlers(new CustomerService(db));
-  registerSettingsHandlers(new SettingsService(db, secrets));
-  registerAddressHandlers(new AddressService(db, secrets, geoapify));
-  registerDbHandlers(new BackupService(db));
+  registerCustomerHandlers(new CustomerService(dataSource));
+  registerSettingsHandlers(new SettingsService(dataSource, secrets));
+  registerAddressHandlers(new AddressService(dataSource, secrets, geoapify));
+  registerDbHandlers(new BackupService(dataSource));
   registerPdfHandlers(invoices);
 }

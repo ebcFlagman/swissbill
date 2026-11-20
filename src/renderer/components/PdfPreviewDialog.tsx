@@ -14,7 +14,7 @@ function base64ToBlobUrl(base64: string): string {
   return URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }));
 }
 
-/** PDF-Vorschau (Entwürfe mit Wasserzeichen, ohne Zahlteil; ausgestellte Rechnungen wie das Endergebnis). */
+/** PDF preview (drafts with watermark, without payment part; issued invoices like the final result). */
 export function PdfPreviewDialog({ invoiceId, open, onClose }: PdfPreviewDialogProps) {
   const [url, setUrl] = useState<string | null>(null);
 

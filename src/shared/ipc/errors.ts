@@ -1,14 +1,14 @@
 export type AppErrorCode = 'VALIDATION' | 'NOT_FOUND' | 'IMMUTABLE' | 'IO' | 'DB';
 
 export interface FieldError {
-  /** z. B. `debtor.name` oder `items.0.description` */
+  /** e.g. `debtor.name` or `items.0.description` */
   field: string;
   message: string;
 }
 
 export interface AppError {
   code: AppErrorCode;
-  /** deutsch, benutzerverständlich */
+  /** German, understandable for the user */
   message: string;
   fields?: FieldError[];
 }
@@ -31,7 +31,7 @@ export function validationError<T = never>(fields: FieldError[]): Result<T> {
   return err('VALIDATION', 'Bitte die markierten Felder prüfen.', fields);
 }
 
-/** Wird von Services geworfen und im IPC-Wrapper in ein `Result` umgewandelt. */
+/** Thrown by services and converted into a `Result` in the IPC wrapper. */
 export class AppException extends Error {
   readonly error: AppError;
 

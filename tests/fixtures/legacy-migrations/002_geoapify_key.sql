@@ -1,3 +1,3 @@
--- Optionaler Geoapify-API-Key für Adressvorschläge (Feature 004).
--- Nur der mit der Betriebssystem-Verschlüsselung verschlüsselte Wert, nie Klartext; NULL = nicht gesetzt.
+-- Optional Geoapify API key for address suggestions (feature 004).
+-- Only the value encrypted with the operating system encryption, never plain text; NULL = not set.
 ALTER TABLE settings ADD COLUMN geoapify_api_key BLOB;

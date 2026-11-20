@@ -8,13 +8,13 @@ import { useAddressSuggestions } from '../lib/use-address-suggestions';
 import { Field } from './Field';
 
 interface AddressFieldsProps<T extends Address> {
-  /** Feldpräfix für Fehlermeldungen und IDs: `sender`, `debtor` oder `customer` */
+  /** Field prefix for error messages and IDs: `sender`, `debtor` or `customer` */
   prefix: string;
   value: T;
   onChange: (value: T) => void;
   errors: Record<string, string>;
   disabled?: boolean;
-  /** Zeigt zusätzlich das IBAN-Feld (nur beim Absender) */
+  /** Additionally shows the IBAN field (sender only) */
   withIban?: boolean;
 }
 
@@ -33,7 +33,7 @@ export function AddressFields<T extends Address & { iban?: string }>({
   const { suggestions, hint, search, clear } = useAddressSuggestions(!disabled);
   const selectedLabel = useRef<string | null>(null);
 
-  // Sofortprüfung der IBAN: ein Fehler aus dem Ausstellen/Speichern hat Vorrang vor der Prüfung beim Tippen
+  // Instant IBAN check: an error from issuing/saving takes precedence over the check while typing
   const [ibanLeft, setIbanLeft] = useState(false);
   const iban = value.iban ?? '';
   const ibanError = error('iban') ?? ibanFeedback(iban, ibanLeft) ?? undefined;
@@ -44,14 +44,14 @@ export function AddressFields<T extends Address & { iban?: string }>({
         <InputText id={id('name')} fluid value={value.name} onChange={set('name')} invalid={!!error('name')} disabled={disabled} />
       </Field>
       <Field label="Strasse" htmlFor={id('street')} error={error('street')} className="span-4">
-        {/* Vorschläge nur mit hinterlegtem Geoapify-Key (sonst bleibt die Liste leer, die Eingabe wie bisher);
-            der Baustein wartet 0,3 s Tipppause und mindestens 3 Zeichen ab. */}
+        {/* Suggestions only with a stored Geoapify key (otherwise the list stays empty and input works as before);
+            the component waits for a typing pause of 0.3 s and at least 3 characters. */}
         <AutoComplete.Root
           options={suggestions}
           optionLabel="label"
           inputValue={value.street}
           onInputValueChange={(event: { query: string }) => {
-            // Der Baustein meldet nach der Auswahl die Anzeigezeile als Eingabe; die übernommene Strasse behält Vorrang
+            // After a selection the component reports the display line as input; the street taken over keeps precedence
             if (selectedLabel.current !== null && event.query === selectedLabel.current) {
               selectedLabel.current = null;
               return;
@@ -120,7 +120,7 @@ export function AddressFields<T extends Address & { iban?: string }>({
               set('iban' as keyof T)(event);
             }}
             onBlur={() => {
-              // Beim Verlassen: unvollständige IBAN melden und in Vierergruppen darstellen
+              // On blur: report an incomplete IBAN and display it in groups of four
               setIbanLeft(true);
               const formatted = formatIban(iban);
               if (formatted !== iban) onChange({ ...value, iban: formatted });

@@ -1,7 +1,7 @@
 name: Release
 
-# Manuell (nur vom Hauptbranch, mit Versionsangabe) oder durch Push eines Tags v<MAJOR>.<MINOR>.<PATCH>[-zusatz].
-# Der Tag entsteht bei manueller Auslösung erst beim Veröffentlichen des Releases, also nur nach erfolgreicher Prüfung und Build.
+# Manually (only from the main branch, with a version) or by pushing a tag v<MAJOR>.<MINOR>.<PATCH>[-suffix].
+# On a manual trigger the tag is only created when the release is published, i.e. only after a successful check and build.
 on:
   workflow_dispatch:
     inputs:
@@ -16,7 +16,7 @@ on:
 permissions:
   contents: read
 
-# Releases laufen nacheinander und werden nie abgebrochen.
+# Releases run one after another and are never cancelled.
 concurrency:
   group: release
   cancel-in-progress: false
@@ -80,7 +80,7 @@ jobs:
           node-version: 26
           cache: npm
 
-      # better-sqlite3 liefert fertige Binaries mit; ohne --ignore-scripts würde npm versuchen, es zu kompilieren.
+      # better-sqlite3 ships prebuilt binaries; without --ignore-scripts npm would try to compile it.
       - name: Install dependencies
         run: npm ci --ignore-scripts
 
@@ -129,14 +129,14 @@ jobs:
       - name: Install Electron binary
         run: node node_modules/electron/install.js
 
-      # Die Release-Version überschreibt nur die gepackte package.json; die Datei im Repository bleibt unverändert.
+      # The release version only overwrites the packaged package.json; the file in the repository stays unchanged.
       - name: Build and package
         shell: bash
         run: npm run "$SCRIPT" -- "-c.extraMetadata.version=$VERSION"
         env:
           SCRIPT: ${{ matrix.script }}
           VERSION: ${{ needs.prepare.outputs.version }}
-          # Optional: ohne Secret baut die App mit Lizenz-Banner.
+          # Optional: without the secret the app builds with a license banner.
           VITE_PRIMEUI_LICENSE: ${{ secrets.PRIMEUI_LICENSE }}
 
       - name: Verify package
@@ -202,7 +202,7 @@ jobs:
           Die Installer sind nicht signiert; Windows kann beim Start eine SmartScreen-Warnung anzeigen.
           EOF
 
-      # Zuerst als Entwurf: der Tag entsteht erst beim Veröffentlichen, ein Fehlschlag hinterlässt keinen Tag.
+      # As a draft first: the tag is only created on publishing, a failure leaves no tag.
       - name: Create release
         run: |
           stale=$(gh release list --limit 1000 --json tagName,isDraft --jq '.[] | select(.tagName == env.TAG and .isDraft) | .tagName')

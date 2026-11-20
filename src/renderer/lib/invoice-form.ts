@@ -10,7 +10,7 @@ import {
 import { formatChfInput, formatMilli, lineAmount, parseChf, parseMilli, type Rappen } from '../../shared/domain/money';
 import type { FieldError } from '../../shared/ipc/errors';
 
-/** Formularzustand: Zahlen bleiben als Text, damit Eingaben wie «1.» oder «» nicht verloren gehen. */
+/** Form state: numbers stay text so that inputs like "1." or "" are not lost. */
 export interface ItemForm {
   key: string;
   description: string;
@@ -58,7 +58,7 @@ export function toForm(invoice: Invoice): InvoiceForm {
   };
 }
 
-/** Wertet die Textfelder aus. Ungültige Zahlen werden als Fehler gemeldet und als 0 bzw. -1 weitergegeben. */
+/** Evaluates the text fields. Invalid numbers are reported as errors and passed on as 0 or -1. */
 function parseItems(items: ItemForm[]): {
   parsed: DraftInput['items'];
   errors: FieldError[];
@@ -102,8 +102,8 @@ export function toDraftInput(id: number, form: InvoiceForm): DraftInput {
 }
 
 /**
- * Sofort-Feedback: dieselben Regeln wie beim Ausstellen (shared/domain), ergänzt um Zahlenformatfehler.
- * Pro Feld wird nur der erste Fehler gemeldet.
+ * Instant feedback: the same rules as when issuing (shared/domain), plus number format errors.
+ * Only the first error is reported per field.
  */
 export function collectErrors(form: InvoiceForm): FieldError[] {
   const { parsed, errors: parseErrors } = parseItems(form.items);
@@ -143,12 +143,12 @@ export function collectErrors(form: InvoiceForm): FieldError[] {
   return result;
 }
 
-/** Nur Fehler beim Lesen der Zahlenfelder (werden sofort angezeigt, die übrigen erst nach dem ersten Versuch). */
+/** Only errors when reading the number fields (shown immediately, the others only after the first attempt). */
 export function parseErrors(form: InvoiceForm): FieldError[] {
   return parseItems(form.items).errors;
 }
 
-/** Positionsbetrag für die Anzeige; `null`, wenn Menge oder Preis ungültig sind. */
+/** Item amount for display; `null` if quantity or price are invalid. */
 export function itemAmount(item: ItemForm): Rappen | null {
   const quantity = parseMilli(item.quantity);
   const unitPrice = parseChf(item.unitPrice);
