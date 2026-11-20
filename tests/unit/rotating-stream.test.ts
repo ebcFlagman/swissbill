@@ -61,16 +61,18 @@ describe('RotatingFileStream', () => {
   });
 
   it('beschränkt den Speicherbedarf auch bei sehr vielen Einträgen (SC-003)', () => {
+    // few, small files instead of 100 000 entries: every write is a synchronous file operation,
+    // which is slow on Windows; the bound that is checked does not depend on the amount
     const file = join(dir, 'swissbill.log');
-    const stream = new RotatingFileStream({ file, maxBytes: 20_000, maxFiles: 5 });
+    const stream = new RotatingFileStream({ file, maxBytes: 5_000, maxFiles: 5 });
     const line = `{"time":"2026-11-20T10:00:00.000Z","level":"info","msg":"${'x'.repeat(120)}"}\n`;
-    for (let i = 0; i < 20_000; i++) stream.write(line);
+    for (let i = 0; i < 1_500; i++) stream.write(line);
     const total = readdirSync(dir)
       .map((n) => readFileSync(join(dir, n)).length)
       .reduce((a, b) => a + b, 0);
     expect(readdirSync(dir).length).toBeLessThanOrEqual(5);
-    expect(total).toBeLessThanOrEqual(5 * (20_000 + line.length));
-  });
+    expect(total).toBeLessThanOrEqual(5 * (5_000 + line.length));
+  }, 30_000);
 
   it('setzt die Rotation mit einer bereits vorhandenen grossen Datei fort', () => {
     const file = join(dir, 'swissbill.log');
