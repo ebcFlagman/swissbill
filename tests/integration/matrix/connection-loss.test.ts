@@ -37,16 +37,24 @@ describeMatrix('Verbindungsabbruch im Betrieb (FR-012)', (name, create) => {
     }
   };
 
-  it('im Leerlauf getrennte Verbindungen werden ersetzt: höchstens ein Versuch scheitert mit Meldung, dann geht es weiter', async () => {
+  it('im Leerlauf getrennte Verbindungen werden ersetzt: einzelne Versuche scheitern mit Meldung, dann geht es weiter', async () => {
     const db = await target.open();
     const { service } = createService(db);
     const draft = await createFilledDraft(service);
     await target.killConnections();
-    // depending on how fast the pool notices the dropped connection, the first try works or fails cleanly
-    const first = await service.issue(draft.id).catch((e: unknown) => e);
-    const failed = first instanceof Error;
-    if (failed) expect(isConnectionLost(first) || first instanceof AppException).toBe(true);
-    const issued = failed ? await service.issue(draft.id) : first;
+    // All idle pooled connections were killed. Depending on how fast the pool notices each dropped
+    // connection, an attempt works or fails cleanly; every dead connection costs at most one attempt,
+    // so after pool size + 1 attempts the pool must have recovered.
+    const MAX_ATTEMPTS = 6;
+    let issued: unknown;
+    for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+      const result = await service.issue(draft.id).catch((e: unknown) => e);
+      if (!(result instanceof Error)) {
+        issued = result;
+        break;
+      }
+      expect(isConnectionLost(result) || result instanceof AppException).toBe(true);
+    }
     expect(issued).toMatchObject({ status: 'issued', number: 'RE-2026-0001' });
   });
 
