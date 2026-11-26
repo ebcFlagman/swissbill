@@ -64,7 +64,7 @@ jobs:
     timeout-minutes: 20
     services:
       postgres:
-        image: postgres:16
+        image: postgres:19
         env:
           POSTGRES_USER: swissbill
           POSTGRES_PASSWORD: test
