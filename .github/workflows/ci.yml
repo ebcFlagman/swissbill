@@ -80,7 +80,7 @@ jobs:
         options: >-
           --health-cmd "mysqladmin ping -h 127.0.0.1 -proot" --health-interval 5s --health-timeout 5s --health-retries 30
       mariadb:
-        image: mariadb:11
+        image: mariadb:13
         env:
           MARIADB_ROOT_PASSWORD: root
         ports: ['3307:3306']
